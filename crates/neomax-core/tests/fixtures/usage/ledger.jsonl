@@ -1,0 +1,4 @@
+{"ts":1787488000,"provider":"claude","account":"claude-1","model":"claude-fable-5[1m]","id":"completion-1","kind":"add","session":"session-1","agent":"worker-1","in":1000,"out":200,"reasoning":50,"cw":10,"cr":25,"cost":0.012,"requests":1,"completions":1,"errors":0,"rate_limits":0,"future_ledger_field":"preserve"}
+{"ts":1787488001,"provider":"claude","account":"claude-1","model":"claude-fable-5[1m]","id":"completion-1","kind":"add","session":"session-1","agent":"worker-1","in":1000,"out":220,"reasoning":50,"cw":10,"cr":25,"cost":0.013,"requests":1,"completions":1,"errors":0,"rate_limits":0,"future_ledger_field":"preserve"}
+{"ts":1787488002,"provider":"codex","account":"codex-2","model":"gpt-5.6-sol","id":"session-1","kind":"total","session":"session-1","agent":"worker-2","in":5000,"out":900,"reasoning":400,"cw":0,"cr":1200,"cost":0.052,"requests":3,"completions":2,"errors":1,"rate_limits":1}
+not-json

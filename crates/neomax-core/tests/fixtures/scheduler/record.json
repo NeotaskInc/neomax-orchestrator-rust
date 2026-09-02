@@ -1,0 +1,39 @@
+{
+  "plan_id": "compat-plan",
+  "repo": "/workspace/project-a",
+  "base": "main",
+  "integration_branch": "neomax/int-compat-plan",
+  "worktree": "/state/worktrees/integ-compat-plan",
+  "plan": {
+    "repo": "/workspace/project-a",
+    "base": "main",
+    "integration_branch": "neomax/int-compat-plan",
+    "plan": "compat-plan",
+    "parts": [
+      {"id":"p1","prompt":"Inspect the service","engine":"claude","model":"claude-fable-5[1m]","area":["api"],"depends_on":[],"effort":"high","ultra":false,"opus":false,"order":0},
+      {"id":"p2","prompt":"Implement the safe change","engine":"codex","model":"gpt-5.6-sol","area":["api","tests"],"depends_on":["p1"],"effort":"medium","ultra":false,"opus":false,"order":1},
+      {"id":"p3","prompt":"Review the implementation","engine":"opencode","model":"opencode/big-pickle","area":["review"],"depends_on":["p1"],"order":2},
+      {"id":"p4","prompt":"Run the Kimi review","engine":"kimi","model":"kimi-code/k3","area":["review"],"depends_on":["p2","p3"],"order":3},
+      {"id":"p5","prompt":"Prepare the final report","engine":"grok","model":"grok-4.6","area":["docs"],"depends_on":["p4"],"order":4}
+    ]
+  },
+  "state": {
+    "states": {"p1":"done","p2":"running","p3":"done","p4":"pending","p5":"pending"},
+    "executions": {"p2":{"run_id":"run-compat-001","branch":"neomax/compat-p2","profile":"/profiles/codex-2","launched_at":1787488123.0}}
+  },
+  "status": "running",
+  "created_at": 1787488000,
+  "started_at": 1787488010,
+  "updated_at": 1787488123,
+  "ended_at": null,
+  "error": null,
+  "errors": [],
+  "recovery_count": 0,
+  "cleanup_requested": false,
+  "cleanup_completed": false,
+  "cleanup_error": null,
+  "killed": false,
+  "interrupted": false,
+  "kill_requested": false,
+  "future_plan_record_field": "preserve"
+}

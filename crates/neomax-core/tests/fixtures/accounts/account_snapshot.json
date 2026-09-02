@@ -1,0 +1,14 @@
+{
+  "engine": "claude",
+  "account": "account-1",
+  "profile": "/profiles/claude-1",
+  "authenticated": true,
+  "paused": false,
+  "reserved": false,
+  "live_workers": 2,
+  "five_hour_percent": 91.5,
+  "weekly_percent": 47.25,
+  "cooldown_until": "2026-08-23T12:30:00Z",
+  "five_hour_reset_at": "2026-08-23T14:00:00Z",
+  "weekly_reset_at": "2026-08-25T00:00:00Z"
+}

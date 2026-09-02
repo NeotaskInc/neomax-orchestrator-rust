@@ -1,0 +1,15 @@
+{
+  "five_hour": {
+    "used_percent": 99,
+    "resets_at": 1787493600
+  },
+  "seven_day": {
+    "used_percent": 81,
+    "resets_at": 1787659200
+  },
+  "source": "rollout",
+  "observed_at": 1787488123,
+  "expired": false,
+  "recoverable": false,
+  "stale": true
+}

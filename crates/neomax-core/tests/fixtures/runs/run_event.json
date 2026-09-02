@@ -1,0 +1,12 @@
+{
+  "ts": 1787488123,
+  "run": "run-compat-001",
+  "event": "usage_limit",
+  "engine": "codex",
+  "account": "codex-2",
+  "status": "limit",
+  "attempt": 2,
+  "resets_at": 1787490000,
+  "limit_window": "weekly",
+  "future_event_field": "preserve"
+}

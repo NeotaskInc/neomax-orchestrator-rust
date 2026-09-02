@@ -1,0 +1,54 @@
+{
+  "repo": "/workspace/project-a",
+  "base": "main",
+  "integration_branch": "neomax/int-compat-plan",
+  "plan": "compat-plan",
+  "parts": [
+    {
+      "id": "p1",
+      "prompt": "Inspect the service",
+      "engine": "claude",
+      "model": "claude-fable-5[1m]",
+      "area": ["api"],
+      "depends_on": [],
+      "effort": "high",
+      "ultra": false,
+      "opus": false
+    },
+    {
+      "id": "p2",
+      "prompt": "Implement the safe change",
+      "engine": "codex",
+      "model": "gpt-5.6-sol",
+      "area": ["api", "tests"],
+      "depends_on": ["p1"],
+      "effort": "medium",
+      "ultra": false,
+      "opus": false
+    },
+    {
+      "id": "p3",
+      "prompt": "Review the implementation",
+      "engine": "opencode",
+      "model": "opencode/big-pickle",
+      "area": ["review"],
+      "depends_on": ["p1"]
+    },
+    {
+      "id": "p4",
+      "prompt": "Run the Kimi review",
+      "engine": "kimi",
+      "model": "kimi-code/k3",
+      "area": ["review"],
+      "depends_on": ["p2", "p3"]
+    },
+    {
+      "id": "p5",
+      "prompt": "Prepare the final report",
+      "engine": "grok",
+      "model": "grok-4.6",
+      "area": ["docs"],
+      "depends_on": ["p4"]
+    }
+  ]
+}

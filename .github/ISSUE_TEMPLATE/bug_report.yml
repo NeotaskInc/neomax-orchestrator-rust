@@ -1,0 +1,86 @@
+name: Bug report
+description: Report a reproducible Neomax for Rust defect
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thanks for helping improve Neomax. Remove credentials, account or
+        profile details, personal paths, private repository names, proprietary
+        source, and unredacted logs before submitting.
+  - type: input
+    id: version
+    attributes:
+      label: Neomax version or commit
+      placeholder: Release version or commit SHA
+    validations:
+      required: true
+  - type: input
+    id: toolchain
+    attributes:
+      label: Rust toolchain and target
+      description: Include the rustc or cargo version and target triple.
+      placeholder: rustc 1.xx, x86_64-unknown-linux-gnu
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system and shell
+      placeholder: Linux, bash
+    validations:
+      required: true
+  - type: dropdown
+    id: affected_area
+    attributes:
+      label: Affected crate or surface
+      options:
+        - neomax-core
+        - neomax-cli
+        - neomax-portal
+        - neomax-usage-agent
+        - neomax-worktrees
+        - Provider adapter or launcher
+        - Installer or distribution
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide the smallest command and sanitized fixture that reproduce the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized diagnostics
+      description: Include only narrow relevant output. Remove secrets, identities, personal paths, and private source.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I searched existing issues for this problem.
+          required: true
+        - label: I removed credentials and private or personally identifying information.
+          required: true
+        - label: This is not a vulnerability that should use private security reporting.
+          required: true

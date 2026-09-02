@@ -1,0 +1,327 @@
+name: Assemble release artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing v<workspace-version> tag to build
+        required: true
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neomax-release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release_ref:
+    name: Validate release ref
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.verify.outputs.tag }}
+      version: ${{ steps.verify.outputs.version }}
+      sha: ${{ steps.verify.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Require the exact workspace tag at HEAD
+        id: verify
+        shell: bash
+        env:
+          DISPATCH_TAG: ${{ inputs.tag || '' }}
+        run: |
+          set -euo pipefail
+          case "$GITHUB_EVENT_NAME" in
+            push)
+              [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF" == refs/tags/* ]] || {
+                printf '%s\n' 'release workflow push must target a tag' >&2
+                exit 1
+              }
+              tag="$GITHUB_REF_NAME"
+              ;;
+            workflow_dispatch)
+              [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF" == refs/tags/* ]] || {
+                printf '%s\n' 'workflow_dispatch must be run against a tag' >&2
+                exit 1
+              }
+              [[ -n "$DISPATCH_TAG" && "$DISPATCH_TAG" == "$GITHUB_REF_NAME" ]] || {
+                printf '%s\n' 'workflow_dispatch tag input must match the selected tag ref' >&2
+                exit 1
+              }
+              tag="$DISPATCH_TAG"
+              ;;
+            *)
+              printf 'unsupported release event: %s\n' "$GITHUB_EVENT_NAME" >&2
+              exit 1
+              ;;
+          esac
+
+          version="$(bash dist/check-version.sh --tag "$tag" --print)"
+          tag_ref="refs/tags/$tag"
+          git show-ref --verify --quiet "$tag_ref" || {
+            printf 'release tag is not present locally: %s\n' "$tag" >&2
+            exit 1
+          }
+          tag_sha="$(git rev-parse --verify "${tag}^{commit}")"
+          head_sha="$(git rev-parse --verify HEAD)"
+          [[ "$tag_sha" == "$head_sha" ]] || {
+            printf 'release tag %s resolves to %s, but checked-out HEAD is %s\n' "$tag" "$tag_sha" "$head_sha" >&2
+            exit 1
+          }
+
+          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          printf 'sha=%s\n' "$tag_sha" >> "$GITHUB_OUTPUT"
+
+  ci_gate:
+    name: Require successful Rust CI for tag commit
+    needs: release_ref
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Find the successful exact-SHA CI run
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ needs.release_ref.outputs.sha }}
+        run: bash dist/verify-ci-run.sh --repository "$GITHUB_REPOSITORY" --sha "$RELEASE_SHA" --workflow ci.yml --branch main
+
+  quality:
+    needs: release_ref
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install quality dependencies
+        run: sudo apt-get update && sudo apt-get install --yes ripgrep
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: false
+      - name: Check documentation style
+        run: bash scripts/check-doc-style.sh
+      - name: Check product surface
+        run: bash scripts/check-product-surface.sh
+      - name: Check privacy surface
+        run: bash scripts/check-privacy-surface.sh
+      - name: Check shell syntax
+        run: bash scripts/check-shell-syntax.sh
+      - name: Check diff whitespace
+        run: git diff --check
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Run tests
+        run: cargo test --workspace --locked
+      - name: Run compatibility fixtures
+        run: cargo test -p neomax-core --test compatibility --locked
+      - name: Check release asset manifest
+        run: bash dist/test-release-assets.sh
+      - name: Check release publication boundary
+        run: bash dist/test-release-workflow.sh
+
+  msrv:
+    needs: release_ref
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.85.0
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: false
+          shared-key: neomax-release-msrv
+      - name: Compile on the minimum supported Rust version
+        run: cargo +1.85.0 check --workspace --all-targets --locked
+
+  release-metadata:
+    needs: [release_ref, ci_gate, quality, msrv]
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      sha: ${{ steps.version.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Export the verified release metadata
+        id: version
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.release_ref.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.release_ref.outputs.version }}
+        run: |
+          set -euo pipefail
+          [[ -n "$RELEASE_TAG" && -n "$RELEASE_VERSION" ]]
+          bash dist/check-version.sh --tag "$RELEASE_TAG" --version "$RELEASE_VERSION" --print
+          printf 'tag=%s\n' "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          printf 'version=%s\n' "$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+          printf 'sha=%s\n' '${{ needs.release_ref.outputs.sha }}' >> "$GITHUB_OUTPUT"
+
+  native-package:
+    needs: release-metadata
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+          - runner: macos-14
+            target: aarch64-apple-darwin
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.runner }}
+    env:
+      TARGET: ${{ matrix.target }}
+      VERSION: ${{ needs.release-metadata.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: false
+      - name: Build release binaries
+        shell: bash
+        run: cargo build --workspace --locked --release --target "$TARGET"
+      - name: Package and verify archive
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/neomax-artifacts"
+          archive="$(bash dist/package.sh --target "$TARGET" --version "$VERSION" --binaries-dir "$GITHUB_WORKSPACE/target/$TARGET/release" --output-dir "$RUNNER_TEMP/neomax-artifacts")"
+          bash dist/checksums.sh --output "$RUNNER_TEMP/neomax-artifacts/SHA256SUMS" "$archive"
+          bash dist/check-package.sh --archive "$archive" --version "$VERSION" --target "$TARGET"
+      - name: Verify native package installation
+        shell: bash
+        run: |
+          archive="$(find "$RUNNER_TEMP/neomax-artifacts" -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' \) -print -quit)"
+          bash dist/verify-install.sh --archive "$archive" --version "$VERSION" --target "$TARGET"
+      - name: Upload assembled artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: neomax-${{ matrix.target }}
+          path: ${{ runner.temp }}/neomax-artifacts
+          if-no-files-found: error
+          retention-days: 30
+
+  cross-package:
+    needs: release-metadata
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - aarch64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-musl
+    env:
+      TARGET: ${{ matrix.target }}
+      VERSION: ${{ needs.release-metadata.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: false
+      - name: Install cross
+        run: cargo install cross --locked
+      - name: Build release binaries
+        run: cross build --workspace --locked --release --target "$TARGET"
+      - name: Package and verify archive
+        run: |
+          mkdir -p "$RUNNER_TEMP/neomax-artifacts"
+          archive="$(bash dist/package.sh --target "$TARGET" --version "$VERSION" --binaries-dir "$GITHUB_WORKSPACE/target/$TARGET/release" --output-dir "$RUNNER_TEMP/neomax-artifacts")"
+          bash dist/checksums.sh --output "$RUNNER_TEMP/neomax-artifacts/SHA256SUMS" "$archive"
+          bash dist/check-package.sh --archive "$archive" --version "$VERSION" --target "$TARGET"
+      - name: Upload assembled artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: neomax-${{ matrix.target }}
+          path: ${{ runner.temp }}/neomax-artifacts
+          if-no-files-found: error
+          retention-days: 30
+
+  assemble:
+    needs: [release-metadata, native-package, cross-package]
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ needs.release-metadata.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Download every target package
+        uses: actions/download-artifact@v8
+        with:
+          pattern: neomax-*
+          path: ${{ runner.temp }}/neomax-package-artifacts
+          merge-multiple: false
+      - name: Verify and assemble permanent release assets
+        shell: bash
+        run: |
+          bash dist/assemble-release.sh \
+            --artifacts-dir "$RUNNER_TEMP/neomax-package-artifacts" \
+            --version "$VERSION" \
+            --output-dir "$RUNNER_TEMP/neomax-release" \
+            --repo-root "$GITHUB_WORKSPACE"
+      - name: Upload assembled release bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: neomax-release-bundle
+          path: ${{ runner.temp }}/neomax-release
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: [release-metadata, assemble]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'NeotaskInc/neomax-orchestrator-rust'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ needs.release-metadata.outputs.tag }}
+      VERSION: ${{ needs.release-metadata.outputs.version }}
+      RELEASE_SHA: ${{ needs.release-metadata.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Verify the release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash dist/check-version.sh --tag "$RELEASE_TAG" --version "$VERSION" --print
+          [[ "$GITHUB_REF_NAME" == "$RELEASE_TAG" ]]
+          git fetch --force --tags --quiet
+          tag_sha="$(git rev-parse --verify "${RELEASE_TAG}^{commit}")"
+          head_sha="$(git rev-parse --verify HEAD)"
+          [[ "$tag_sha" == "$head_sha" ]]
+      - name: Download the verified release bundle
+        uses: actions/download-artifact@v8
+        with:
+          name: neomax-release-bundle
+          path: ${{ runner.temp }}/neomax-release
+      - name: Publish permanent GitHub Release assets
+        shell: bash
+        run: |
+          bash dist/publish-release.sh \
+            --release-dir "$RUNNER_TEMP/neomax-release" \
+            --repository "$GITHUB_REPOSITORY" \
+            --tag "$RELEASE_TAG" \
+            --version "$VERSION" \
+            --expected-sha "$RELEASE_SHA"

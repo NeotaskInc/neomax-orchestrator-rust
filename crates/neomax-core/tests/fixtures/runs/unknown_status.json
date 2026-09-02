@@ -1,0 +1,21 @@
+{
+  "id": "run-future-status",
+  "engine": "opencode",
+  "model": "opencode/big-pickle",
+  "prompt": "Keep this record readable",
+  "profile": "/profiles/opencode-1",
+  "workdir": "/workspace/project-a",
+  "status": "provider_review",
+  "started": 1787489000,
+  "session_history": [
+    {
+      "session": "session-future-1",
+      "account": "opencode-1",
+      "attempt": 1,
+      "future_session_field": "preserve"
+    }
+  ],
+  "future_run_field": {
+    "preserve": true
+  }
+}

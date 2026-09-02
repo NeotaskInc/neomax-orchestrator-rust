@@ -1,0 +1,54 @@
+name: Feature request
+description: Propose a focused Neomax for Rust improvement
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Describe a provider-neutral, user-facing improvement. Do not include
+        credentials, account or profile details, personal paths, private
+        repository names, proprietary source, or unredacted logs.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or contributor problem should Neomax solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the public CLI, workflow, or integration behavior you expect.
+    validations:
+      required: true
+  - type: input
+    id: affected_area
+    attributes:
+      label: Affected crate or surface
+      placeholder: neomax-core, neomax-cli, portal, or another public surface
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Provider and compatibility impact
+      description: Note affected providers, models, platforms, state migrations, or portal surfaces.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: testing
+    attributes:
+      label: Hermetic testing approach
+      description: Explain how the proposal could be tested with temporary state, sanitized fixtures, or fake provider executables.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I searched existing issues and pull requests for this proposal.
+          required: true
+        - label: I have not included credentials, personal paths, or private project information.
+          required: true

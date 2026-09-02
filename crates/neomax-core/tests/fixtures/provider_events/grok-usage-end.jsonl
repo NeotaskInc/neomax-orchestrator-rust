@@ -1,0 +1,3 @@
+{"type":"usage","usage":{"input_tokens":40,"output_tokens":3,"reasoning_tokens":1,"cache_read_input_tokens":10,"cache_creation_input_tokens":2}}
+{"type":"usage","usage":{"input_tokens":60,"output_tokens":5,"reasoning_tokens":3,"cache_read_input_tokens":20,"cache_creation_input_tokens":5}}
+{"type":"end","stopReason":"end_turn","sessionId":"fixture-session","usage":{"input_tokens":100,"output_tokens":8,"reasoning_tokens":4,"cache_read_input_tokens":20,"cache_creation_input_tokens":5,"total_tokens":133}}

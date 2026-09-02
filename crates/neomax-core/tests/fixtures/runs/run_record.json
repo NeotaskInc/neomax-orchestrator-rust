@@ -1,0 +1,73 @@
+{
+  "id": "run-compat-001",
+  "engine": "codex",
+  "model": "gpt-5.6-sol",
+  "prompt": "Inspect the service",
+  "_prompt_to_send": "Continue from the saved worktree",
+  "profile": "/profiles/codex-2",
+  "workdir": "/workspace/project-a",
+  "cwd": "/workspace/project-a",
+  "repo": "/workspace/project-a/service-a",
+  "worktree": "/state/worktrees/run-compat-001",
+  "branch": "neomax/run-compat-001",
+  "base": "main",
+  "base_ref": "refs/heads/main",
+  "tag": "compatibility",
+  "effort": "high",
+  "goal": "Keep the durable run recoverable",
+  "max_turns": 12,
+  "session": "session-compat-001",
+  "_resume_session": "session-compat-000",
+  "session_history": [
+    {
+      "session": "session-compat-000",
+      "account": "codex-1",
+      "attempt": 1
+    },
+    {
+      "session": "session-compat-001",
+      "account": "codex-2",
+      "attempt": 2
+    }
+  ],
+  "project": "project-a",
+  "orch_session": "session-orchestrator-001",
+  "worker_pid": 321,
+  "pid": 654,
+  "attempt": 2,
+  "status": "running",
+  "started": 1787488000,
+  "ended": null,
+  "wall_min": 8.5,
+  "stall_min": null,
+  "ultra": false,
+  "opus": false,
+  "plan_mode": false,
+  "pr": false,
+  "no_failover": false,
+  "resumed": true,
+  "killed": false,
+  "acknowledged": true,
+  "tried": [
+    "/profiles/codex-1",
+    "/profiles/codex-2"
+  ],
+  "log": "/state/logs/run-compat-001.jsonl",
+  "result_text": null,
+  "usage": {
+    "in": 1200,
+    "out": 800,
+    "reasoning": 100,
+    "future_usage_field": true
+  },
+  "resets_at": 1787490000,
+  "limit_window": null,
+  "error_detail": null,
+  "worktree_state": "active",
+  "files_touched": ["src/lib.rs", "README.md"],
+  "pr_url": null,
+  "children": [],
+  "future_run_field": {
+    "preserve": true
+  }
+}

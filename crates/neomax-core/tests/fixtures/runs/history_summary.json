@@ -1,0 +1,20 @@
+{
+  "id": "run-compat-001",
+  "engine": "codex",
+  "account": "codex-2",
+  "account_number": 2,
+  "status": "done",
+  "prompt": "Inspect the service",
+  "branch": "neomax/run-compat-001",
+  "tag": "compatibility",
+  "goal": "Keep the durable run recoverable",
+  "ultra": false,
+  "opus": false,
+  "effort": "high",
+  "children": 3,
+  "attempt": 2,
+  "pr_url": "https://example.invalid/pull/1",
+  "started": 1787488000,
+  "ended": 1787488400,
+  "repo": "service-a"
+}

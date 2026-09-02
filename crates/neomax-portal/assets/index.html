@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Neomax Portal</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="topbar">
+      <div>
+        <h1>Neomax Orchestrator</h1>
+        <p class="subline">multi-provider coding fleet <span aria-hidden="true">·</span> Claude + Codex + OpenCode + Kimi + Grok <span id="clock"></span></p>
+      </div>
+      <div class="top-actions">
+        <button id="quick" class="button small" type="button">Quick actions</button>
+        <button id="theme" class="button small" type="button" aria-label="Toggle light and dark theme">Light</button>
+        <span class="live-mark" aria-label="Live updates enabled"></span><span class="refresh-label">live · 5s</span>
+      </div>
+    </header>
+
+    <section id="stats" class="stats" aria-label="Fleet summary"></section>
+    <section id="alerts" class="alert" aria-live="polite"></section>
+    <section id="rotation-banner" class="alert rotation-banner" aria-live="polite"></section>
+
+    <section id="rotation-history" class="panel" aria-labelledby="rotation-history-title">
+      <div class="panel-title"><h2 id="rotation-history-title">Auth rotation history</h2><span class="hint">last six hours</span></div>
+      <div id="rotations" class="rotation-list"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="engines-title">
+      <div class="panel-title"><h2 id="engines-title">Provider accounts</h2><span class="hint">quota and rotation state</span></div>
+      <div id="engines" class="engine-grid"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="runs-title">
+      <div class="panel-title"><h2 id="runs-title">Run ledger</h2><span id="run-count" class="hint"></span></div>
+      <div class="project-filter" id="project-filter"></div>
+      <div class="table-scroll"><table id="runs"><thead><tr><th>status</th><th>provider / account</th><th>prompt</th><th>project / branch</th><th>model</th><th>children</th><th>started</th><th></th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <section class="panel" aria-labelledby="ambient-title">
+      <div class="panel-title"><h2 id="ambient-title">Interactive sessions</h2><span class="hint">ambient main sessions and native agents</span></div>
+      <div class="table-scroll"><table id="ambient"><thead><tr><th>provider / account</th><th>session</th><th>context / state</th><th>activity</th><th>tokens / cache</th><th>requests / errors</th><th>tools / files</th><th>cost</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <nav class="tabs" aria-label="Portal views">
+      <button class="tab active" data-tab="history" type="button">History</button>
+      <button class="tab" data-tab="sessions" type="button">Sessions</button>
+      <button class="tab" data-tab="subagents" type="button">Subagents</button>
+      <button class="tab" data-tab="usage" type="button">Usage and cost</button>
+      <button class="tab" data-tab="projects" type="button">Projects</button>
+      <button class="tab" data-tab="delivery" type="button">Plans, issues, and worktrees</button>
+    </nav>
+
+    <section id="history-panel" class="panel tab-panel" aria-labelledby="history-tab-title">
+      <div class="panel-title"><h2 id="history-tab-title">Completed history</h2><span class="hint">latest archived runs</span></div>
+      <div class="table-scroll"><table id="history"><thead><tr><th>status</th><th>provider / account</th><th>prompt</th><th>branch</th><th>ended</th><th></th></tr></thead><tbody></tbody></table></div>
+    </section>
+    <section id="sessions-panel" class="panel tab-panel hidden" aria-labelledby="sessions-tab-title">
+      <div class="panel-title"><h2 id="sessions-tab-title">Session activity</h2><span class="hint">last three days</span></div>
+      <div class="table-scroll"><table id="sessions"><thead><tr><th>last active</th><th>provider / account</th><th>session</th><th>context / state</th><th>tokens / cache</th><th>requests / completions / errors / 429</th><th>tools / errors</th><th>files / edits</th><th>cost</th></tr></thead><tbody></tbody></table></div>
+    </section>
+    <section id="subagents-panel" class="panel tab-panel hidden" aria-labelledby="subagents-tab-title">
+      <div class="panel-title"><h2 id="subagents-tab-title">Subagent activity</h2><span class="hint">native and transcript agents</span></div>
+      <div class="table-scroll"><table id="subagents"><thead><tr><th>last active</th><th>provider / account</th><th>status</th><th>context / mission / model</th><th>tokens / cache</th><th>requests / completions / errors / 429</th><th>tools / errors</th><th>files / edits</th><th>cost</th></tr></thead><tbody></tbody></table></div>
+    </section>
+    <section id="usage-panel" class="panel tab-panel hidden" aria-labelledby="usage-tab-title">
+      <div class="panel-title"><h2 id="usage-tab-title">Usage and cost</h2><span class="hint"><button class="button tiny active" data-days="30" type="button">30d</button> <button class="button tiny" data-days="7" type="button">7d</button> <button class="button tiny" data-days="0" type="button">all</button></span></div>
+      <div id="usage-summary" class="usage-summary"></div>
+      <div class="table-scroll"><table id="usage"><thead><tr><th>provider</th><th>account</th><th>model</th><th>input</th><th>output</th><th>reasoning</th><th>cache read</th><th>cache write</th><th>requests</th><th>completions</th><th>errors</th><th>rate limits</th><th>cost</th></tr></thead><tbody></tbody></table></div>
+      <div id="usage-breakdowns" class="usage-breakdowns"></div>
+    </section>
+    <section id="projects-panel" class="panel tab-panel hidden" aria-labelledby="projects-tab-title">
+      <div class="panel-title"><h2 id="projects-tab-title">Projects and backlog</h2><span class="hint">portable project registry, tasks, and queue</span></div>
+      <div id="projects" class="project-grid"></div>
+    </section>
+    <section id="delivery-panel" class="panel tab-panel hidden" aria-labelledby="delivery-tab-title">
+      <div class="panel-title"><h2 id="delivery-tab-title">Plans, issues, and worktrees</h2><span class="hint">scheduler state and delivery records</span></div>
+      <div class="delivery-grid">
+        <section><h3>Plans</h3><div id="plans" class="delivery-list"></div></section>
+        <section><h3>Issues</h3><div id="issues" class="delivery-list"></div></section>
+        <section><h3>Rotation and failover events</h3><div id="failovers" class="delivery-list"></div></section>
+        <section class="delivery-wide"><h3>Worktrees</h3><div class="table-scroll"><table id="worktrees"><thead><tr><th>id</th><th>path</th><th>presence</th><th>status</th><th>run</th><th>branch</th></tr></thead><tbody></tbody></table></div></section>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="modal" class="modal" aria-labelledby="modal-title">
+    <div class="modal-head"><h2 id="modal-title">Details</h2><button id="modal-close" class="button small" type="button">Close</button></div>
+    <div id="modal-body" class="modal-body"></div>
+  </dialog>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

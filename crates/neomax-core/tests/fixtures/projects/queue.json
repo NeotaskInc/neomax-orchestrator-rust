@@ -1,0 +1,24 @@
+{
+  "agent_budget": 8,
+  "task_budget": 3,
+  "queue": [
+    {
+      "id": "res-1",
+      "task": "task-a",
+      "want": 5,
+      "granted": 5,
+      "batch": "batch-1",
+      "ts": 1787488000,
+      "session": "session-1"
+    },
+    {
+      "id": "res-2",
+      "task": "task-b",
+      "want": 4,
+      "granted": 3,
+      "batch": null,
+      "ts": 1787488010,
+      "session": "session-2"
+    }
+  ]
+}

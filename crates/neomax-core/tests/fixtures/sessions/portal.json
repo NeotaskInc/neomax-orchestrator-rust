@@ -1,0 +1,67 @@
+{
+  "generated_at": 1787488123,
+  "sessions": [
+    {
+      "id": "session-compat-001",
+      "engine": "codex",
+      "account": "codex-2",
+      "model": "gpt-5.6-sol",
+      "cwd": "/workspace/project-a",
+      "project": "project-a",
+      "branch": "neomax/compat-p2",
+      "slug": "compatibility",
+      "label": "Implementation",
+      "kind": "main",
+      "parent_id": null,
+      "workflow": "neomax",
+      "started": 1787488000,
+      "last_active": 1787488120,
+      "age_s": 3,
+      "active": true,
+      "working": true,
+      "done": false,
+      "archived": false,
+      "orchestrator": false,
+      "worker": true,
+      "tokens": {"in":1000,"out":800,"reasoning":100,"cr":25,"cw":10,"total":1935,"cost":0.052,"future_token_field":true},
+      "requests": 3,
+      "completions": 2,
+      "errors": 1,
+      "rate_limits": 1,
+      "tool_calls": 4,
+      "tool_errors": 0,
+      "files": [{"path":"src/lib.rs","adds":12,"dels":2,"ops":1,"future_file_field":true}],
+      "children": [],
+      "future_session_field": "preserve"
+    }
+  ],
+  "subagents": [
+    {
+      "id": "session-compat-child",
+      "engine": "codex",
+      "account": "codex-2",
+      "model": "gpt-5.6-sol",
+      "cwd": "/workspace/project-a",
+      "project": "project-a",
+      "branch": "neomax/compat-p2",
+      "kind": "native_subagent",
+      "parent_id": "session-compat-001",
+      "active": false,
+      "working": false,
+      "done": true,
+      "tokens": {"in":200,"out":120,"total":320},
+      "files": []
+    }
+  ],
+  "summary": {
+    "sessions": 1,
+    "mains": 1,
+    "subagents": 1,
+    "active": 1,
+    "working": 1,
+    "input": 1200,
+    "output": 920,
+    "errors": 1,
+    "rate_limits": 1
+  }
+}

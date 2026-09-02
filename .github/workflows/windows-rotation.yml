@@ -1,0 +1,78 @@
+name: Windows rotation test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ci/windows-rotation
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neomax-windows-rotation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regressions:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          shared-key: neomax-windows-regressions
+      - name: Run Windows profile path regression
+        run: cargo test -p neomax-core --lib runs::live_work::process::tests::profile_environment_supports_spaces_and_defaults_to_claude_home --locked -- --exact --nocapture
+      - name: Run bounded process I/O regressions
+        run: cargo test -p neomax-core --lib io::tests::process --locked -- --nocapture
+      - name: Run compatibility fixture regressions
+        run: cargo test -p neomax-core --test compatibility --locked -- --nocapture
+      - name: Run Windows rotation regression
+        run: cargo test -p neomax-cli --test e2e_rotation rotate_moves_live_work_to_the_next_same_provider_account --locked -- --exact --nocapture
+      - name: Run Windows process-group tests
+        run: cargo test -p neomax-core --lib io::process_group::windows --locked -- --nocapture
+
+  package-tests:
+    name: ${{ matrix.package }}
+    runs-on: windows-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - neomax-core
+          - neomax-cli
+          - neomax-portal
+          - neomax-usage-agent
+          - neomax-worktrees
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          shared-key: neomax-windows-${{ matrix.package }}
+      - name: Run every package test without stopping at the first failing target
+        run: cargo test -p ${{ matrix.package }} --all-targets --locked --no-fail-fast
+
+  windows-proof:
+    name: Complete Windows proof
+    needs:
+      - regressions
+      - package-tests
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          shared-key: neomax-windows-proof
+      - name: Run the complete Windows workspace without fail-fast masking
+        run: cargo test --workspace --all-targets --locked --no-fail-fast
+      - name: Run Windows process-group tests explicitly
+        run: cargo test -p neomax-core --lib io::process_group::windows --locked -- --nocapture

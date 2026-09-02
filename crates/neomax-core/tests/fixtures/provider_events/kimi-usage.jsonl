@@ -1,0 +1,2 @@
+{"type":"usage.record","usage":{"inputOther":10,"output":2,"reasoning_tokens":1,"inputCacheRead":3,"inputCacheCreation":4}}
+{"type":"usage.record","usage":{"inputOther":20,"output":5,"reasoning_tokens":2,"inputCacheRead":6,"inputCacheCreation":7}}

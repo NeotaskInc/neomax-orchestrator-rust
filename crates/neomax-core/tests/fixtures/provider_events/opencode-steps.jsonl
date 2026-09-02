@@ -1,0 +1,2 @@
+{"type":"step_finish","part":{"reason":"tool-calls","tokens":{"total":12,"input":8,"output":2,"reasoning":2,"cache":{"read":3,"write":1}}}}
+{"type":"step_finish","part":{"reason":"stop","tokens":{"total":20,"input":10,"output":4,"reasoning":3,"cache":{"read":5,"write":2}}}}

@@ -1,0 +1,31 @@
+[package]
+name = "neomax-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description.workspace = true
+readme.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+base64.workspace = true
+chrono.workspace = true
+fs2.workspace = true
+glob.workspace = true
+libc.workspace = true
+regex.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tempfile.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+uuid.workspace = true
+walkdir.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys.workspace = true

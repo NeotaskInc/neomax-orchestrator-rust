@@ -1,0 +1,1 @@
+{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":10,"output_tokens":2}},"rate_limits":{"primary":{"used_percent":100,"window_minutes":10080,"resets_at":2000},"secondary":null}}}

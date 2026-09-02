@@ -1,0 +1,18 @@
+{
+  "project-a": {
+    "root": "/workspace/project-a",
+    "repos": ["service-a", "service-b"],
+    "branch_prefix": "proja",
+    "brain": "CLAUDE.md",
+    "agents": "AGENTS.md",
+    "orch_brain": "docs/neomax-orchestrator/ORCHESTRATOR.md",
+    "opener": "docs/neomax-orchestrator/ORCHESTRATOR_OPENER.md",
+    "planning": "docs/neomax-orchestrator",
+    "desc": "Portable project fixture",
+    "created": 1787487000,
+    "auto_registered": true,
+    "future_project_field": {
+      "preserve": true
+    }
+  }
+}

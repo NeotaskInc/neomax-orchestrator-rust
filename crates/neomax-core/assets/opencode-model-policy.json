@@ -1,0 +1,60 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "opencode/big-pickle",
+  "small_model": "opencode/big-pickle",
+  "enabled_providers": [
+    "opencode"
+  ],
+  "share": "disabled",
+  "autoupdate": false,
+  "agent": {
+    "build": {
+      "model": "opencode/big-pickle",
+      "permission": {
+        "task": {
+          "*": "deny",
+          "general": "allow",
+          "explore": "allow",
+          "scout": "allow"
+        }
+      }
+    },
+    "plan": {
+      "model": "opencode/big-pickle",
+      "permission": {
+        "task": {
+          "*": "deny",
+          "general": "allow",
+          "explore": "allow",
+          "scout": "allow"
+        }
+      }
+    },
+    "general": {
+      "model": "opencode/big-pickle",
+      "permission": {
+        "task": {
+          "*": "deny",
+          "general": "allow",
+          "explore": "allow",
+          "scout": "allow"
+        }
+      }
+    },
+    "explore": {
+      "model": "opencode/big-pickle"
+    },
+    "scout": {
+      "model": "opencode/big-pickle"
+    },
+    "compaction": {
+      "model": "opencode/big-pickle"
+    },
+    "title": {
+      "model": "opencode/big-pickle"
+    },
+    "summary": {
+      "model": "opencode/big-pickle"
+    }
+  }
+}

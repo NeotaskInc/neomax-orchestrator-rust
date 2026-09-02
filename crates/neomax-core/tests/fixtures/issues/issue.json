@@ -1,0 +1,43 @@
+{
+  "key": "ISSUE-1",
+  "title": "Preserve the run after rotation",
+  "body": "The durable task must continue in its existing worktree.",
+  "project": "project-a",
+  "severity": "high",
+  "labels": ["rotation", "durability"],
+  "status": "fixing",
+  "claim": {
+    "session": "session-compat-001",
+    "pid": 321,
+    "ts": 1787488100,
+    "future_claim_field": "preserve"
+  },
+  "fingerprint": "fixture-fingerprint",
+  "created": 1787487000,
+  "updated": 1787488123,
+  "repos": {
+    "service-a": {
+      "number": 17,
+      "url": "https://example.invalid/issues/17",
+      "state": "open",
+      "future_mirror_field": true
+    },
+    "service-b": {
+      "number": "18",
+      "url": "https://example.invalid/issues/18",
+      "state": "closed"
+    }
+  },
+  "repositories": ["service-a", "service-b"],
+  "runs": ["run-compat-001"],
+  "prs": {
+    "service-a": "https://example.invalid/pull/22"
+  },
+  "history": [
+    {"ts":1787487000,"event":"created","future_history_field":1},
+    {"ts":1787488123,"event":"claimed"}
+  ],
+  "future_issue_field": {
+    "preserve": true
+  }
+}

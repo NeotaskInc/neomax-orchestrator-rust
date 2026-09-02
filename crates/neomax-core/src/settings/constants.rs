@@ -1,0 +1,20 @@
+use std::time::Duration;
+
+pub const MAX_SUBAGENTS_ENV: &str = "NEOMAX_MAX_SUBAGENTS";
+pub const MAX_TASKS_ENV: &str = "NEOMAX_MAX_TASKS";
+pub const MAX_SESSIONS_PER_ACCOUNT_ENV: &str = "NEOMAX_MAX_SESSIONS_PER_ACCOUNT";
+pub const LANES_PER_ACCOUNT_ENV: &str = "NEOMAX_LANES_PER_ACCOUNT";
+pub const QUEUE_TTL_SECONDS_ENV: &str = "NEOMAX_QUEUE_TTL_SECONDS";
+pub const LEGACY_AGENT_BUDGET_ENV: &str = "NEOMAX_AGENT_BUDGET";
+pub const FLEET_CAP_ENV: &str = "NEOMAX_FLEET_CAP";
+pub const MAX_LIVE_ENV: &str = "NEOMAX_MAX_LIVE";
+pub const LEGACY_FLEET_CAP_ENV: &str = FLEET_CAP_ENV;
+pub const LEGACY_TASK_BUDGET_ENV: &str = "NEOMAX_TASK_BUDGET";
+pub const LEGACY_LANES_PER_ACCT_ENV: &str = "NEOMAX_LANES_PER_ACCT";
+pub const LEGACY_QUEUE_TTL_ENV: &str = "NEOMAX_QUEUE_TTL";
+
+pub const DEFAULT_QUEUE_TTL_SECONDS: f64 = 12.0 * 60.0 * 60.0;
+pub const DEFAULT_FLEET_LIVE_CAP: u32 = 50;
+
+pub(super) const MAX_SETTINGS_BYTES: usize = 2 * 1024 * 1024;
+pub(super) const SETTINGS_READ_TIMEOUT: Duration = Duration::from_secs(5);

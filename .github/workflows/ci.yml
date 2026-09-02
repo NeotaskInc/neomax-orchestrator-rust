@@ -1,0 +1,188 @@
+name: Rust CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: neomax-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install quality dependencies
+        run: sudo apt-get update && sudo apt-get install --yes ripgrep
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: false
+      - name: Check documentation style
+        run: bash scripts/check-doc-style.sh
+      - name: Check product surface
+        run: bash scripts/check-product-surface.sh
+      - name: Check privacy surface
+        run: bash scripts/check-privacy-surface.sh
+      - name: Check shell syntax
+        run: bash scripts/check-shell-syntax.sh
+      - name: Test bootstrap installers against a local mirror
+        run: bash scripts/test-bootstrap-installers.sh
+      - name: Check workflow boundaries
+        run: bash dist/test-release-workflow.sh
+      - name: Check diff whitespace
+        run: git diff --check
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Run tests
+        run: cargo test --workspace --locked --no-fail-fast
+      - name: Run compatibility fixtures
+        run: cargo test -p neomax-core --test compatibility --locked
+
+  msrv:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.85.0
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: false
+          shared-key: neomax-msrv
+      - name: Compile on the minimum supported Rust version
+        run: cargo +1.85.0 check --workspace --all-targets --locked
+
+  native-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - macos-15-intel
+          - macos-14
+          - windows-latest
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: false
+          shared-key: neomax-native-${{ matrix.runner }}
+      - name: Assert Windows private ACL enforcement
+        if: matrix.runner == 'windows-latest'
+        shell: bash
+        run: cargo test -p neomax-core --lib io::permissions --locked
+      - name: Run native workspace tests
+        run: cargo test --workspace --all-targets --locked --no-fail-fast
+      - name: Check non-Windows process-group boundary
+        if: matrix.runner != 'windows-latest'
+        run: cargo check -p neomax-core --all-targets --locked
+      - name: Run Windows process-group tests
+        if: matrix.runner == 'windows-latest'
+        run: cargo test -p neomax-core --lib io::process_group::windows -- --nocapture
+
+  native-package:
+    needs: [quality, msrv]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+          - runner: macos-14
+            target: aarch64-apple-darwin
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.runner }}
+    env:
+      TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: false
+      - name: Check distribution scripts
+        shell: bash
+        run: bash scripts/check-shell-syntax.sh
+      - name: Test PowerShell bootstrap installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/test-install-ps1.ps1
+      - name: Build release binaries
+        shell: bash
+        run: cargo build --workspace --locked --release --target "$TARGET"
+      - name: Package and verify archive
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/neomax-artifacts"
+          archive="$(bash dist/package.sh --target "$TARGET" --binaries-dir "$GITHUB_WORKSPACE/target/$TARGET/release" --output-dir "$RUNNER_TEMP/neomax-artifacts")"
+          bash dist/checksums.sh --output "$RUNNER_TEMP/neomax-artifacts/SHA256SUMS" "$archive"
+          bash dist/check-package.sh --archive "$archive" --version "$(bash dist/check-version.sh --print)" --target "$TARGET"
+      - name: Verify isolated package installation
+        shell: bash
+        run: |
+          archive="$(find "$RUNNER_TEMP/neomax-artifacts" -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' \) -print -quit)"
+          bash dist/verify-install.sh --archive "$archive" --version "$(bash dist/check-version.sh --print)" --target "$TARGET"
+      - name: Upload temporary package artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: neomax-${{ matrix.target }}
+          path: ${{ runner.temp }}/neomax-artifacts
+          if-no-files-found: error
+          retention-days: 7
+
+  cross-package:
+    needs: [quality, msrv]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - aarch64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-musl
+    env:
+      TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: false
+      - name: Install cross
+        run: cargo install cross --locked
+      - name: Build release binaries
+        run: cross build --workspace --locked --release --target "$TARGET"
+      - name: Package and verify archive
+        run: |
+          mkdir -p "$RUNNER_TEMP/neomax-artifacts"
+          archive="$(bash dist/package.sh --target "$TARGET" --binaries-dir "$GITHUB_WORKSPACE/target/$TARGET/release" --output-dir "$RUNNER_TEMP/neomax-artifacts")"
+          bash dist/checksums.sh --output "$RUNNER_TEMP/neomax-artifacts/SHA256SUMS" "$archive"
+          bash dist/check-package.sh --archive "$archive" --version "$(bash dist/check-version.sh --print)" --target "$TARGET"
+      - name: Upload temporary package artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: neomax-${{ matrix.target }}
+          path: ${{ runner.temp }}/neomax-artifacts
+          if-no-files-found: error
+          retention-days: 7

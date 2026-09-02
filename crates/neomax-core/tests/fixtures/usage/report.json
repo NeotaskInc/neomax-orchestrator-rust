@@ -1,0 +1,57 @@
+{
+  "days": 7,
+  "now": 1787488123,
+  "grand": {
+    "in": 6000,
+    "out": 1120,
+    "reasoning": 450,
+    "cw": 10,
+    "cr": 1225,
+    "requests": 4,
+    "completions": 3,
+    "errors": 1,
+    "rate_limits": 1,
+    "cost": 0.065
+  },
+  "by_provider": [
+    {
+      "provider": "claude",
+      "in": 1000,
+      "out": 220,
+      "reasoning": 50,
+      "cw": 10,
+      "cr": 25,
+      "requests": 1,
+      "completions": 1,
+      "errors": 0,
+      "rate_limits": 0,
+      "cost": 0.013
+    },
+    {
+      "provider": "codex",
+      "in": 5000,
+      "out": 900,
+      "reasoning": 400,
+      "cw": 0,
+      "cr": 1200,
+      "requests": 3,
+      "completions": 2,
+      "errors": 1,
+      "rate_limits": 1,
+      "cost": 0.052
+    }
+  ],
+  "by_account": [],
+  "by_model": [],
+  "by_date": [],
+  "by_session": [],
+  "by_agent": [],
+  "pricing": {
+    "claude-fable-5[1m]": {
+      "in": 10.0,
+      "out": 50.0,
+      "cw": 12.5,
+      "cr": 1.0
+    }
+  }
+}

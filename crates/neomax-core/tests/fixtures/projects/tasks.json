@@ -1,0 +1,36 @@
+{
+  "seq": 3,
+  "tasks": {
+    "t1": {
+      "id": "t1",
+      "title": "Inspect account rotation",
+      "project": "project-a",
+      "status": "doing",
+      "created": 1787487000,
+      "updated": 1787488000,
+      "notes": ["Check the 99 percent wall"],
+      "runs": ["run-compat-001"],
+      "future_task_field": "preserve"
+    },
+    "t2": {
+      "id": "t2",
+      "title": "Record usage",
+      "project": "project-a",
+      "status": "done",
+      "created": 1787487010,
+      "updated": 1787488010,
+      "notes": [],
+      "runs": []
+    },
+    "t3": {
+      "id": "t3",
+      "title": "Review portal",
+      "project": "project-b",
+      "status": "todo",
+      "created": 1787487020,
+      "updated": 1787488020,
+      "notes": [],
+      "runs": []
+    }
+  }
+}

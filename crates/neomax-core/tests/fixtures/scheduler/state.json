@@ -1,0 +1,17 @@
+{
+  "states": {
+    "p1": "done",
+    "p2": "running",
+    "p3": "done",
+    "p4": "pending",
+    "p5": "pending"
+  },
+  "executions": {
+    "p2": {
+      "run_id": "run-compat-001",
+      "branch": "neomax/compat-p2",
+      "profile": "/profiles/codex-2",
+      "launched_at": 1787488123.0
+    }
+  }
+}
