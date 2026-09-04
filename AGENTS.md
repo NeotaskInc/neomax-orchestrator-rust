@@ -135,6 +135,9 @@ described in `README.md`.
 
 - Use ASCII punctuation in Markdown. Em dashes and en dashes are not allowed.
 - Use `Neomax` in prose and `neomax` or `NEOMAX_*` in commands and state.
+- The public repository and its history are published product surfaces. Use
+  normal additive commits. Do not delete or recreate the repository, replace
+  its root, force-push a public branch, or rewrite published history.
 - Keep `WORKLOG.md` entry-free on `main`. A pull request branch must replace the
   template with a concise product-safe record of behavior, affected files,
   exact verification, and remaining risk. Maintainers clear accepted entries

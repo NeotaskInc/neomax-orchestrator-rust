@@ -14,16 +14,13 @@ provider credentials, or invoke a provider. Use the printed PATH command after i
 Linux and macOS:
 
 ```bash
-curl --fail --silent --show-error --location https://neotask.ai/neomax_orchestrator_rust/install.sh -o install.sh
-bash install.sh
+curl -fsSL https://neotask.ai/neomax-orchestrator/install.sh | bash
 ```
 
 Windows PowerShell:
 
 ```powershell
-Invoke-WebRequest -Uri https://neotask.ai/neomax_orchestrator_rust/install.ps1 -OutFile install.ps1
-Set-ExecutionPolicy -Scope Process Bypass
-.\install.ps1
+Invoke-RestMethod https://neotask.ai/neomax-orchestrator/install.ps1 | Invoke-Expression
 ```
 
 Set `NEOMAX_VERSION=0.1.0` or `$env:NEOMAX_VERSION = '0.1.0'` to install an exact release. Without
