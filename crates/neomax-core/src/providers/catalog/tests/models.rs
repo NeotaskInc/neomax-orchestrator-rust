@@ -37,7 +37,7 @@ fn model_precedence_keeps_strict_defaults_and_passes_local_ids() {
         resolve_model(Engine::Claude, None, &environment)
             .unwrap()
             .id,
-        "claude-fable-5[1m]"
+        "claude-fable-5-1[1m]"
     );
     let environment = MapEnvironment::new([
         ("NEOMAX_DEFAULT_MODEL".into(), "claude-local".into()),
@@ -84,4 +84,19 @@ fn model_precedence_keeps_strict_defaults_and_passes_local_ids() {
         "kimi-code/kimi-for-coding"
     );
     assert!(resolve_model(Engine::Opencode, Some("big-pickle"), &environment).is_err());
+}
+
+#[test]
+fn astra_is_default_and_worker_family_aliases_remain_available() {
+    let environment = MapEnvironment::default();
+    assert_eq!(default_model_id(Engine::Codex), "gpt-6-astra");
+    for (alias, model) in [
+        ("astra", "gpt-6-astra"),
+        ("sol", "gpt-5.6-sol"),
+        ("terra", "gpt-5.6-terra"),
+        ("luna", "gpt-5.6-luna"),
+    ] {
+        assert_eq!(resolve_model(Engine::Codex, Some(alias), &environment).unwrap().id, model);
+        assert_eq!(resolve_model(Engine::Codex, Some(model), &environment).unwrap().id, model);
+    }
 }

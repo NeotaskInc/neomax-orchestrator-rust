@@ -104,21 +104,26 @@ project selection, and provider priority. Explicit choices win.
 
 | Provider | Default model | Pinned launcher | Account helper |
 | --- | --- | --- | --- |
-| Claude | `claude-fable-5[1m]` | `cmax` | `cmax ACCOUNT` |
-| Codex | `gpt-5.6-sol` | `cdxmax` | `cdx` |
+| Claude | `claude-fable-5-1[1m]` | `cmax` | `cmax ACCOUNT` |
+| Codex | `gpt-6-astra` | `cdxmax` | `cdx` |
 | OpenCode | `opencode/big-pickle` | `ocmax` | `ocx` |
 | Kimi | `kimi-code/k3` | `kmax` | `kmx` |
 | Grok | `grok-4.6` | `gmax` | `gmx` |
 
 Every provider accepts model IDs supported by its local CLI. OpenCode model
-IDs use `provider/model`. Claude Opus is opt-in.
+IDs use `provider/model`. Claude Opus is opt-in. Codex uses GPT-6 Astra as its
+default root model. Codex workers may be assigned a different supported model
+explicitly or by the routing policy. The GPT-5.6
+family remains available for explicit worker choices: Luna for lightweight
+work, Terra for balanced coding work, and Sol for heavier general work.
 
 Set a model for one launch:
 
 ```bash
 neomax --engine opencode --model provider/model
 cmax --model claude-model-id
-neomax --codex-model gpt-model-id --kimi-model kimi-model-id
+cdxmax --model gpt-5.6-terra
+neomax --codex-model gpt-5.6-luna --kimi-model kimi-model-id
 ```
 
 Set persistent defaults:
@@ -171,6 +176,21 @@ Supported helper shapes:
 Use `orch` instead of a number for a reserved orchestrator profile. Run an
 account command with `--dry-run --json` to inspect it without invoking the
 provider.
+
+Select an existing profile by its local account email or directory alias:
+
+```bash
+cdx person@example.com
+cdxmax person@example.com --dry-run --json
+neomax --engine codex --account person@example.com
+cdx run alias:.codex-acct2
+```
+
+Email lookup is case-insensitive and provider-specific. Missing or duplicate
+matches produce an error instead of choosing another account. Numbered
+accounts still work. `alias:NAME` matches an existing profile directory name;
+it does not create a new login. Providers must expose email metadata locally
+for email selection to work. The upstream `codex` command is unchanged.
 
 ## Automatic quota survival
 

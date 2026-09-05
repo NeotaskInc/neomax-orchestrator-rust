@@ -6,7 +6,8 @@ use crate::{Engine, Result};
 // Compatibility facade. New code should import model policy from providers::catalog.
 pub use catalog::{
     CLAUDE_DEFAULT_MODEL, CLAUDE_OPUS_MODEL, CLAUDE_OPUS_MODEL_1M, CODEX_DEFAULT_MODEL,
-    CODEX_SERVICE_TIER, GROK_DEFAULT_MODEL, KIMI_DEFAULT_MODEL, OPENCODE_DEFAULT_MODEL,
+    CODEX_SERVICE_TIER, CODEX_SUBAGENT_MODELS, GROK_DEFAULT_MODEL,
+    KIMI_DEFAULT_MODEL, OPENCODE_DEFAULT_MODEL,
 };
 
 pub fn resolve_model(
@@ -20,6 +21,7 @@ pub fn resolve_model(
 
 pub fn codex_model_tier(model: &str) -> Option<&'static str> {
     match model {
+        "gpt-6-astra" => Some("astra"),
         "gpt-5.6-sol" => Some("sol"),
         "gpt-5.6-terra" => Some("terra"),
         "gpt-5.6-luna" => Some("luna"),

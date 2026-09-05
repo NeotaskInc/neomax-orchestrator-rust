@@ -117,8 +117,8 @@ fn universal_launch_selects_the_only_connected_provider_and_runs_the_fake_cli() 
 #[test]
 fn each_provider_pinned_launcher_selects_its_provider_without_authenticating_any_other() {
     let cases = [
-        ("cmax", Engine::Claude, "claude-fable-5[1m]"),
-        ("cdxmax", Engine::Codex, "gpt-5.6-sol"),
+        ("cmax", Engine::Claude, "claude-fable-5-1[1m]"),
+        ("cdxmax", Engine::Codex, "gpt-6-astra"),
         ("ocmax", Engine::Opencode, "opencode/big-pickle"),
         ("kmax", Engine::Kimi, "kimi-code/k3"),
         ("gmax", Engine::Grok, "grok-4.6"),
@@ -185,7 +185,7 @@ fn cmax_solo_uses_a_plain_claude_session_and_arms_local_rotation() {
     let report = result.json();
     assert_eq!(report["status"], "done");
     assert_eq!(report["engine"], "claude");
-    assert_eq!(report["model"], "claude-fable-5[1m]");
+    assert_eq!(report["model"], "claude-fable-5-1[1m]");
 
     let invocations = harness.invocations();
     assert_eq!(invocations.len(), 1);

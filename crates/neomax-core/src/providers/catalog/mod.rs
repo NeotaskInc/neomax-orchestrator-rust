@@ -13,7 +13,9 @@ mod profile_auth_grok;
 mod profile_auth_kimi;
 mod profile_auth_opencode;
 mod profile_auth_store;
+mod profile_identity;
 mod profile_paths;
+mod selectors;
 mod profiles;
 mod ranking;
 mod specs;
@@ -37,11 +39,15 @@ pub use profiles::{
     credential_path_with_environment, discover_profile_snapshots, grok_auth_identity,
     inspect_profile_snapshot, resolve_profile_path, worker_profile_snapshots,
 };
+pub use profile_identity::{profile_email, profile_email_with_environment};
+pub use selectors::{matching_account_ids, profile_matches_selector, resolve_profile_selector};
 pub use ranking::{choose_neomax, rank_neomax, RankingPolicy, DEFAULT_NEOMAX_PRIORITY};
 pub use specs::{
-    all_specs, default_model_id, spec, supports_native_interactive_resume, supports_native_resume,
-    CLAUDE_DEFAULT_MODEL, CLAUDE_OPUS_MODEL, CLAUDE_OPUS_MODEL_1M, CODEX_DEFAULT_MODEL,
-    CODEX_SERVICE_TIER, GROK_DEFAULT_MODEL, KIMI_DEFAULT_MODEL, OPENCODE_DEFAULT_MODEL,
+    all_specs, default_model_id, spec,
+    supports_native_interactive_resume, supports_native_resume, CLAUDE_DEFAULT_MODEL,
+    CLAUDE_OPUS_MODEL, CLAUDE_OPUS_MODEL_1M, CODEX_DEFAULT_MODEL, CODEX_SERVICE_TIER,
+    CODEX_SUBAGENT_MODELS, GROK_DEFAULT_MODEL, KIMI_DEFAULT_MODEL,
+    OPENCODE_DEFAULT_MODEL,
 };
 pub use types::{
     AuthMethod, AuthStatus, BinaryStatus, CatalogSnapshot, CodexAuthIdentity, GrokAuthIdentity,

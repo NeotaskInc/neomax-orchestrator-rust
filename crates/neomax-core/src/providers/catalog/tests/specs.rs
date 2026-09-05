@@ -17,7 +17,7 @@ fn every_provider_spec_has_a_complete_runtime_contract() {
         assert!(provider.capabilities.orchestrator);
         assert!(provider.capabilities.worker);
     }
-    assert_eq!(spec(Engine::Codex).default_model, "gpt-5.6-sol");
+    assert_eq!(spec(Engine::Codex).default_model, "gpt-6-astra");
     assert_eq!(CODEX_SERVICE_TIER, "fast");
 }
 

@@ -22,6 +22,15 @@ const IDENTITY_FIELDS: &[&str] = &[
     "user_id",
     "userId",
 ];
+const EMAIL_FIELDS: &[&str] = &[
+    "email",
+    "emailAddress",
+    "email_address",
+    "user_email",
+    "userEmail",
+    "account_email",
+    "accountEmail",
+];
 
 pub(super) fn codex_auth(profile: &Path, filesystem: &dyn FileSystem) -> Vec<AuthMethod> {
     let Some(value) = json_file(
@@ -73,6 +82,7 @@ pub(super) fn codex_auth_identity(
 
     let mut plan = None;
     let mut identity = first_identity(root).or_else(|| first_identity(tokens));
+    let mut email = first_email(root).or_else(|| first_email(tokens));
     for field in TOKEN_FIELDS {
         let Some(token) = tokens.get(*field).and_then(Value::as_str) else {
             continue;
@@ -89,7 +99,10 @@ pub(super) fn codex_auth_identity(
         if identity.is_none() {
             identity = nonempty_string_value(payload.get("email"));
         }
-        if identity.is_some() && plan.is_some() {
+        if email.is_none() {
+            email = first_email_from_payload(&payload);
+        }
+        if identity.is_some() && plan.is_some() && email.is_some() {
             break;
         }
     }
@@ -104,7 +117,7 @@ pub(super) fn codex_auth_identity(
     for byte in digest.iter().take(8) {
         let _ = write!(label, "{byte:02x}");
     }
-    Some(CodexAuthIdentity::new(label, plan))
+    Some(CodexAuthIdentity::new(label, plan, email))
 }
 
 fn nonempty_string(value: &Value) -> bool {
@@ -125,6 +138,12 @@ fn first_identity(object: &serde_json::Map<String, Value>) -> Option<String> {
         .find_map(|field| nonempty_string_value(object.get(*field)))
 }
 
+fn first_email(object: &serde_json::Map<String, Value>) -> Option<String> {
+    EMAIL_FIELDS
+        .iter()
+        .find_map(|field| nonempty_string_value(object.get(*field)))
+}
+
 fn first_identity_from_payload(payload: &Value) -> Option<String> {
     payload
         .get("https://api.openai.com/auth")
@@ -132,6 +151,14 @@ fn first_identity_from_payload(payload: &Value) -> Option<String> {
         .and_then(first_identity)
         .or_else(|| payload.as_object().and_then(first_identity))
         .or_else(|| nonempty_string_value(payload.get("sub")))
+}
+
+fn first_email_from_payload(payload: &Value) -> Option<String> {
+    payload
+        .get("https://api.openai.com/auth")
+        .and_then(Value::as_object)
+        .and_then(first_email)
+        .or_else(|| payload.as_object().and_then(first_email))
 }
 
 fn payload_plan(payload: &Value) -> Option<String> {
@@ -224,6 +251,8 @@ mod tests {
         assert!(!identity.label().contains("person"));
         assert!(!identity.label().contains("123"));
         assert_eq!(identity.plan(), Some("plus"));
+        assert_eq!(identity.email(), Some("person@example.test"));
+        assert!(!format!("{identity:?}").contains("person@example.test"));
     }
 
     #[test]
@@ -242,5 +271,6 @@ mod tests {
         assert!(identity.label().starts_with("acct-"));
         assert!(!identity.label().contains("person"));
         assert!(identity.plan().is_none());
+        assert_eq!(identity.email(), Some("person@example.test"));
     }
 }

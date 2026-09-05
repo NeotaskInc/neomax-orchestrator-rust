@@ -35,6 +35,8 @@ pub fn execute(launcher: Launcher, args: &[String], context: &RuntimeContext) ->
     }
     let normalized_args = normalize_command_args(args);
     let args = normalized_args.as_deref().unwrap_or(args);
+    let selected_args = super::account_selectors::normalize(launcher, args, context)?;
+    let args = selected_args.as_deref().unwrap_or(args);
     if let Some(native_resume_args) = provider_native_resume_args(launcher, args) {
         return launch::run(launcher, &native_resume_args, context);
     }

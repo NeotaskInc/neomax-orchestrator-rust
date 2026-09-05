@@ -24,16 +24,32 @@ pub enum AuthMethod {
 ///
 /// The marker is deliberately an opaque digest. It is useful for detecting
 /// profiles that share one account or refresh-token family without retaining
-/// or displaying a token, email address, or provider identifier.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// or displaying a token or provider identifier. Email metadata, when present,
+/// is exposed separately for explicit local account selection.
+#[derive(Clone, PartialEq, Eq)]
 pub struct CodexAuthIdentity {
     label: String,
     plan: Option<String>,
+    email: Option<String>,
+}
+
+impl std::fmt::Debug for CodexAuthIdentity {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.debug_struct("CodexAuthIdentity")
+            .field("label", &self.label)
+            .field("plan", &self.plan)
+            .field("has_email", &self.email.is_some())
+            .finish()
+    }
 }
 
 impl CodexAuthIdentity {
-    pub(crate) fn new(label: String, plan: Option<String>) -> Self {
-        Self { label, plan }
+    pub(crate) fn new(label: String, plan: Option<String>, email: Option<String>) -> Self {
+        Self {
+            label,
+            plan,
+            email,
+        }
     }
 
     /// Returns a stable, sanitized label suitable for local status output.
@@ -44,6 +60,12 @@ impl CodexAuthIdentity {
     /// Returns the allowlisted plan label from the local JWT, when present.
     pub fn plan(&self) -> Option<&str> {
         self.plan.as_deref()
+    }
+
+    /// Returns the locally discovered account email, when the provider
+    /// credential contains one. The value is never required for auth.
+    pub fn email(&self) -> Option<&str> {
+        self.email.as_deref()
     }
 }
 

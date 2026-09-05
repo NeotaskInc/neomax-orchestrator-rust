@@ -1,3 +1,5 @@
+#[path = "cli/account_selectors.rs"]
+mod account_selectors;
 #[path = "cli/agent_normalize.rs"]
 mod agent_normalize;
 #[path = "cli/authorization.rs"]

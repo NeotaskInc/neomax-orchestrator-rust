@@ -144,7 +144,7 @@ usage-agent service to change the interval in seconds; set it to `0` to
 disable only the periodic sweep. Terminal cleanup and explicit `neomax tidy`
 remain available. Use
 `neomax tidy --dry-run --any --json` to inspect candidates before a manual
-sweep. See [docs/USAGE-AGENT.md](docs/USAGE-AGENT.md) for the maintenance
+sweep. See [usage-agent reference](USAGE-AGENT.md) for the maintenance
 state and service behavior.
 
 ## Dynamic and explicit routing
@@ -885,8 +885,8 @@ Defaults are explicit and provider-specific:
 
 | Provider | Default model | Model discovery |
 | --- | --- | --- |
-| Claude | `claude-fable-5[1m]` | No Neomax model-list command; explicit local-CLI-supported IDs are accepted |
-| Codex | `gpt-5.6-sol` | No Neomax model-list command; explicit local-CLI-supported IDs are accepted |
+| Claude | `claude-fable-5-1[1m]` | No Neomax model-list command; explicit local-CLI-supported IDs are accepted |
+| Codex | `gpt-6-astra` | No Neomax model-list command; explicit local-CLI-supported IDs are accepted |
 | OpenCode | `opencode/big-pickle` | Best-effort local registry discovery |
 | Kimi | `kimi-code/k3` | Best-effort local CLI discovery |
 | Grok | `grok-4.6` | Best-effort local CLI discovery |
@@ -894,9 +894,10 @@ Defaults are explicit and provider-specific:
 Every provider accepts an explicit model ID that the selected local CLI
 supports. Neomax validates basic shape and lets the provider validate the
 provider-specific model. OpenCode IDs must use the qualified `provider/model`
-form. Codex keeps `sol`, `terra`, and `luna` aliases. Kimi keeps `k3` and
-`k2.7` aliases. Claude Opus is never implicit; select it explicitly when the
-connected Claude CLI supports it.
+form. Codex keeps the GPT-5.6 `luna`, `terra`, and `sol` choices for explicit
+worker routing: Luna is intended for lightweight work, Terra for balanced
+coding work, and Sol for heavier general work. Kimi keeps `k3` and `k2.7` aliases. Claude Opus is never
+implicit; select it explicitly when the connected Claude CLI supports it.
 
 Model overrides are stored separately from the main settings file so a
 provider model change does not discard unrelated configuration:
@@ -905,7 +906,7 @@ provider model change does not discard unrelated configuration:
 neomax config show
 neomax config models
 neomax config set-model opencode opencode/big-pickle
-neomax config set-model claude 'claude-fable-5[1m]'
+neomax config set-model claude 'claude-fable-5-1[1m]'
 neomax config unset-model opencode
 ```
 
@@ -1383,7 +1384,7 @@ the executables under `target/release`; it does not modify the user account or
 install provider workflows. Use the verified release installer for the full
 multicall command surface and provider workflow installation. Developers can
 build a complete package from source with the commands in
-[dist/README.md](dist/README.md).
+[distribution reference](../dist/README.md).
 
 The normal install also leaves shell startup files unchanged. On Unix-like systems using zsh,
 enable the optional dynamic account shortcuts explicitly:
@@ -1422,7 +1423,7 @@ refuses to replace modified or unrelated files unless `--force` is explicit.
 provider profiles, credentials, state, unrelated files, and unrelated Claude hooks alone. Claude
 settings hooks are merged structurally and are removed only when Neomax owns the exact command.
 New profiles created through Neomax are seeded with the same workflows. See
-[docs/INSTALLATION.md](docs/INSTALLATION.md) for installation paths and
+[installation reference](INSTALLATION.md) for installation paths and
 rollback behavior.
 
 The release tooling supports macOS, Linux, and Windows targets. After the
@@ -1444,14 +1445,14 @@ checks version, help, configuration, archive safety, manifest hashes, and all
 aliases, then exercises native install and scoped uninstall without invoking a
 provider or reading an existing login.
 
-See [docs/INSTALLATION.md](docs/INSTALLATION.md) for source builds, release
+See [installation reference](INSTALLATION.md) for source builds, release
 installs, upgrades, rollback, and scoped uninstall behavior.
 
 ## Development and contribution
 
-Read [AGENTS.md](AGENTS.md) for the provider-neutral development contract,
-[CLAUDE.md](CLAUDE.md) for the Claude Code pointer, and
-[CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md) before
+Read [the development guide](../AGENTS.md) for the provider-neutral development
+contract, [the Claude Code pointer](../CLAUDE.md), and
+[contribution guide](../CONTRIBUTING.md) and [security policy](../SECURITY.md) before
 opening an issue or pull request.
 Use the
 [GitHub issue tracker](https://github.com/NeotaskInc/neomax-orchestrator-rust/issues)
@@ -1472,4 +1473,4 @@ change carries its own review record.
 
 ## License
 
-Neomax is distributed under the MIT License. See [LICENSE](LICENSE).
+Neomax is distributed under the MIT License. See [the license](../LICENSE).

@@ -2,10 +2,15 @@ use crate::Engine;
 
 use super::types::{AuthMethod, ModelDiscoverySupport, ProviderCapabilities, ProviderSpec};
 
-pub const CLAUDE_DEFAULT_MODEL: &str = "claude-fable-5[1m]";
+pub const CLAUDE_DEFAULT_MODEL: &str = "claude-fable-5-1[1m]";
 pub const CLAUDE_OPUS_MODEL: &str = "claude-opus-5";
 pub const CLAUDE_OPUS_MODEL_1M: &str = "claude-opus-5[1m]";
-pub const CODEX_DEFAULT_MODEL: &str = "gpt-5.6-sol";
+pub const CODEX_DEFAULT_MODEL: &str = "gpt-6-astra";
+pub const CODEX_SUBAGENT_MODELS: &[&str] = &[
+    "gpt-5.6-sol",
+    "gpt-5.6-terra",
+    "gpt-5.6-luna",
+];
 pub const CODEX_SERVICE_TIER: &str = "fast";
 pub const OPENCODE_DEFAULT_MODEL: &str = "opencode/big-pickle";
 pub const KIMI_DEFAULT_MODEL: &str = "kimi-code/k3";
