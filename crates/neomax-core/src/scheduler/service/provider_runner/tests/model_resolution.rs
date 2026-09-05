@@ -40,7 +40,7 @@ fn scheduler_initial_model_uses_explicit_config_environment_then_default() {
     );
     assert_eq!(
         resolve_scheduler_model(&config_path, Engine::Claude, None, &BTreeMap::new(),).unwrap(),
-        "claude-fable-5[1m]"
+        "claude-fable-5-1[1m]"
     );
 }
 
