@@ -7,6 +7,10 @@ away from exhausted accounts, track usage, and clean generated worktree data.
 
 ## Install
 
+[Latest release](https://github.com/NeotaskInc/neomax-orchestrator-rust/releases/latest)
+includes precompiled packages for macOS (Apple Silicon and Intel), Windows
+(x64), and Linux (x64 and ARM64, including Ubuntu).
+
 ### Give Neomax to your coding agent
 
 Paste this into Claude Code, Codex, OpenCode, Kimi, Grok, or another coding
@@ -191,6 +195,9 @@ matches produce an error instead of choosing another account. Numbered
 accounts still work. `alias:NAME` matches an existing profile directory name;
 it does not create a new login. Providers must expose email metadata locally
 for email selection to work. The upstream `codex` command is unchanged.
+
+These selectors require Neomax 0.1.1 or newer. Re-run the installer above to
+upgrade to the latest published release while keeping your accounts and config.
 
 ## Automatic quota survival
 

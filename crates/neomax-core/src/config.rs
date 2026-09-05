@@ -338,8 +338,8 @@ mod tests {
     #[test]
     fn defaults_match_the_release_contract() {
         let models = ModelDefaults::default();
-        assert_eq!(models.for_engine(Engine::Claude), "claude-fable-5[1m]");
-        assert_eq!(models.for_engine(Engine::Codex), "gpt-5.6-sol");
+        assert_eq!(models.for_engine(Engine::Claude), "claude-fable-5-1[1m]");
+        assert_eq!(models.for_engine(Engine::Codex), "gpt-6-astra");
         assert_eq!(
             models.for_engine(Engine::Opencode),
             "opencode/big-pickle"

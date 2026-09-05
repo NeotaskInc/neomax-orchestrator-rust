@@ -112,22 +112,17 @@ fn profile_directory_aliases_are_explicit_and_portable() {
     let temp = tempfile::tempdir().unwrap();
     let home = temp.path().join("home");
     let profile = home.join("codex-work");
+    let profile = snapshot(Engine::Codex, "1", profile);
     let environment = environment(&home);
     assert!(profile_matches_selector(
-        Engine::Codex,
-        "1",
         &profile,
-        false,
         "alias:codex-work",
         &home,
         &environment,
         &RealFileSystem,
     ));
     assert!(!profile_matches_selector(
-        Engine::Codex,
-        "1",
         &profile,
-        false,
         "codex-work",
         &home,
         &environment,

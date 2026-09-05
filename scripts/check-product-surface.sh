@@ -22,7 +22,7 @@ fi
 
 matches=$(rg -n \
   "cdelegate|cmax-orchestrator|cmax-worktrees|cmax-usage-agent|bin/neotask|Command::new\\(\"neotask\"\\)|name[[:space:]]*=[[:space:]]*\"neotask\"|\"neotask\"[[:space:]]*:|NeoMax|Neo-Max" \
-  --hidden --glob '!target/**' --glob '!.git/**' --glob '!scripts/check-product-surface.sh' --glob '!scripts/check-privacy-surface.sh' . || true)
+  --hidden --glob '!target/**' --glob '!.git' --glob '!.git/**' --glob '!scripts/check-product-surface.sh' --glob '!scripts/check-privacy-surface.sh' . || true)
 if [ -n "$matches" ]; then
   fail 'Legacy or reserved executable names remain in the product surface.'
 fi
@@ -30,7 +30,7 @@ fi
 # The old launchd service label is retained only as an uninstall migration
 # seam. Keep the exception narrow so it cannot become a new install surface.
 legacy_usagewatch_files=$(rg -l 'io\.cmax\.usagewatch' \
-  --hidden --glob '!target/**' --glob '!.git/**' \
+  --hidden --glob '!target/**' --glob '!.git' --glob '!.git/**' \
   --glob '!scripts/check-product-surface.sh' --glob '!scripts/check-privacy-surface.sh' . || true)
 for file in $legacy_usagewatch_files; do
   case "$file" in
@@ -41,13 +41,13 @@ done
 
 matches=$(rg -l -i \
   '/Users/[^/[:space:]]+/' \
-  --hidden --glob '!target/**' --glob '!.git/**' --glob '!scripts/check-product-surface.sh' --glob '!scripts/check-privacy-surface.sh' . || true)
+  --hidden --glob '!target/**' --glob '!.git' --glob '!.git/**' --glob '!scripts/check-product-surface.sh' --glob '!scripts/check-privacy-surface.sh' . || true)
 if [ -n "$matches" ]; then
   fail 'Machine-specific macOS home paths are not allowed in the product surface.'
 fi
 
 home_files=$(rg -l -i '/home/[^/[:space:]]+/' \
-  --hidden --glob '!target/**' --glob '!.git/**' --glob '!scripts/check-product-surface.sh' --glob '!scripts/check-privacy-surface.sh' . || true)
+  --hidden --glob '!target/**' --glob '!.git' --glob '!.git/**' --glob '!scripts/check-product-surface.sh' --glob '!scripts/check-privacy-surface.sh' . || true)
 for file in $home_files; do
   if rg -n -i '/home/[^/[:space:]]+/' "$file" | grep -qvE '/home/(user|tester|example|test)/'; then
     fail 'Machine-specific Linux home paths are not allowed in the product surface.'
@@ -56,7 +56,7 @@ done
 
 matches=$(rg -l -i \
   'ghp_[[:alnum:]]{20,}|github_pat_[[:alnum:]_]{20,}|sk-[[:alnum:]]{20,}|Bearer[[:space:]]+[[:alnum:]._-]{20,}|BEGIN[[:space:]]+([A-Z]+[[:space:]]+)?PRIVATE[[:space:]]+KEY' \
-  --hidden --glob '!target/**' --glob '!.git/**' --glob '!scripts/check-product-surface.sh' --glob '!scripts/check-privacy-surface.sh' . || true)
+  --hidden --glob '!target/**' --glob '!.git' --glob '!.git/**' --glob '!scripts/check-product-surface.sh' --glob '!scripts/check-privacy-surface.sh' . || true)
 if [ -n "$matches" ]; then
   fail 'Credential or private-key material is not allowed in the product surface.'
 fi

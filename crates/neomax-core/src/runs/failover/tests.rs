@@ -196,7 +196,7 @@ fn transitions_in_place_without_losing_worktree_or_session_history() {
     );
     assert_eq!(item.engine, Engine::Codex);
     assert_eq!(item.profile, target.profile);
-    assert_eq!(item.model, "gpt-5.6-sol");
+    assert_eq!(item.model, "gpt-6-astra");
     assert_eq!(item.effort.as_deref(), Some("xhigh"));
     assert_eq!(item.workdir, PathBuf::from("/workspace"));
     assert_eq!(item.branch.as_deref(), Some("work"));

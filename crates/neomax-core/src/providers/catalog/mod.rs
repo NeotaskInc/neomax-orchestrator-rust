@@ -40,7 +40,7 @@ pub use profiles::{
     inspect_profile_snapshot, resolve_profile_path, worker_profile_snapshots,
 };
 pub use profile_identity::{profile_email, profile_email_with_environment};
-pub use selectors::{matching_account_ids, profile_matches_selector, resolve_profile_selector};
+pub use selectors::resolve_profile_selector;
 pub use ranking::{choose_neomax, rank_neomax, RankingPolicy, DEFAULT_NEOMAX_PRIORITY};
 pub use specs::{
     all_specs, default_model_id, spec,

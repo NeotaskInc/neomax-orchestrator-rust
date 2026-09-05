@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::{Engine, Error, Result};
 
@@ -24,10 +24,7 @@ pub fn resolve_profile_selector<'a>(
         .filter(|profile| {
             profile.engine == engine
                 && profile_matches_selector(
-                    engine,
-                    &profile.account,
-                    &profile.path,
-                    profile.reserved,
+                    profile,
                     selector,
                     home,
                     environment,
@@ -53,11 +50,8 @@ pub fn resolve_profile_selector<'a>(
 
 /// Test a selector against one discovered account without making an auth
 /// decision. Callers apply their own routing or login eligibility policy.
-pub fn profile_matches_selector(
-    engine: Engine,
-    account: &str,
-    profile: &Path,
-    reserved: bool,
+fn profile_matches_selector(
+    profile: &ProfileSnapshot,
     selector: &str,
     home: &Path,
     environment: &dyn Environment,
@@ -69,14 +63,14 @@ pub fn profile_matches_selector(
     }
     if let Some(alias) = selector.strip_prefix(ALIAS_PREFIX) {
         let alias = alias.trim();
-        return !alias.is_empty() && profile_alias_matches(profile, home, alias);
+        return !alias.is_empty() && profile_alias_matches(&profile.path, home, alias);
     }
-    account.eq_ignore_ascii_case(selector)
-        || (reserved
+    profile.account.eq_ignore_ascii_case(selector)
+        || (profile.reserved
             && (selector.eq_ignore_ascii_case("orch")
                 || selector.eq_ignore_ascii_case("orchestrator")))
         || canonical_email(selector).is_some_and(|requested| {
-            profile_email_with_environment(engine, profile, home, environment, filesystem)
+            profile_email_with_environment(profile.engine, &profile.path, home, environment, filesystem)
                 .is_some_and(|email| email == requested)
         })
 }
@@ -91,34 +85,6 @@ fn profile_alias_matches(profile: &Path, home: &Path, alias: &str) -> bool {
             .ok()
             .and_then(|relative| relative.to_str())
             .is_some_and(|relative| relative.eq_ignore_ascii_case(alias))
-}
-
-/// Match the same selector forms against the lightweight account inventory
-/// used by launch and failover code.
-pub fn matching_account_ids(
-    engine: Engine,
-    accounts: impl IntoIterator<Item = (String, PathBuf, bool)>,
-    selector: &str,
-    home: &Path,
-    environment: &dyn Environment,
-    filesystem: &dyn FileSystem,
-) -> Vec<String> {
-    accounts
-        .into_iter()
-        .filter(|(account, profile, reserved)| {
-            profile_matches_selector(
-                engine,
-                account,
-                profile,
-                *reserved,
-                selector,
-                home,
-                environment,
-                filesystem,
-            )
-        })
-        .map(|(account, _, _)| account)
-        .collect()
 }
 
 #[cfg(test)]

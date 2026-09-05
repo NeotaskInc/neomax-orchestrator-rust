@@ -56,7 +56,7 @@ private_pattern_matches() {
   while IFS= read -r pattern; do
     if rg -l -I -i \
       -e "$pattern" \
-      --hidden --glob '!target/**' --glob '!.git/**' \
+      --hidden --glob '!target/**' --glob '!.git' --glob '!.git/**' \
       --glob '!scripts/check-privacy-surface.sh' \
       --glob '!scripts/check-product-surface.sh' . >/dev/null 2>&1; then
       return 0
@@ -69,7 +69,7 @@ EOF
 
 matches=$(rg -l -I -i \
   'ghp_[[:alnum:]]{20,}|github_pat_[[:alnum:]_]{20,}|sk-[[:alnum:]]{20,}|Bearer[[:space:]]+[[:alnum:]._-]{20,}|BEGIN[[:space:]]+([A-Z]+[[:space:]]+)?PRIVATE[[:space:]]+KEY' \
-  --hidden --glob '!target/**' --glob '!.git/**' \
+  --hidden --glob '!target/**' --glob '!.git' --glob '!.git/**' \
   --glob '!scripts/check-privacy-surface.sh' \
   --glob '!scripts/check-product-surface.sh' . || true)
 if [ -n "$matches" ]; then
@@ -81,7 +81,7 @@ if private_pattern_matches; then
 fi
 
 mac_paths=$(rg -n -I -i '/Users/[^/[:space:]]+/' \
-  --hidden --glob '!target/**' --glob '!.git/**' \
+  --hidden --glob '!target/**' --glob '!.git' --glob '!.git/**' \
   --glob '!scripts/check-privacy-surface.sh' \
   --glob '!scripts/check-product-surface.sh' . || true)
 if [ -n "$mac_paths" ]; then
@@ -89,7 +89,7 @@ if [ -n "$mac_paths" ]; then
 fi
 
 linux_paths=$(rg -n -I -i '/home/[^/[:space:]]+/' \
-  --hidden --glob '!target/**' --glob '!.git/**' \
+  --hidden --glob '!target/**' --glob '!.git' --glob '!.git/**' \
   --glob '!scripts/check-privacy-surface.sh' \
   --glob '!scripts/check-product-surface.sh' . \
   | grep -vE '/home/(user|tester|example|test)/' || true)
