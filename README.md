@@ -7,8 +7,10 @@ away from exhausted accounts, track usage, and clean generated worktree data.
 
 ## Connect multiple accounts, launch by email
 
-After [installing Neomax](#install), connect each Codex account once. Complete
-each login with the account you want assigned to that number:
+Multiple accounts and email selection work across Claude, Codex, OpenCode,
+Kimi, and Grok. After [installing Neomax](#install), connect each account once.
+For example, add two Codex accounts, completing each login with a different
+account:
 
 ```bash
 cdx login 1 oauth
@@ -16,21 +18,27 @@ cdx login 2 oauth
 cdx status
 ```
 
-Open a Codex session by its saved email, or choose that account as the Neomax
-orchestrator:
+Choose an orchestrator account by its saved email or number:
 
-```bash
-cdx developer@example.com
-cdxmax developer@example.com
-```
+| Provider | Launch by email | Launch account 2 |
+| --- | --- | --- |
+| Claude | `cmax developer@example.com` | `cmax 2` |
+| Codex | `cdxmax developer@example.com` | `cdxmax 2` |
+| OpenCode | `ocmax developer@example.com` | `ocmax 2` |
+| Kimi | `kmax developer@example.com` | `kmax 2` |
+| Grok | `gmax developer@example.com` | `gmax 2` |
 
-Numbers work too: `cdx run 1`, `cdx run 2`, `cdxmax 1`, or `cdxmax 2`.
+Account helpers also accept emails, such as `cdx developer@example.com`,
+`ocx developer@example.com`, `kmx developer@example.com`, and
+`gmx developer@example.com`. For a numbered Codex session, use `cdx run 2`.
 The account number is a separate argument; Neomax does not install commands
 named `codex1` or `cdxmax1`, and the upstream `codex` command stays unchanged.
 
 Email selection requires Neomax 0.1.1 or newer and an existing profile with
-local email metadata. Unknown or ambiguous emails produce an error. See
-[Accounts](#accounts) for Claude, OpenCode, Kimi, Grok, and other login methods.
+local email metadata. Lookup stays within the selected provider; unknown or
+ambiguous emails produce an error. Use the account number when a profile has
+no email metadata. See [Accounts](#accounts) for each provider's login commands
+and authentication methods.
 
 ## Install
 
