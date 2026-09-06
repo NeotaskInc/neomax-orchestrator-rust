@@ -5,6 +5,33 @@ Grok. It can select an orchestrator dynamically, route workers across any
 connected provider set, use different models for different tasks, rotate work
 away from exhausted accounts, track usage, and clean generated worktree data.
 
+## Connect multiple accounts, launch by email
+
+After [installing Neomax](#install), connect each Codex account once. Complete
+each login with the account you want assigned to that number:
+
+```bash
+cdx login 1 oauth
+cdx login 2 oauth
+cdx status
+```
+
+Open a Codex session by its saved email, or choose that account as the Neomax
+orchestrator:
+
+```bash
+cdx developer@example.com
+cdxmax developer@example.com
+```
+
+Numbers work too: `cdx run 1`, `cdx run 2`, `cdxmax 1`, or `cdxmax 2`.
+The account number is a separate argument; Neomax does not install commands
+named `codex1` or `cdxmax1`, and the upstream `codex` command stays unchanged.
+
+Email selection requires Neomax 0.1.1 or newer and an existing profile with
+local email metadata. Unknown or ambiguous emails produce an error. See
+[Accounts](#accounts) for Claude, OpenCode, Kimi, Grok, and other login methods.
+
 ## Install
 
 [Latest release](https://github.com/NeotaskInc/neomax-orchestrator-rust/releases/latest)
