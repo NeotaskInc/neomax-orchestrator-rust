@@ -37,6 +37,7 @@ fn builds_one_shared_view_of_auth_quota_controls_and_live_work() {
             QuotaSnapshot {
                 available: true,
                 weekly_percent: Some(74.0),
+                model_weekly: Default::default(),
                 weekly_reset_at: Some(now + Duration::days(2)),
                 ..QuotaSnapshot::default()
             },

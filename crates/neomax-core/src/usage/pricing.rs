@@ -15,6 +15,8 @@ pub struct ModelPrice {
     pub cache_write: f64,
     #[serde(rename = "cr")]
     pub cache_read: f64,
+    #[serde(default, rename = "cw1h", skip_serializing_if = "Option::is_none")]
+    pub cache_write_1h: Option<f64>,
 }
 
 impl ModelPrice {
@@ -23,12 +25,13 @@ impl ModelPrice {
         Self {
             input,
             output,
-            cache_write: if openai {
+            cache_write: if openai && !model.starts_with("gpt-5.6-") && model != "gpt-6-astra" {
                 0.0
             } else {
                 round_four(input * CLAUDE_CACHE_WRITE_MULTIPLIER)
             },
-            cache_read: round_four(input * CACHE_READ_MULTIPLIER),
+            cache_read: round_four(input * if model == "claude-fable-5-1" { 0.025 } else { CACHE_READ_MULTIPLIER }),
+            cache_write_1h: model.starts_with("claude-").then(|| round_four(input * 2.0)),
         }
     }
 
@@ -74,13 +77,17 @@ impl PriceCatalog {
             .replace("[1m]", "")
             .trim()
             .to_string();
+        let normalized = normalized.strip_prefix("anthropic/").or_else(|| normalized.strip_prefix("openai/"))
+            .unwrap_or(&normalized).replace("claude-fable-5.1", "claude-fable-5-1");
         self.rates
             .get(&normalized)
             .copied()
             .or_else(|| {
                 self.rates
                     .iter()
-                    .find_map(|(name, price)| normalized.starts_with(name).then_some(*price))
+                    .filter(|(name, _)| normalized.starts_with(name.as_str()))
+                    .max_by_key(|(name, _)| name.len())
+                    .map(|(_, price)| *price)
             })
             .unwrap_or(self.fallback)
     }
@@ -96,6 +103,17 @@ impl PriceCatalog {
         self.price_for(model)
             .estimate(input, output, cache_write, cache_read)
     }
+
+    pub fn estimate_record(&self, record: &super::LedgerRecord) -> f64 {
+        let price = self.price_for(&record.model);
+        let one_hour = record.extra.get("cache_write_1h").and_then(serde_json::Value::as_u64)
+            .unwrap_or(0).min(record.cache_write);
+        let mut cost = price.estimate(record.input, record.output, record.cache_write, record.cache_read);
+        if let Some(rate) = price.cache_write_1h {
+            cost += one_hour as f64 * (rate - price.cache_write) / 1_000_000.0;
+        }
+        cost
+    }
 }
 
 const MODEL_IO: &[(&str, f64, f64)] = &[
@@ -103,11 +121,14 @@ const MODEL_IO: &[(&str, f64, f64)] = &[
     ("claude-opus-4-8", 5.0, 25.0),
     ("claude-opus-4-7", 5.0, 25.0),
     ("claude-fable-5", 10.0, 50.0),
+    ("claude-fable-5-1", 10.0, 50.0),
+    ("claude-sonnet-5", 2.0, 10.0),
     ("claude-sonnet-4-6", 3.0, 15.0),
     ("claude-haiku-4-5", 1.0, 5.0),
-    ("gpt-5.6-sol", 5.0, 30.0),
-    ("gpt-5.6-terra", 2.5, 15.0),
-    ("gpt-5.6-luna", 0.5, 4.0),
+    ("gpt-6-astra", 10.0, 50.0),
+    ("gpt-5.6-sol", 4.0, 20.0),
+    ("gpt-5.6-terra", 2.0, 12.0),
+    ("gpt-5.6-luna", 0.2, 1.2),
     ("gpt-5.5", 5.0, 30.0),
     ("gpt-5.4", 2.5, 15.0),
     ("kimi-code/k3", 0.0, 0.0),
@@ -124,6 +145,32 @@ mod tests {
     use super::*;
 
     #[test]
+    fn current_models_have_distinct_cache_prices_and_longest_prefix_matching() {
+        let prices = PriceCatalog::default();
+        for (model, input, output, read, write) in [
+            ("gpt-6-astra", 10.0, 50.0, 1.0, 12.5),
+            ("gpt-5.6-sol", 4.0, 20.0, 0.4, 5.0),
+            ("gpt-5.6-terra", 2.0, 12.0, 0.2, 2.5),
+            ("gpt-5.6-luna", 0.2, 1.2, 0.02, 0.25),
+            ("claude-fable-5", 10.0, 50.0, 1.0, 12.5),
+            ("claude-fable-5-1", 10.0, 50.0, 0.25, 12.5),
+        ] {
+            let price = prices.price_for(model);
+            assert_eq!((price.input, price.output, price.cache_read, price.cache_write), (input, output, read, write), "{model}");
+        }
+        for model in ["claude-fable-5-1[1m]", "claude-fable-5-1-20260901", "anthropic/claude-fable-5.1"] {
+            assert_eq!(prices.price_for(model).cache_read, 0.25, "{model}");
+        }
+        let mut record: super::super::LedgerRecord = serde_json::from_value(serde_json::json!({
+            "ts":1,"provider":"claude","account":"1","model":"claude-fable-5-1","id":"fixture","kind":"add",
+            "in":1_000_000,"out":1_000_000,"cw":1_000_000,"cr":1_000_000,"cache_write_1h":400_000
+        })).unwrap();
+        assert_eq!(prices.estimate_record(&record), 75.75);
+        record.model = "claude-fable-5".into();
+        assert_eq!(prices.estimate_record(&record), 76.5);
+    }
+
+    #[test]
     fn derives_cache_prices_and_normalizes_context_suffixes() {
         let prices = PriceCatalog::default();
         let claude = prices.price_for("claude-fable-5[1m]");
@@ -131,8 +178,8 @@ mod tests {
         assert_eq!(claude.cache_read, 1.0);
 
         let codex = prices.price_for("gpt-5.6-sol-fast");
-        assert_eq!(codex.cache_write, 0.0);
-        assert_eq!(codex.cache_read, 0.5);
+        assert_eq!(codex.cache_write, 5.0);
+        assert_eq!(codex.cache_read, 0.4);
     }
 
     #[test]
@@ -140,7 +187,7 @@ mod tests {
         let prices = PriceCatalog::default();
         assert_eq!(
             prices.estimate("gpt-5.6-sol", 1_000_000, 100_000, 50, 500_000),
-            8.25
+            6.20025
         );
     }
 }

@@ -90,7 +90,10 @@ pub(crate) fn sweep(
         let Some(source) = source else {
             continue;
         };
-        if !over_threshold(&source, &marker, now) {
+        let scoped_source = live_record
+            .map(|record| source.for_model(&record.model, now))
+            .unwrap_or_else(|| source.clone());
+        if !over_threshold(&scoped_source, &marker, now) {
             continue;
         }
         if !claims.try_claim(&profile, now)? {
@@ -339,6 +342,7 @@ fn fallback_source(
         live_workers: 0,
         five_hour_percent: None,
         weekly_percent: None,
+        model_weekly: Default::default(),
         cooldown_until: None,
         five_hour_reset_at: None,
         weekly_reset_at: None,
@@ -471,6 +475,7 @@ mod tests {
             live_workers: 0,
             five_hour_percent: Some(98.0),
             weekly_percent: Some(10.0),
+            model_weekly: Default::default(),
             cooldown_until: None,
             five_hour_reset_at: None,
             weekly_reset_at: None,

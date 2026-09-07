@@ -70,6 +70,16 @@ pub(crate) fn text(report: &StatusReport) -> Result<()> {
                 account.paused,
                 account.quota.hard_wall
             );
+            for (family, window) in &account.quota.model_weekly {
+                println!(
+                    "    {} weekly={} reset={}",
+                    super::safety::model_label(family),
+                    percent(window.used_percent),
+                    window
+                        .resets_at
+                        .map_or_else(|| "-".into(), |reset| reset.to_string())
+                );
+            }
         }
     }
     println!("sessions:");

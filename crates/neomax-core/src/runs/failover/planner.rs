@@ -18,6 +18,18 @@ pub fn plan_failover(
     now: DateTime<Utc>,
     policy: &SelectionPolicy,
 ) -> FailoverDecision {
+    plan_failover_with_resolver(run, status, accounts, scope, now, policy, &super::NoModelOverrides)
+}
+
+pub fn plan_failover_with_resolver(
+    run: &RunRecord,
+    status: RunStatus,
+    accounts: &[AccountSnapshot],
+    scope: &WorkerScope,
+    now: DateTime<Utc>,
+    policy: &SelectionPolicy,
+    models: &dyn super::ModelResolver,
+) -> FailoverDecision {
     if !matches!(status, RunStatus::Limit | RunStatus::Error) {
         return FailoverDecision::Stop(FailoverStop::TerminalStatus);
     }
@@ -36,7 +48,7 @@ pub fn plan_failover(
     }
 
     let excluded = excluded_profiles(run);
-    if let Some(account) = select_for_engine(run.engine, accounts, &excluded, now, policy) {
+    if let Some(account) = select_for_engine(run.engine, &run.model, accounts, &excluded, now, policy) {
         return FailoverDecision::Continue(FailoverTarget {
             account,
             crosses_provider: false,
@@ -44,7 +56,8 @@ pub fn plan_failover(
     }
     if status == RunStatus::Limit {
         for engine in cross_provider_order(run.engine, scope) {
-            if let Some(account) = select_for_engine(engine, accounts, &excluded, now, policy) {
+            let model = models.model_for(engine).unwrap_or_else(|| crate::providers::catalog::default_model_id(engine).to_owned());
+            if let Some(account) = select_for_engine(engine, &model, accounts, &excluded, now, policy) {
                 return FailoverDecision::Continue(FailoverTarget {
                     account,
                     crosses_provider: true,
@@ -57,6 +70,7 @@ pub fn plan_failover(
 
 fn select_for_engine(
     engine: crate::Engine,
+    model: &str,
     accounts: &[AccountSnapshot],
     excluded: &BTreeSet<PathBuf>,
     now: DateTime<Utc>,
@@ -65,7 +79,7 @@ fn select_for_engine(
     let candidates = accounts
         .iter()
         .filter(|account| account.engine == engine)
-        .cloned()
+        .map(|account| account.for_model(model, now))
         .collect::<Vec<_>>();
     select_account(
         &candidates,

@@ -104,6 +104,25 @@ pub fn is_weekly_limit(window: Option<&str>) -> bool {
         .any(|part| value.contains(part))
 }
 
+pub fn claude_model_family(model: &str) -> Option<&'static str> {
+    let name = model.to_ascii_lowercase();
+    ["fable", "opus", "sonnet", "haiku"].into_iter().find(|family| {
+        name == *family || name.starts_with(&format!("claude-{family}-"))
+            || name.starts_with(&format!("{family} "))
+            || name.starts_with(&format!("{family}["))
+    })
+}
+
+pub fn claude_limit_family(window: &str) -> Option<&'static str> {
+    match window {
+        "seven_day_overage_included" | "fable" => Some("fable"),
+        "seven_day_opus" => Some("opus"),
+        "seven_day_sonnet" => Some("sonnet"),
+        "seven_day_haiku" => Some("haiku"),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use chrono::Duration;

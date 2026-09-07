@@ -17,8 +17,9 @@ pub fn record_limit_cooldown(
         return Ok(None);
     }
     controls
-        .set_cooldown(
+        .set_limit_cooldown(
             &run.profile,
+            (run.engine == crate::Engine::Claude).then(|| run.limit_window.as_deref().and_then(crate::usage::claude_limit_family)).flatten(),
             run.resets_at,
             now.timestamp_millis() as f64 / 1000.0,
             default.as_secs_f64(),

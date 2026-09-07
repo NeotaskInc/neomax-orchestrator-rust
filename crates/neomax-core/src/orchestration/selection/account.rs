@@ -85,6 +85,7 @@ mod tests {
             live_workers: 0,
             five_hour_percent: five,
             weekly_percent: weekly,
+            model_weekly: Default::default(),
             cooldown_until: None,
             five_hour_reset_at: None,
             weekly_reset_at: None,

@@ -6,7 +6,7 @@ mod types;
 
 pub use model::{ModelResolver, NoModelOverrides};
 pub use order::cross_provider_order;
-pub use planner::plan_failover;
+pub use planner::{plan_failover, plan_failover_with_resolver};
 pub use transition::{
     apply_failover, apply_failover_with_resolver, CROSS_PROVIDER_NOTE, SAME_PROVIDER_NOTE,
 };

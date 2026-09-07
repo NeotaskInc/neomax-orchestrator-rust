@@ -71,7 +71,7 @@ h2 { font-size: 10.5px; letter-spacing: .12em; margin: 0; min-width: 0; text-tra
 .account-meta { color: var(--dim); font-size: 10.5px; min-width: 0; overflow-wrap: anywhere; }
 .telemetry-detail, .quota-detail { margin-top: 2px; }
 .bar-row { align-items: center; display: flex; gap: 7px; margin-top: 3px; min-width: 0; }
-.bar-label { color: var(--dim2); font-size: 9px; width: 22px; }
+.bar-label { color: var(--dim2); font-size: 9px; min-width: 84px; }
 .bar { background: var(--track); height: 5px; min-width: 0; overflow: hidden; width: 100%; }
 .bar > i { background: var(--fg); display: block; height: 100%; }
 .bar > i.warn { background: var(--accent); }.bar > i.gold { background: var(--gold); }

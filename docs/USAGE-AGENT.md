@@ -165,6 +165,31 @@ response stores `five_hour.utilization`, `five_hour.resets_at`,
 `observed_at`, and the local account UUID. Reset times accept numeric epochs
 or RFC3339 values.
 
+Claude model-specific weekly windows are stored in `model_weekly`, separately
+from shared weekly usage. The collector accepts the CLI's
+`limits[].kind=weekly_scoped` records and structured
+`rate_limits.model_scoped` usage. Fable 5 and Fable 5.1 share the Fable window.
+At its 99 percent wall, Neomax selects another account for Fable; Opus and
+Sonnet remain eligible unless their own limits or the account-wide limits
+are exhausted. Reactive model cooldowns follow the Claude account identity
+through credential swaps. Missing model usage remains unknown.
+
+The portal shows shared and model-specific weekly windows separately.
+Its pricing catalog uses standard API-equivalent rates, not subscription
+charges. Fable 5 cache reads cost $1 per million tokens; Fable 5.1 cache reads
+cost $0.25. Both use $12.50 five-minute and $20 one-hour cache writes;
+one-hour counts are priced separately when the transcript supplies them.
+GPT-6 Astra and GPT-5.6 Sol, Terra, and Luna have individual input, output,
+cache-read, and cache-write entries. Cumulative records without request-level
+pricing metadata use standard rates; long-context and service-tier premiums
+are not inferred from session totals.
+
+Rates are based on the [Claude pricing documentation](https://platform.claude.com/docs/en/about-claude/pricing)
+and the official [Astra](https://developers.openai.com/api/docs/models/gpt-6-astra),
+[Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
+[Terra](https://developers.openai.com/api/docs/models/gpt-5.6-terra), and
+[Luna](https://developers.openai.com/api/docs/models/gpt-5.6-luna) model pages.
+
 When a Claude token is expired, the agent first tries the local refresh token.
 If the exchange returns `access_token`, it also accepts replacement
 `refresh_token` and `expires_in`, updates the profile's `.credentials.json`,

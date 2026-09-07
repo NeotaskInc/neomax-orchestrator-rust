@@ -128,15 +128,7 @@ fn metrics_for(record: &LedgerRecord, prices: &PriceCatalog) -> UsageMetrics {
         completions,
         errors: record.errors,
         rate_limits: record.rate_limits,
-        cost: record.cost.unwrap_or_else(|| {
-            prices.estimate(
-                &record.model,
-                record.input,
-                record.output,
-                record.cache_write,
-                record.cache_read,
-            )
-        }),
+        cost: record.cost.unwrap_or_else(|| prices.estimate_record(record)),
     })
 }
 

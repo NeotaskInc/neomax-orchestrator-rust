@@ -37,6 +37,22 @@ pub(super) fn choose_target(
         ));
     }
     let restrict_to_scope = options.worker_dispatch || requested_engine.is_none();
+    let scoped_accounts = accounts
+        .iter()
+        .map(|account| {
+            if account.engine != Engine::Claude
+                || requested_engine.is_some_and(|engine| engine != Engine::Claude)
+            {
+                return Ok(account.clone());
+            }
+            match selected_model(context, options, account.engine) {
+                Ok(model) => Ok(account.for_model(&model.model, Utc::now())),
+                Err(error) if requested_engine == Some(Engine::Claude) => Err(error),
+                Err(_) => Ok(account.clone()),
+            }
+        })
+        .collect::<Result<Vec<_>>>()?;
+    let accounts = scoped_accounts.as_slice();
     if let Some(account) = options.account.as_deref() {
         let matches = accounts
             .iter()

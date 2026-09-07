@@ -108,6 +108,7 @@ pub(crate) fn refresh(
     let mut output = ProviderUsageCache {
         five_hour: window(response.get("five_hour")),
         seven_day: window(response.get("seven_day")),
+        model_weekly: neomax_core::usage::claude_model_windows(&response),
         source: Some("claude-api".into()),
         observed_at: Some(now as f64),
         ..ProviderUsageCache::default()
@@ -117,7 +118,10 @@ pub(crate) fn refresh(
             .extra
             .insert("acct_uuid".into(), Value::String(account_uuid));
     }
-    if output.five_hour.used_percent.is_none() && output.seven_day.used_percent.is_none() {
+    if output.five_hour.used_percent.is_none()
+        && output.seven_day.used_percent.is_none()
+        && output.model_weekly.is_empty()
+    {
         return Ok(cached.and_then(|mut cache| {
             stale_ok(&cache, now, Duration::from_secs(DEFAULT_STALE_SECS as u64)).then(|| {
                 cache.stale = true;

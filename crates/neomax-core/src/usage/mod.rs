@@ -3,6 +3,8 @@ mod cache;
 mod ingest;
 mod ledger;
 mod pricing;
+mod model_quota;
+pub use model_quota::{claude_model_family, claude_limit_family, claude_model_windows};
 mod report;
 mod types;
 

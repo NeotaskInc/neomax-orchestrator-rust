@@ -151,6 +151,7 @@ fn view(input: AccountViewInput<'_>) -> AccountView {
         live_workers: 0,
         five_hour_percent: None,
         weekly_percent: None,
+        model_weekly: Default::default(),
         cooldown_until: None,
         five_hour_reset_at: None,
         weekly_reset_at: None,
@@ -174,6 +175,7 @@ fn view(input: AccountViewInput<'_>) -> AccountView {
     let quota = QuotaView {
         five_hour_percent: snapshot.five_hour_percent,
         weekly_percent: snapshot.weekly_percent,
+        model_weekly: snapshot.model_weekly.clone(),
         five_hour_reset_at: snapshot.five_hour_reset_at.map(|value| value.timestamp()),
         weekly_reset_at: snapshot.weekly_reset_at.map(|value| value.timestamp()),
         cooldown_until: snapshot.cooldown_until.map(|value| value.timestamp()),

@@ -9,9 +9,10 @@ mod windows;
 pub use claims::{RotationClaimStore, RotationRank};
 pub use controls::AccountControlStore;
 pub use inventory::{
-    AccountInventory, QuotaRotationAdvice, QuotaTarget, QuotaWindow, quota_advice,
+    AccountInventory, QuotaRotationAdvice, QuotaTarget, QuotaWindow, quota_advice, quota_advice_for_model,
 };
-pub use ports::{LiveWorkSnapshot, LiveWorkSource, QuotaSnapshot, QuotaSnapshotSource};
+pub use ports::{LiveWorkSnapshot, LiveWorkSource, ModelQuotaWindow, QuotaSnapshot, QuotaSnapshotSource};
+pub use windows::{claude_model_family, claude_limit_family};
 pub use selection::{
     AccountRank, AccountRankingPolicy, AccountSelector, SelectionDecision, SelectionPolicy,
     SelectionTier, compare_account_rank, rank_account, select_account,

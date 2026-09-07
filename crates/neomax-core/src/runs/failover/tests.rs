@@ -22,6 +22,7 @@ fn account(engine: Engine, name: &str, weekly: f64) -> AccountSnapshot {
         live_workers: 0,
         five_hour_percent: Some(0.0),
         weekly_percent: Some(weekly),
+        model_weekly: Default::default(),
         cooldown_until: None,
         five_hour_reset_at: None,
         weekly_reset_at: None,
@@ -37,6 +38,28 @@ fn run(engine: Engine, profile: &PathBuf) -> RunRecord {
         "usage":{"output":10}, "result_text":"partial", "error_detail":"old"
     }))
     .unwrap()
+}
+
+#[test]
+fn model_aware_failover_preserves_fable_exhausted_accounts_for_opus() {
+    let current = account(Engine::Claude, "1", 20.0);
+    let mut exhausted = account(Engine::Claude, "2", 25.0);
+    exhausted.model_weekly.insert("fable".into(), crate::usage::QuotaWindow {used_percent:Some(100.0), resets_at:None});
+    let fresh = account(Engine::Claude, "3", 40.0);
+    let accounts = [current.clone(), exhausted.clone(), fresh.clone()];
+    for (model, expected) in [("claude-fable-5", &fresh), ("claude-fable-5-1[1m]", &fresh), ("claude-opus-5", &exhausted), ("claude-sonnet-5", &exhausted)] {
+        let mut run = run(Engine::Claude, &current.profile);
+        run.model = model.into();
+        let FailoverDecision::Continue(target) = plan_failover(&run, RunStatus::Limit, &accounts, &WorkerScope::only(Engine::Claude), Utc::now(), &SelectionPolicy::default()) else {panic!("expected eligible account")};
+        assert_eq!(target.account.profile, expected.profile, "{model}");
+    }
+    let codex = account(Engine::Codex, "1", 100.0);
+    let run = run(Engine::Codex, &codex.profile);
+    let accounts = [codex, exhausted];
+    let scope: WorkerScope = "claude,codex".parse().unwrap();
+    assert!(matches!(plan_failover(&run, RunStatus::Limit, &accounts, &scope, Utc::now(), &SelectionPolicy::default()), FailoverDecision::Stop(_)));
+    let models = BTreeMap::from([(Engine::Claude, "claude-opus-5".into())]);
+    assert!(matches!(plan_failover_with_resolver(&run, RunStatus::Limit, &accounts, &scope, Utc::now(), &SelectionPolicy::default(), &models), FailoverDecision::Continue(_)));
 }
 
 #[test]

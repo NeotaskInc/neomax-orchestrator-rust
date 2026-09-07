@@ -13,13 +13,67 @@ const MAX_RESET_HORIZON_SECONDS: f64 = 7.0 * 24.0 * 3600.0 + 3600.0;
 pub struct AccountControlStore {
     cooldowns: PathBuf,
     paused: PathBuf,
+    model_scoped: bool,
 }
 
 impl AccountControlStore {
+    fn model_store(&self, family: &str) -> Self {
+        let mut path = self.cooldowns.as_os_str().to_os_string();
+        path.push(format!(".model-{family}.json"));
+        let mut store = Self::new(PathBuf::from(path), self.paused.clone());
+        store.model_scoped = true;
+        store
+    }
+
+    fn key(&self, profile: &Path) -> Result<String> {
+        let profile = normalized(profile)?;
+        if self.model_scoped {
+            let limits = crate::io::ReadLimits::new(512 * 1024, std::time::Duration::from_secs(2))?;
+            let identity_path = crate::orchestration::auth::claude::identity_path(&profile);
+            if let Ok(bytes) = crate::io::read_file(&crate::io::LocalFileSource, &identity_path, limits) {
+                if let Ok(value) = serde_json::from_slice::<Value>(&bytes) {
+                    if let Some(uuid) = value.pointer("/oauthAccount/accountUuid").and_then(Value::as_str).filter(|uuid| !uuid.trim().is_empty()) {
+                        return Ok(format!("claude-account:{uuid}"));
+                    }
+                }
+            }
+        }
+        Ok(profile.to_string_lossy().into_owned())
+    }
+
+    pub fn set_limit_cooldown(
+        &self,
+        profile: &Path,
+        family: Option<&str>,
+        reported_until: Option<f64>,
+        now: f64,
+        default_seconds: f64,
+    ) -> Result<f64> {
+        if let Some(family) = family.and_then(crate::accounts::claude_model_family) {
+            self.model_store(family).set_cooldown(profile, reported_until, now, default_seconds)
+        } else {
+            self.set_cooldown(profile, reported_until, now, default_seconds)
+        }
+    }
+
+    pub fn apply_model_cooldowns(&self, account: &mut super::AccountSnapshot, now: f64) -> Result<()> {
+        if account.engine == crate::Engine::Claude {
+            for family in ["fable", "opus", "sonnet", "haiku"] {
+                if let Some(until) = self.model_store(family).cooldown_until(&account.profile, now)? {
+                    account.model_weekly.insert(family.into(), crate::accounts::ModelQuotaWindow {
+                        used_percent: Some(100.0), resets_at: Some(until),
+                    });
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn new(cooldowns: impl Into<PathBuf>, paused: impl Into<PathBuf>) -> Self {
         Self {
             cooldowns: cooldowns.into(),
             paused: paused.into(),
+            model_scoped: false,
         }
     }
 
@@ -28,7 +82,7 @@ impl AccountControlStore {
     }
 
     pub fn cooldown_until(&self, profile: &Path, now: f64) -> Result<Option<f64>> {
-        let key = normalized(profile)?.to_string_lossy().into_owned();
+        let key = self.key(profile)?;
         Ok(self
             .cooldowns()
             .get(&key)
@@ -43,7 +97,7 @@ impl AccountControlStore {
         now: f64,
         default_seconds: f64,
     ) -> Result<f64> {
-        let key = normalized(profile)?.to_string_lossy().into_owned();
+        let key = self.key(profile)?;
         let candidate = reported_until
             .filter(|value| value.is_finite() && *value > now)
             .unwrap_or(now + default_seconds)
@@ -68,7 +122,7 @@ impl AccountControlStore {
     }
 
     pub fn clear_cooldown(&self, profile: &Path) -> Result<()> {
-        let key = normalized(profile)?.to_string_lossy().into_owned();
+        let key = self.key(profile)?;
         update_json_locked::<BTreeMap<String, f64>, _>(
             &self.cooldowns,
             &lock_path(&self.cooldowns),
@@ -213,6 +267,29 @@ mod tests {
     use std::fs;
 
     use super::*;
+
+    #[test]
+    fn model_cooldowns_follow_account_identity_through_profile_swaps() {
+        let temp = tempfile::tempdir().unwrap();
+        let store = AccountControlStore::new(temp.path().join("cooldowns.json"), temp.path().join("paused.json"));
+        let first = temp.path().join("first");
+        let second = temp.path().join("second");
+        fs::create_dir_all(&first).unwrap();
+        fs::create_dir_all(&second).unwrap();
+        let first_id = br#"{"oauthAccount":{"accountUuid":"fixture-first"}}"#;
+        let second_id = br#"{"oauthAccount":{"accountUuid":"fixture-second"}}"#;
+        fs::write(first.join(".claude.json"), first_id).unwrap();
+        fs::write(second.join(".claude.json"), second_id).unwrap();
+        store.set_limit_cooldown(&first, Some("fable"), Some(2_000.0), 1_000.0, 300.0).unwrap();
+        assert_eq!(store.cooldown_until(&first, 1_100.0).unwrap(), None);
+        assert_eq!(store.model_store("fable").cooldown_until(&first, 1_100.0).unwrap(), Some(2_000.0));
+        assert_eq!(store.model_store("opus").cooldown_until(&first, 1_100.0).unwrap(), None);
+        fs::write(first.join(".claude.json"), second_id).unwrap();
+        fs::write(second.join(".claude.json"), first_id).unwrap();
+        assert_eq!(store.model_store("fable").cooldown_until(&first, 1_100.0).unwrap(), None);
+        assert_eq!(store.model_store("fable").cooldown_until(&second, 1_100.0).unwrap(), Some(2_000.0));
+        assert_eq!(store.model_store("fable").cooldown_until(&second, 2_001.0).unwrap(), None);
+    }
 
     #[test]
     fn pause_and_cooldown_changes_are_atomic_and_live() {

@@ -203,6 +203,7 @@ impl neomax_core::accounts::QuotaSnapshotSource for LocalQuotaRefresher {
             available: true,
             five_hour_percent: numeric.then_some(cache.five_hour.used_percent).flatten(),
             weekly_percent: cache.seven_day.used_percent,
+            model_weekly: cache.model_weekly.clone(),
             five_hour_reset_at: numeric
                 .then_some(cache.five_hour.resets_at.and_then(epoch_datetime))
                 .flatten(),

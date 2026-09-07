@@ -18,13 +18,18 @@ pub struct QuotaTarget {
 pub enum QuotaWindow {
     FiveHour,
     Weekly,
+    ModelWeekly(&'static str),
 }
 
 impl QuotaWindow {
-    pub const fn as_str(self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         match self {
             Self::FiveHour => "5h",
             Self::Weekly => "weekly",
+            Self::ModelWeekly("fable") => "seven_day_overage_included",
+            Self::ModelWeekly("opus") => "seven_day_opus",
+            Self::ModelWeekly("sonnet") => "seven_day_sonnet",
+            Self::ModelWeekly(_) => "seven_day_haiku",
         }
     }
 }
@@ -42,6 +47,15 @@ pub fn quota_advice(
     target: &QuotaTarget,
     now: DateTime<Utc>,
 ) -> QuotaRotationAdvice {
+    quota_advice_for_model(quota, target, "", now)
+}
+
+pub fn quota_advice_for_model(
+    quota: &dyn QuotaSnapshotSource,
+    target: &QuotaTarget,
+    model: &str,
+    now: DateTime<Utc>,
+) -> QuotaRotationAdvice {
     let mut account = AccountSnapshot {
         engine: target.engine,
         account: String::new(),
@@ -54,6 +68,7 @@ pub fn quota_advice(
         live_workers: 0,
         five_hour_percent: None,
         weekly_percent: None,
+        model_weekly: Default::default(),
         cooldown_until: None,
         five_hour_reset_at: None,
         weekly_reset_at: None,
@@ -63,6 +78,17 @@ pub fn quota_advice(
     let weekly = account.weekly_at(now);
     let advice = rotation_advice(target.engine, five, weekly);
     if !advice.rotate {
+        let scoped = account.for_model(model, now);
+        if scoped.weekly_at(now) >= crate::accounts::WEEKLY_HARD_PERCENT {
+            if let Some(family) = crate::accounts::claude_model_family(model) {
+                return QuotaRotationAdvice {
+                    rotate: true,
+                    reason: format!("{family} weekly usage wall"),
+                    resets_at: scoped.weekly_reset_at,
+                    limit_window: Some(QuotaWindow::ModelWeekly(family)),
+                };
+            }
+        }
         return QuotaRotationAdvice {
             rotate: false,
             reason: advice.reason,

@@ -81,7 +81,9 @@ fn claude_usage_is_parsed_and_cached_without_a_live_provider_call() {
     .unwrap();
     let http = Arc::new(FakeHttp::new(serde_json::json!({
         "five_hour": {"utilization": 42.5, "resets_at": "2040-01-02T03:04:05Z"},
-        "seven_day": {"utilization": 8.0, "resets_at": 4102444800_i64}
+        "seven_day": {"utilization": 8.0, "resets_at": 4102444800_i64},
+        "limits": [{"kind":"weekly_scoped","percent":100.0,"resets_at":4102444800_i64,"scope":{"model":{"display_name":"Fable"}}}],
+        "cinder_cove": {"utilization": 75.0}
     })));
     let refresher = LocalQuotaRefresher::with_http(paths.clone(), http.clone());
     let report = refresher.refresh(true).unwrap();
@@ -92,6 +94,8 @@ fn claude_usage_is_parsed_and_cached_without_a_live_provider_call() {
         .unwrap();
     assert_eq!(cache.five_hour.used_percent, Some(42.5));
     assert_eq!(cache.seven_day.used_percent, Some(8.0));
+    assert_eq!(cache.model_weekly["fable"].used_percent, Some(100.0));
+    assert_eq!(cache.model_weekly.len(), 1);
     let calls = http.calls.lock().unwrap();
     assert_eq!(calls.len(), 1);
     assert_eq!(calls[0].0, claude::CLAUDE_USAGE_URL);

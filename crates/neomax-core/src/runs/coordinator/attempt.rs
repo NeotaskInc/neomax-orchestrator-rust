@@ -1,7 +1,7 @@
 use chrono::Utc;
 
 use crate::accounts::{
-    quota_advice, QuotaRotationAdvice, QuotaSnapshotSource, QuotaTarget, QuotaWindow,
+    quota_advice_for_model, QuotaRotationAdvice, QuotaSnapshotSource, QuotaTarget, QuotaWindow,
 };
 use crate::providers::ProviderRegistry;
 use crate::runs::execution::{
@@ -57,6 +57,7 @@ impl AttemptRunner for NativeAttemptRunner<'_> {
             profile: run.profile.clone(),
         };
         let run_id = run.id.clone();
+        let model = run.model.clone();
         let resumed = resume_session.is_some();
         let mut outcome = AttemptSupervisor::new(provider, SupervisorConfig::for_run(run)?)
             .run_monitored(
@@ -67,9 +68,10 @@ impl AttemptRunner for NativeAttemptRunner<'_> {
                 |record| self.runs.save_preserving_kill(record).map(|_| ()),
                 || match self.runs.load(&run_id) {
                     Ok(record) if record.killed => Ok(SupervisorDirective::Abort),
-                    Ok(_) => Ok(supervisor_directive(quota_advice(
+                    Ok(_) => Ok(supervisor_directive(quota_advice_for_model(
                         self.quota,
                         &target,
+                        &model,
                         Utc::now(),
                     ))),
                     Err(error) => Err(error),

@@ -31,9 +31,14 @@ impl ProviderExecution {
             live_work: &live_work,
         };
         let now = self.inner.clock.now();
+        let model = resolve_scheduler_model(
+            &self.inner.settings.config_path, request.engine, request.model.as_deref(),
+            &model_environment(&request.environment),
+        ).map_err(|error| DispatchError::terminal(error.to_string()))?;
         let accounts = inventory
             .routing_snapshots(&WorkerScope::only(request.engine), now)
-            .map_err(classify_selection_error)?;
+            .map_err(classify_selection_error)?
+            .into_iter().map(|account| account.for_model(&model, now)).collect::<Vec<_>>();
         let decision = select_account(
             &accounts,
             &AccountSelector::Auto,

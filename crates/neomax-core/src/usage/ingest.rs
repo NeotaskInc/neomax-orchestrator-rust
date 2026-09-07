@@ -57,7 +57,11 @@ pub fn parse_claude_line(line: &str, account: &str, fallback_ts: i64) -> Option<
         completions: None,
         errors: 0,
         rate_limits: 0,
-        extra: BTreeMap::new(),
+        extra: usage.get("cache_creation")
+            .and_then(|value| value.get("ephemeral_1h_input_tokens"))
+            .and_then(Value::as_u64)
+            .map(|tokens| BTreeMap::from([("cache_write_1h".into(), Value::from(tokens))]))
+            .unwrap_or_default(),
     })
 }
 

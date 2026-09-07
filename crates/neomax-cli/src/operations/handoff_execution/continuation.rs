@@ -84,7 +84,26 @@ pub(crate) fn continue_tracked_run(
     trigger: RotationTrigger,
 ) -> Result<ContinuationMode> {
     let mut run = runs.load(&original.id)?;
-    let resets_at = run.resets_at;
+    let scoped_source = selection
+        .source
+        .for_model(&run.model, context_time(context));
+    let limit_family = (run.engine == Engine::Claude)
+        .then(|| {
+            run.limit_window
+                .as_deref()
+                .and_then(neomax_core::usage::claude_limit_family)
+        })
+        .flatten()
+        .or_else(|| {
+            selection
+                .source
+                .limiting_model_family(&run.model, context_time(context))
+        });
+    let resets_at = run.resets_at.or_else(|| {
+        limit_family
+            .and(scoped_source.weekly_reset_at)
+            .map(|reset| reset.timestamp() as f64)
+    });
     let mut request = ContinuationRequest::from_run_with_source_eligibility(
         &run,
         target.clone(),
@@ -98,6 +117,14 @@ pub(crate) fn continue_tracked_run(
     request.reason = options.reason.clone();
     request.cwd = run.cwd.clone().unwrap_or_else(|| options.cwd.clone());
     request.target = target.clone();
+    if request.limit_window.is_none() {
+        request.limit_window = limit_family.map(|family| {
+            neomax_core::accounts::QuotaWindow::ModelWeekly(family)
+                .as_str()
+                .into()
+        });
+        request.resets_at = resets_at;
+    }
 
     let handoff = HandoffStore::at_state_dir(&context.paths.state);
     let rotation = NoCredentialRotation;
@@ -122,8 +149,9 @@ pub(crate) fn continue_tracked_run(
     runs.save_preserving_control_markers(&run)?;
 
     let controls = AccountControlStore::new(&context.paths.cooldowns, &context.paths.paused);
-    controls.set_cooldown(
+    controls.set_limit_cooldown(
         &outcome.cooldown_profile,
+        limit_family,
         resets_at,
         context.now as f64,
         Duration::from_secs(30 * 60).as_secs_f64(),

@@ -9,10 +9,12 @@ const MAX_CONTROL_BYTES: u64 = 4 * 1024 * 1024;
 pub(crate) struct ControlState {
     cooldowns: BTreeMap<String, f64>,
     paused: BTreeSet<PathBuf>,
+    store: neomax_core::accounts::AccountControlStore,
 }
 
 impl ControlState {
     pub(crate) fn load(cooldowns: &Path, paused: &Path) -> Self {
+        let store = neomax_core::accounts::AccountControlStore::new(cooldowns, paused);
         let cooldowns = read_control(cooldowns)
             .and_then(|value| serde_json::from_value(value).ok())
             .unwrap_or_default();
@@ -29,7 +31,19 @@ impl ControlState {
                 _ => BTreeSet::new(),
             })
             .unwrap_or_default();
-        Self { cooldowns, paused }
+        Self {
+            cooldowns,
+            paused,
+            store,
+        }
+    }
+
+    pub(crate) fn apply_model_cooldowns(
+        &self,
+        snapshot: &mut neomax_core::accounts::AccountSnapshot,
+        now: f64,
+    ) -> neomax_core::Result<()> {
+        self.store.apply_model_cooldowns(snapshot, now)
     }
 
     pub(crate) fn is_paused(&self, profile: &Path) -> bool {

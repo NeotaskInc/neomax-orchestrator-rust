@@ -8,6 +8,7 @@ use serde::Serialize;
 pub(crate) struct QuotaView {
     pub five_hour_percent: Option<f64>,
     pub weekly_percent: Option<f64>,
+    pub model_weekly: BTreeMap<String, neomax_core::usage::QuotaWindow>,
     pub five_hour_reset_at: Option<i64>,
     pub weekly_reset_at: Option<i64>,
     pub cooldown_until: Option<i64>,

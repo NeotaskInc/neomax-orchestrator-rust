@@ -7,7 +7,7 @@ use crate::orchestration::continuation::{
 };
 use crate::runs::coordinator::events::{append_attempt, append_failover_with_strategy};
 use crate::runs::failover::{
-    FailoverDecision, ModelResolver, NoModelOverrides, apply_failover_with_resolver, plan_failover,
+    FailoverDecision, ModelResolver, NoModelOverrides, apply_failover_with_resolver, plan_failover_with_resolver,
 };
 use crate::runs::lifecycle::{
     Finalization, FinalizeOptions, RunFinalizer, exit_code, mark_attempt_started,
@@ -133,6 +133,8 @@ impl RunCoordinator<'_> {
                 return self.finish(run, RunStatus::Aborted, finished_at, warnings);
             }
 
+            let limit_family = (run.engine == crate::Engine::Claude)
+                .then(|| run.limit_window.as_deref().and_then(crate::usage::claude_limit_family)).flatten();
             let accounts = match self.inventory.routing_snapshots(self.scope, finished_at) {
                 Ok(accounts) => accounts,
                 Err(error) => {
@@ -140,6 +142,7 @@ impl RunCoordinator<'_> {
                         &mut warnings,
                         self.controls,
                         &run.profile,
+                        limit_family,
                         run.resets_at,
                         finished_at,
                         self.default_cooldown,
@@ -151,7 +154,7 @@ impl RunCoordinator<'_> {
             if self.refresh_control_markers(run)? {
                 return self.finish(run, RunStatus::Aborted, finished_at, warnings);
             }
-            let decision = match self.plan_target(run, status, &accounts, finished_at) {
+            let decision = match self.plan_target(run, status, &accounts, finished_at, models) {
                 Ok(decision) => decision,
                 Err(error) => {
                     warnings.push(format!("rotation claim: {error}"));
@@ -159,6 +162,7 @@ impl RunCoordinator<'_> {
                         &mut warnings,
                         self.controls,
                         &run.profile,
+                        limit_family,
                         run.resets_at,
                         finished_at,
                         self.default_cooldown,
@@ -200,6 +204,7 @@ impl RunCoordinator<'_> {
                                     &mut warnings,
                                     self.controls,
                                     &run.profile,
+                        limit_family,
                                     run.resets_at,
                                     finished_at,
                                     self.default_cooldown,
@@ -254,6 +259,7 @@ impl RunCoordinator<'_> {
                             &mut warnings,
                             self.controls,
                             &cooldown_profile,
+                        limit_family,
                             resets_at,
                             finished_at,
                             self.default_cooldown,
@@ -265,6 +271,7 @@ impl RunCoordinator<'_> {
                             &mut warnings,
                             self.controls,
                             &cooldown_profile,
+                        limit_family,
                             resets_at,
                             finished_at,
                             self.default_cooldown,
@@ -277,6 +284,7 @@ impl RunCoordinator<'_> {
                         &mut warnings,
                         self.controls,
                         &run.profile,
+                        limit_family,
                         run.resets_at,
                         finished_at,
                         self.default_cooldown,
@@ -315,9 +323,10 @@ impl RunCoordinator<'_> {
         status: RunStatus,
         accounts: &[crate::accounts::AccountSnapshot],
         now: chrono::DateTime<chrono::Utc>,
+        models: &dyn ModelResolver,
     ) -> Result<FailoverDecision> {
         loop {
-            let decision = plan_failover(run, status, accounts, self.scope, now, &self.selection);
+            let decision = plan_failover_with_resolver(run, status, accounts, self.scope, now, &self.selection, models);
             let FailoverDecision::Continue(target) = decision else {
                 return Ok(decision);
             };
@@ -367,12 +376,14 @@ fn record_cooldown(
     warnings: &mut Vec<String>,
     controls: &AccountControlStore,
     profile: &std::path::Path,
+    family: Option<&str>,
     resets_at: Option<f64>,
     now: chrono::DateTime<chrono::Utc>,
     default_cooldown: Duration,
 ) {
-    if let Err(error) = controls.set_cooldown(
+    if let Err(error) = controls.set_limit_cooldown(
         profile,
+        family,
         resets_at,
         now.timestamp_millis() as f64 / 1000.0,
         default_cooldown.as_secs_f64(),

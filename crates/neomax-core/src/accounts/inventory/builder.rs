@@ -50,6 +50,7 @@ impl AccountInventory<'_> {
                     live_workers: live.count(engine, &profile.path),
                     five_hour_percent: None,
                     weekly_percent: None,
+                    model_weekly: Default::default(),
                     cooldown_until: self
                         .controls
                         .cooldown_until(&profile.path, now.timestamp_millis() as f64 / 1000.0)?
@@ -59,6 +60,7 @@ impl AccountInventory<'_> {
                 };
                 let quota = self.quota.quota_snapshot(engine, &profile.path);
                 snapshot.apply_quota(&quota, now);
+                self.controls.apply_model_cooldowns(&mut snapshot, now.timestamp_millis() as f64 / 1000.0)?;
                 snapshots.push(snapshot);
             }
         }

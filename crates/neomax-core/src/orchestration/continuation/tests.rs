@@ -90,6 +90,7 @@ fn request(engine: Engine, target_engine: Engine, trigger: RotationTrigger) -> C
             live_workers: 0,
             five_hour_percent: Some(12.0),
             weekly_percent: Some(20.0),
+            model_weekly: Default::default(),
             cooldown_until: None,
             five_hour_reset_at: None,
             weekly_reset_at: None,

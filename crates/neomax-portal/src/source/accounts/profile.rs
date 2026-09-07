@@ -108,6 +108,7 @@ pub(crate) fn inspect_profile(
         live_workers: 0,
         five_hour_percent: None,
         weekly_percent: None,
+        model_weekly: Default::default(),
         cooldown_until: context
             .controls
             .cooldown_until(&profile.path, context.now.timestamp() as f64)
@@ -117,6 +118,9 @@ pub(crate) fn inspect_profile(
     };
     let cache = context.usage.load(engine, &profile.path);
     context.usage.hydrate(&mut snapshot, context.now);
+    context
+        .controls
+        .apply_model_cooldowns(&mut snapshot, context.now.timestamp() as f64)?;
 
     let workers = context
         .runs
@@ -150,10 +154,14 @@ pub(crate) fn inspect_profile(
         .cooldown_until
         .map(|value| value.timestamp())
         .unwrap_or_default();
-    let usage = matches!(quota_support(engine), QuotaSupport::Numeric)
+    let mut usage = matches!(quota_support(engine), QuotaSupport::Numeric)
         .then(|| cache.as_ref())
         .flatten()
         .and_then(|value| serde_json::to_value(value).ok());
+    if !snapshot.model_weekly.is_empty() {
+        let value = usage.get_or_insert_with(|| serde_json::json!({}));
+        value["model_weekly"] = serde_json::to_value(&snapshot.model_weekly)?;
+    }
     let telemetry = telemetry_for(
         engine,
         &profile.account,

@@ -18,6 +18,7 @@ pub(super) fn account(name: &str, five: f64, weekly: f64, live: u32) -> AccountS
         live_workers: live,
         five_hour_percent: Some(five),
         weekly_percent: Some(weekly),
+        model_weekly: Default::default(),
         cooldown_until: None,
         five_hour_reset_at: None,
         weekly_reset_at: None,

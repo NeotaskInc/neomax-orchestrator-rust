@@ -12,7 +12,7 @@ use neomax_core::orchestration::continuation::{
 };
 use neomax_core::providers::ProviderRegistry;
 use neomax_core::runs::execution::{AttemptSupervisor, SupervisorConfig, prepare_attempt};
-use neomax_core::runs::failover::{FailoverDecision, FailoverTarget, plan_failover};
+use neomax_core::runs::failover::{FailoverDecision, FailoverTarget, plan_failover_with_resolver};
 use neomax_core::runs::{RunLiveWorkSource, RunRecord, RunStatus, RunStore, SystemProcessProbe};
 use neomax_core::usage::UsageCacheStore;
 use neomax_core::{StatePaths, WorkerScope};
@@ -154,8 +154,25 @@ fn rotate_one(
     let mut run = runs.load(&original.id)?;
     let source_engine = run.engine;
     let source_account = run.account();
+    let model_overrides =
+        neomax_core::settings::process_environment_model_overrides(&settings.config_path)?;
+    let limit_family = (run.engine == neomax_core::Engine::Claude)
+        .then(|| {
+            run.limit_window
+                .as_deref()
+                .and_then(neomax_core::usage::claude_limit_family)
+        })
+        .flatten();
     let target = loop {
-        let decision = plan_failover(&run, RunStatus::Limit, accounts, scope, now, selection);
+        let decision = plan_failover_with_resolver(
+            &run,
+            RunStatus::Limit,
+            accounts,
+            scope,
+            now,
+            selection,
+            &model_overrides,
+        );
         let target = match decision {
             FailoverDecision::Continue(target) => target,
             FailoverDecision::Stop(stop) => {
@@ -250,8 +267,9 @@ fn rotate_one(
     };
     runs.save_preserving_control_markers(&run)?;
     let cooldown_profile = outcome.cooldown_profile.clone();
-    controls.set_cooldown(
+    controls.set_limit_cooldown(
         &cooldown_profile,
+        limit_family,
         resets_at,
         now.timestamp_millis() as f64 / 1000.0,
         Duration::from_secs(30 * 60).as_secs_f64(),

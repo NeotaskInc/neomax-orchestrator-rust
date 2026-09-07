@@ -45,16 +45,28 @@ pub(crate) fn select_with_profile(
     environment: &BTreeMap<String, String>,
 ) -> Result<HandoffSelection> {
     let current_profile = canonical_profile(current_profile)?;
+    let raw_accounts = accounts;
     let accounts = accounts
         .iter()
         .filter(|account| !is_rooted_but_not_absolute(&account.profile))
-        .cloned()
+        .map(|account| {
+            account.for_model(
+                options
+                    .model_overrides
+                    .get(&account.engine)
+                    .map(String::as_str)
+                    .unwrap_or_else(|| {
+                        neomax_core::providers::catalog::default_model_id(account.engine)
+                    }),
+                context_time(context),
+            )
+        })
         .collect::<Vec<_>>();
     let source = source_account(
         options.engine,
         &current_profile,
         options.source_account.as_deref(),
-        &accounts,
+        raw_accounts,
         environment,
         &context.paths.home,
     )?;
@@ -85,11 +97,17 @@ pub(crate) fn select_with_profile(
     let target_reset = target
         .as_ref()
         .and_then(|selection| reset_label(selection.account.weekly_reset_at, request.now));
+    let source_model = options
+        .model_overrides
+        .get(&source.engine)
+        .map(String::as_str)
+        .unwrap_or_else(|| neomax_core::providers::catalog::default_model_id(source.engine));
+    let scoped_source = source.for_model(source_model, request.now);
     let check = check_result(
         options.engine,
         source.account.clone(),
-        source.five_hour_at(request.now),
-        source.weekly_at(request.now),
+        scoped_source.five_hour_at(request.now),
+        scoped_source.weekly_at(request.now),
         target_account,
         target_reset,
         None,

@@ -612,6 +612,7 @@ macro_rules! neomax_domain_declarations {
                     "usage::ingest",
                     "usage::ledger",
                     "usage::pricing",
+                    "usage::model_quota",
                     "usage::report",
                     "usage::types",
                     "usage::report::builder",

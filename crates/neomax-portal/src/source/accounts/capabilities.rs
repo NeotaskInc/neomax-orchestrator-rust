@@ -21,7 +21,7 @@ pub(crate) fn capabilities_for(
     let spec = catalog::spec(engine);
     let binary = binary_available(&spec.default_binary, &spec.binary_env, environment);
     let numeric_quota = matches!(quota_support(engine), QuotaSupport::Numeric);
-    let windows = if numeric_quota {
+    let mut windows = if numeric_quota {
         ["five_hour", "seven_day"]
             .into_iter()
             .filter(|key| {
@@ -37,6 +37,20 @@ pub(crate) fn capabilities_for(
     } else {
         Vec::new()
     };
+    if numeric_quota {
+        if let Some(scoped) = usage
+            .as_ref()
+            .and_then(|value| value.get("model_weekly"))
+            .and_then(Value::as_object)
+        {
+            windows.extend(
+                scoped
+                    .iter()
+                    .filter(|(_, window)| window.get("used_percent").and_then(number).is_some())
+                    .map(|(family, _)| format!("model_weekly.{family}")),
+            );
+        }
+    }
     let windows_available = !windows.is_empty();
     let source = if windows_available {
         usage

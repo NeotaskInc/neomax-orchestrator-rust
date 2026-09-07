@@ -21,13 +21,7 @@ const CACHE_IDENTITY_DOMAIN: &[u8] = b"neomax-usage-profile-v2\0";
 const INVALID_CACHE_IDENTITY_DOMAIN: &[u8] = b"neomax-invalid-usage-profile-v1\0";
 const CACHE_PROFILE_IDENTITY_KEY: &str = "neomax_profile_identity";
 
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct QuotaWindow {
-    #[serde(default, deserialize_with = "optional_number")]
-    pub used_percent: Option<f64>,
-    #[serde(default, deserialize_with = "optional_number")]
-    pub resets_at: Option<f64>,
-}
+pub use crate::accounts::ModelQuotaWindow as QuotaWindow;
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ProviderUsageCache {
@@ -35,6 +29,8 @@ pub struct ProviderUsageCache {
     pub five_hour: QuotaWindow,
     #[serde(default)]
     pub seven_day: QuotaWindow,
+    #[serde(default)]
+    pub model_weekly: BTreeMap<String, QuotaWindow>,
     #[serde(default)]
     pub source: Option<String>,
     #[serde(default, deserialize_with = "optional_number")]
@@ -100,8 +96,10 @@ impl UsageCacheStore {
         let identity = profile_identity(profile)?;
         let [path, legacy] = self.cache_paths(engine, profile);
         let limits = ReadLimits::new(MAX_CACHE_BYTES, CACHE_READ_TIMEOUT).ok()?;
-        let native = read_cache_for_identity(&path, limits, &identity);
-        let legacy_cache = read_cache_for_identity(&legacy, limits, &identity);
+        let native = read_cache_for_identity(&path, limits, &identity)
+            .filter(|cache| cache_matches_claude_identity(engine, profile, cache));
+        let legacy_cache = read_cache_for_identity(&legacy, limits, &identity)
+            .filter(|cache| cache_matches_claude_identity(engine, profile, cache));
 
         if let Some(native) = native {
             if let Some(legacy_cache) = legacy_cache.filter(|cache| {
@@ -291,6 +289,21 @@ fn lexical_normalize(path: &Path) -> PathBuf {
     }
 }
 
+fn cache_matches_claude_identity(engine: Engine, profile: &Path, cache: &ProviderUsageCache) -> bool {
+    if engine != Engine::Claude {
+        return true;
+    }
+    let Some(cached_uuid) = cache.extra.get("acct_uuid").and_then(serde_json::Value::as_str) else {
+        return true;
+    };
+    let path = crate::orchestration::auth::claude::identity_path(profile);
+    let Ok(limits) = ReadLimits::new(MAX_CACHE_BYTES, CACHE_READ_TIMEOUT) else { return false };
+    let Ok(bytes) = read_file(&LocalFileSource, &path, limits) else { return true };
+    let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) else { return true };
+    value.pointer("/oauthAccount/accountUuid").and_then(serde_json::Value::as_str)
+        .is_none_or(|uuid| uuid == cached_uuid)
+}
+
 impl QuotaSnapshotSource for UsageCacheStore {
     fn quota_snapshot(&self, engine: Engine, profile: &Path) -> QuotaSnapshot {
         let Some(cache) = self.load(engine, profile) else {
@@ -306,6 +319,7 @@ impl QuotaSnapshotSource for UsageCacheStore {
             available: true,
             five_hour_percent: numeric.then_some(cache.five_hour.used_percent).flatten(),
             weekly_percent: cache.seven_day.used_percent,
+            model_weekly: cache.model_weekly.clone(),
             five_hour_reset_at: numeric
                 .then_some(cache.five_hour.resets_at.and_then(epoch_datetime))
                 .flatten(),
