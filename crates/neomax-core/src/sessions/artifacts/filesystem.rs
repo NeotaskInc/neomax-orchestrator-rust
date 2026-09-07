@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 
 use walkdir::WalkDir;
 
-use crate::io::{read_file, BoundedIoError, LocalFileSource, ReadLimits};
 use crate::Result;
+use crate::io::{BoundedIoError, LocalFileSource, ReadLimits, read_file};
 
 use super::index::ArtifactIndex;
 use super::matching::matches_kind;
@@ -114,6 +114,20 @@ impl FsArtifactSource {
 
 impl ArtifactSource for FsArtifactSource {
     fn discover(&self, profile: &Path, kind: ArtifactKind, cutoff: i64) -> Result<Vec<Artifact>> {
+        let mut artifacts = Vec::new();
+        self.visit(profile, kind, cutoff, &mut |artifact| {
+            artifacts.push(artifact)
+        })?;
+        Ok(artifacts)
+    }
+
+    fn visit(
+        &self,
+        profile: &Path,
+        kind: ArtifactKind,
+        cutoff: i64,
+        visitor: &mut dyn FnMut(Artifact),
+    ) -> Result<()> {
         let mut paths = Vec::new();
         for entry in WalkDir::new(profile)
             .follow_links(false)
@@ -126,14 +140,12 @@ impl ArtifactSource for FsArtifactSource {
             }
         }
         paths.sort();
-        paths
-            .into_iter()
-            .filter_map(|path| match self.load(profile, path, kind, cutoff) {
-                Ok(Some(artifact)) => Some(Ok(artifact)),
-                Ok(None) => None,
-                Err(error) => Some(Err(error)),
-            })
-            .collect()
+        for path in paths {
+            if let Some(artifact) = self.load(profile, path, kind, cutoff)? {
+                visitor(artifact);
+            }
+        }
+        Ok(())
     }
 
     fn index(&self, profile: &Path, cutoff: i64) -> Result<ArtifactIndex> {

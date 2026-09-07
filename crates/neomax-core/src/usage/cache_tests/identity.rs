@@ -1,8 +1,22 @@
 use std::path::PathBuf;
 
-use super::super::{legacy_path, write_json_atomic, UsageCacheStore, MAX_CACHE_BYTES};
+use super::super::{MAX_CACHE_BYTES, UsageCacheStore, legacy_path, write_json_atomic};
 use super::fixtures::cache;
 use crate::Engine;
+
+#[test]
+fn read_only_legacy_cache_inspection_does_not_create_or_rewrite_files() {
+    let temp = tempfile::tempdir().unwrap();
+    let store = UsageCacheStore::new(temp.path().join("usage"));
+    let profile = temp.path().join("profile");
+    let legacy = legacy_path(&store.directory, Engine::Codex, &profile);
+    write_json_atomic(&legacy, &cache(27.0)).unwrap();
+    let original = std::fs::read(&legacy).unwrap();
+    let loaded = store.load_read_only(Engine::Codex, &profile).unwrap();
+    assert_eq!(loaded.five_hour.used_percent, Some(27.0));
+    assert_eq!(std::fs::read(&legacy).unwrap(), original);
+    assert!(!store.path(Engine::Codex, &profile).exists());
+}
 
 #[test]
 fn oversized_cache_is_ignored_before_deserialization() {
@@ -29,16 +43,20 @@ fn profiles_with_the_same_basename_have_distinct_private_cache_identity() {
     let first_path = store.path(Engine::Claude, &first);
     let second_path = store.path(Engine::Claude, &second);
     assert_ne!(first_path, second_path);
-    assert!(!first_path
-        .file_name()
-        .unwrap()
-        .to_string_lossy()
-        .contains(".claude"));
-    assert!(!second_path
-        .file_name()
-        .unwrap()
-        .to_string_lossy()
-        .contains(".claude"));
+    assert!(
+        !first_path
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .contains(".claude")
+    );
+    assert!(
+        !second_path
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .contains(".claude")
+    );
 
     store.save(Engine::Claude, &first, &cache(12.0)).unwrap();
     store.save(Engine::Claude, &second, &cache(87.0)).unwrap();

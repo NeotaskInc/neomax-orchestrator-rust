@@ -29,6 +29,12 @@ impl EffectiveSettings {
         environment: &BTreeMap<String, String>,
     ) -> Result<Self> {
         validate_concurrency(&file.concurrency)?;
+        let reset_aware_ranking = match file.extra.get("reset_aware_ranking") {
+            None => false,
+            Some(value) => value.as_bool().ok_or_else(|| {
+                crate::Error::InvalidArgument("reset_aware_ranking must be true or false".into())
+            })?,
+        };
         let mut concurrency = file.concurrency;
         let mut source = config_path.display().to_string();
         if let Some((key, raw)) =
@@ -65,7 +71,21 @@ impl EffectiveSettings {
             concurrency.queue_ttl_seconds = parse_positive_seconds(key, raw)?;
         }
         validate_concurrency(&concurrency)?;
+        let codex_fast = match environment
+            .get(super::constants::CODEX_FAST_ENV)
+            .map(String::as_str)
+        {
+            None | Some("0" | "false" | "off") => false,
+            Some("1" | "true" | "on") => true,
+            Some(_) => {
+                return Err(crate::Error::InvalidArgument(
+                    "NEOMAX_CODEX_FAST must be 1 or 0".into(),
+                ));
+            }
+        };
         Ok(Self {
+            reset_aware_ranking,
+            codex_fast,
             concurrency,
             config_path,
             max_subagents_source: source,
@@ -74,6 +94,10 @@ impl EffectiveSettings {
 
     pub fn agent_environment(&self) -> BTreeMap<String, String> {
         let mut environment = BTreeMap::from([
+            (
+                super::constants::CODEX_FAST_ENV.into(),
+                if self.codex_fast { "1" } else { "0" }.into(),
+            ),
             (
                 MAX_SUBAGENTS_ENV.into(),
                 self.concurrency.max_subagents.to_string(),

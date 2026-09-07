@@ -48,6 +48,8 @@ impl Default for ConcurrencySettings {
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct EffectiveSettings {
+    pub reset_aware_ranking: bool,
+    pub codex_fast: bool,
     pub concurrency: ConcurrencySettings,
     pub config_path: PathBuf,
     pub max_subagents_source: String,

@@ -13,6 +13,7 @@ pub struct HeaderMetadata {
     pub slug: Option<String>,
     pub label: Option<String>,
     pub session_id: Option<String>,
+    pub parent_id: Option<String>,
     pub started: Option<i64>,
     pub extra: BTreeMap<String, Value>,
 }
@@ -66,6 +67,7 @@ pub fn claude_head_meta(head: &str) -> HeaderMetadata {
 
 pub fn codex_head_meta(head: &str) -> HeaderMetadata {
     let mut meta = HeaderMetadata::default();
+    let mut session_metadata_seen = false;
     for event in json_lines(head) {
         if meta.extra.is_empty() {
             if let Some(object) = event.as_object() {
@@ -84,9 +86,23 @@ pub fn codex_head_meta(head: &str) -> HeaderMetadata {
                 string_field(payload, "branch").or_else(|| string_field(payload, "git_branch"));
         }
         if meta.session_id.is_none() {
-            meta.session_id =
-                string_field(payload, "session_id").or_else(|| string_field(&event, "session_id"));
+            meta.session_id = string_field(payload, "session_id")
+                .or_else(|| string_field(&event, "session_id"))
+                .or_else(|| {
+                    (event.get("type").and_then(Value::as_str) == Some("session_meta"))
+                        .then(|| string_field(payload, "id"))
+                        .flatten()
+                });
         }
+        if !session_metadata_seen {
+            meta.parent_id = string_field(payload, "parent_thread_id").or_else(|| {
+                payload
+                    .pointer("/source/subagent/thread_spawn/parent_thread_id")
+                    .and_then(Value::as_str)
+                    .map(str::to_string)
+            });
+        }
+        session_metadata_seen |= event.get("type").and_then(Value::as_str) == Some("session_meta");
         if meta.started.is_none() {
             meta.started = payload
                 .get("timestamp")

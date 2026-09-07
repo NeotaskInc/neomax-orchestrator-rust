@@ -128,6 +128,8 @@ fn reports_budget_metrics_and_persists_runtime_tuning() {
 fn reads_the_global_limits_from_effective_settings() {
     let temp = tempfile::tempdir().unwrap();
     let settings = EffectiveSettings {
+        reset_aware_ranking: false,
+        codex_fast: false,
         concurrency: ConcurrencySettings {
             max_subagents: 73,
             max_tasks: 9,
@@ -146,6 +148,8 @@ fn reads_the_global_limits_from_effective_settings() {
 fn reads_the_reservation_ttl_from_effective_settings() {
     let temp = tempfile::tempdir().unwrap();
     let settings = EffectiveSettings {
+        reset_aware_ranking: false,
+        codex_fast: false,
         concurrency: ConcurrencySettings {
             max_subagents: 10,
             max_tasks: 1,

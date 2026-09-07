@@ -3,6 +3,44 @@ use std::path::PathBuf;
 use super::*;
 
 #[test]
+fn filesystem_visits_preserve_complete_artifacts_and_codex_projection() {
+    let temp = tempfile::tempdir().unwrap();
+    let directory = temp.path().join("sessions");
+    std::fs::create_dir(&directory).unwrap();
+    for id in ["b", "a", "c"] {
+        std::fs::write(directory.join(format!("rollout-{id}.jsonl")), format!("{{\"type\":\"session_meta\",\"payload\":{{\"id\":\"{id}\"}}}}\n{{\"usage\":{{\"input\":3,\"output\":4}}}}\n{{\"subagent\":{{\"id\":\"{id}-child\",\"status\":\"running\"}}}}\n")).unwrap();
+    }
+    let source = FsArtifactSource::default();
+    let all = source
+        .discover(temp.path(), ArtifactKind::CodexRollout, 0)
+        .unwrap();
+    let mut visited = Vec::new();
+    source
+        .visit(
+            temp.path(),
+            ArtifactKind::CodexRollout,
+            0,
+            &mut |artifact| visited.push(artifact),
+        )
+        .unwrap();
+    assert_eq!(all, visited);
+    let context = crate::sessions::DiscoveryContext::new(chrono::Utc::now().timestamp());
+    let mut expected = all
+        .iter()
+        .filter_map(|artifact| crate::sessions::codex::parse_rollout(artifact, "1", &context))
+        .collect::<Vec<_>>();
+    expected.sort_by_key(|row| std::cmp::Reverse(row.last_active.unwrap_or_default()));
+    let actual = crate::sessions::codex::discover(&source, temp.path(), "1", &context, 0).unwrap();
+    assert_eq!(actual, expected);
+    assert_eq!(actual.len(), 3);
+    assert!(
+        actual
+            .iter()
+            .all(|row| row.tokens.output == 4 && row.children.len() == 1)
+    );
+}
+
+#[test]
 fn memory_source_is_deterministic_and_cutoff_aware() {
     let profile = PathBuf::from("/profile");
     let source = MemoryArtifactSource::new([
@@ -36,10 +74,12 @@ fn filesystem_source_rejects_journals_and_unbounded_files() {
     std::fs::write(sub.join("journal.jsonl"), b"{}").unwrap();
     std::fs::write(sub.join("agent.jsonl"), b"{}").unwrap();
     let source = FsArtifactSource::new(1);
-    assert!(source
-        .discover(temp.path(), ArtifactKind::ClaudeSubagent, 0)
-        .unwrap()
-        .is_empty());
+    assert!(
+        source
+            .discover(temp.path(), ArtifactKind::ClaudeSubagent, 0)
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]

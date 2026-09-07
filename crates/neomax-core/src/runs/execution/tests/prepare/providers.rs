@@ -2,9 +2,9 @@ use std::ffi::OsStr;
 use std::path::PathBuf;
 
 use crate::agent_tools::{
-    MANIFEST_RELATIVE_PATH, ManifestStore, NEOMAX_BIN_ENV, NEOMAX_TOOL_DEPTH_ENV,
-    NEOMAX_TOOL_INSTRUCTION_ENV, NEOMAX_TOOL_MANIFEST_ENV, NEOMAX_TOOL_MAX_DEPTH_ENV,
-    NEOMAX_TOOL_POLICY_ENV, ToolManifest,
+    ManifestStore, NEOMAX_BIN_ENV, NEOMAX_TOOL_DEPTH_ENV, NEOMAX_TOOL_INSTRUCTION_ENV,
+    NEOMAX_TOOL_MANIFEST_ENV, NEOMAX_TOOL_MAX_DEPTH_ENV, NEOMAX_TOOL_POLICY_ENV, ToolManifest,
+    canonical_manifest_relative_path,
 };
 use crate::providers::{Kimi, Provider, ProviderRegistry};
 use crate::runs::RunRecord;
@@ -56,7 +56,7 @@ fn every_production_provider_launch_receives_the_prepared_tool_contract() {
     let paths = StatePaths::new(temp.path(), temp.path().join("state"));
     let settings = settings();
     let providers = ProviderRegistry::standard();
-    let manifest_path = paths.state.join(MANIFEST_RELATIVE_PATH);
+    let manifest_path = paths.state.join(canonical_manifest_relative_path());
 
     for engine in Engine::ALL {
         let profile = temp.path().join(format!("profile-{engine}"));

@@ -18,3 +18,4 @@ pub const DEFAULT_FLEET_LIVE_CAP: u32 = 50;
 
 pub(super) const MAX_SETTINGS_BYTES: usize = 2 * 1024 * 1024;
 pub(super) const SETTINGS_READ_TIMEOUT: Duration = Duration::from_secs(5);
+pub const CODEX_FAST_ENV: &str = "NEOMAX_CODEX_FAST";

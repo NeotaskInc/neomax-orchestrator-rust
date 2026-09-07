@@ -147,7 +147,7 @@ fn select_source(
         dedicated: false,
         current_session: None,
         now: Utc::now(),
-        policy: &OrchestratorPolicy::default(),
+        policy: &OrchestratorPolicy::from_settings(&context.settings),
     })
     .ok_or_else(|| anyhow::anyhow!("no logged-in, uncooled Claude account is available"))?;
     profiles

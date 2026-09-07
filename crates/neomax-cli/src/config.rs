@@ -42,6 +42,19 @@ fn without_json(args: &[String], action: &str) -> Vec<String> {
 
 fn set(context: &RuntimeContext, args: &[String]) -> Result<()> {
     match args {
+        [key, value] if key == "reset-aware-ranking" => {
+            let enabled = match value.as_str() {
+                "true" | "on" => true,
+                "false" | "off" => false,
+                _ => bail!("reset-aware-ranking must be true or false"),
+            };
+            let mut file = neomax_core::SettingsFile::load(&context.settings.config_path)?;
+            file.extra
+                .insert("reset_aware_ranking".into(), enabled.into());
+            file.save(&context.settings.config_path)?;
+            println!("reset_aware_ranking = {enabled}");
+            Ok(())
+        }
         [key, value] if key == "max-subagents" => set_max_subagents(context, value),
         [key, value] if key == "max-sessions-per-account" => {
             set_max_sessions_per_account(context, value)
@@ -126,6 +139,7 @@ fn show(context: &RuntimeContext, as_json: bool) -> Result<()> {
     if as_json {
         return output::json(&json!({
             "config": settings.config_path.display().to_string(),
+            "reset_aware_ranking": settings.reset_aware_ranking,
             "max_subagents": settings.concurrency.max_subagents,
             "max_subagents_source": settings.max_subagents_source,
             "max_tasks": settings.concurrency.max_tasks,
@@ -138,6 +152,7 @@ fn show(context: &RuntimeContext, as_json: bool) -> Result<()> {
         }));
     }
     println!("config = {}", settings.config_path.display());
+    println!("reset_aware_ranking = {}", settings.reset_aware_ranking);
     println!(
         "max_subagents = {} ({})",
         settings.concurrency.max_subagents, settings.max_subagents_source

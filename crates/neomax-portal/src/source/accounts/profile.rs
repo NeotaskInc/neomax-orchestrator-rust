@@ -48,6 +48,7 @@ pub(crate) struct AccountProfile {
     pub(crate) cooldown_until: i64,
     pub(crate) paused: bool,
     pub(crate) token_expired: bool,
+    pub(crate) credential: Option<neomax_core::providers::catalog::CredentialEvidence>,
     pub(crate) usage: Option<Value>,
     pub(crate) telemetry: Option<Value>,
     pub(crate) capabilities: EngineCapabilitiesView,
@@ -61,17 +62,13 @@ pub(crate) fn inspect_profile(
     binary_available: bool,
     context: &AccountContext<'_>,
 ) -> Result<AccountProfile> {
-    let auth_method = (engine == Engine::Kimi)
-        .then(|| {
-            auth_methods.and_then(|methods| {
-                methods.iter().find_map(|method| match method {
-                    AuthMethod::OAuth => Some("OAuth".to_string()),
-                    AuthMethod::ApiKey => Some("API key".to_string()),
-                    AuthMethod::Device | AuthMethod::LocalCredential => None,
-                })
-            })
+    let auth_method = auth_methods.and_then(|methods| {
+        methods.iter().find_map(|method| match method {
+            AuthMethod::OAuth => Some("OAuth".to_string()),
+            AuthMethod::ApiKey => Some("API key".to_string()),
+            AuthMethod::Device | AuthMethod::LocalCredential => None,
         })
-        .flatten();
+    });
     let detected_authenticated = eligibility
         .map(|value| value.authenticated)
         .unwrap_or_else(|| auth_method.is_some());
@@ -96,6 +93,27 @@ pub(crate) fn inspect_profile(
     eligibility_view.worker_eligible = worker_eligible;
     eligibility_view.orchestrator_eligible &= binary_available;
     let authenticated = eligibility_view.authenticated;
+    let credential_profile = neomax_core::providers::catalog::ProfileSnapshot {
+        engine,
+        account: profile.account.clone(),
+        path: profile.path.clone(),
+        reserved: profile.reserved,
+        auth: if authenticated {
+            neomax_core::providers::catalog::AuthStatus::Authenticated {
+                methods: auth_methods.unwrap_or_default().to_vec(),
+            }
+        } else {
+            neomax_core::providers::catalog::AuthStatus::Unauthenticated
+        },
+        eligibility,
+    };
+    let credential = Some(neomax_core::providers::catalog::credential_evidence(
+        &credential_profile,
+        context.home,
+        context.environment,
+        &neomax_core::providers::catalog::RealFileSystem,
+        context.now.timestamp(),
+    ));
     let mut snapshot = AccountSnapshot {
         engine,
         account: profile.account.clone(),
@@ -171,6 +189,14 @@ pub(crate) fn inspect_profile(
     let token_expired = cache.as_ref().is_some_and(|value| value.expired);
     let live = workers.saturating_add(mains);
     let (email, plan, display_name) = identity_for(engine, &profile.path, context.home);
+    let email = neomax_core::providers::catalog::profile_email_with_environment(
+        engine,
+        &profile.path,
+        context.home,
+        context.environment,
+        &neomax_core::providers::catalog::RealFileSystem,
+    )
+    .or(email);
     let capabilities = capabilities_for(
         engine,
         context.home,
@@ -198,6 +224,7 @@ pub(crate) fn inspect_profile(
         cooldown_until,
         paused: snapshot.paused,
         token_expired,
+        credential,
         usage,
         telemetry,
         capabilities,

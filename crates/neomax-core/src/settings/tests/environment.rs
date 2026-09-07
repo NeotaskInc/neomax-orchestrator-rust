@@ -18,6 +18,25 @@ fn resolve(environment: BTreeMap<String, String>) -> EffectiveSettings {
 }
 
 #[test]
+fn codex_fast_mode_is_off_unless_explicitly_enabled_and_is_propagated() {
+    let key = crate::settings::CODEX_FAST_ENV;
+    let standard = resolve(BTreeMap::new());
+    assert!(!standard.codex_fast);
+    assert_eq!(standard.agent_environment()[key], "0");
+    let fast = resolve(BTreeMap::from([(key.into(), "1".into())]));
+    assert!(fast.codex_fast);
+    assert_eq!(fast.agent_environment()[key], "1");
+    assert!(
+        EffectiveSettings::resolve(
+            SettingsFile::default(),
+            "fixture".into(),
+            &BTreeMap::from([(key.into(), "invalid".into())])
+        )
+        .is_err()
+    );
+}
+
+#[test]
 fn canonical_subagent_limit_overrides_legacy_aliases() {
     let effective = resolve(BTreeMap::from([
         (LEGACY_FLEET_CAP_ENV.into(), "10".into()),

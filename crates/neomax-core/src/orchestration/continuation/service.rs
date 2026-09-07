@@ -1,12 +1,10 @@
 use std::path::{Path, PathBuf};
 
-use crate::orchestration::auth::{
-    FsCredentialWriter, RotationEffects, RotationPaths, RotationService,
-};
-use crate::config::StatePaths;
-use crate::orchestration::handoff::HandoffStore;
 use crate::Error;
 use crate::Result;
+use crate::config::StatePaths;
+use crate::orchestration::auth::{RotationEffects, RotationPaths};
+use crate::orchestration::handoff::HandoffStore;
 
 use super::ports::{CredentialRotationPort, HandoffPort};
 use super::request::{ContinuationRequest, RotationTrigger};
@@ -35,7 +33,7 @@ pub struct ContinuationService<'a> {
 }
 
 pub struct FilesystemContinuation {
-    rotation: RotationService<FsCredentialWriter>,
+    rotation: crate::orchestration::rotation::accounts::AccountRotationService,
     handoff: HandoffStore,
 }
 
@@ -48,15 +46,19 @@ impl FilesystemContinuation {
     }
 
     pub fn in_paths(paths: &StatePaths, usage_cache: Option<std::path::PathBuf>) -> Self {
-        let mut rotation_paths = RotationPaths::new(
-            paths.auth_backups.clone(),
-            paths.auth_rotations.clone(),
-        );
+        let mut rotation_paths =
+            RotationPaths::new(paths.auth_backups.clone(), paths.auth_rotations.clone());
         if let Some(usage_cache) = usage_cache {
             rotation_paths = rotation_paths.with_usage_cache_dir(usage_cache);
         }
         Self {
-            rotation: RotationService::filesystem(rotation_paths),
+            rotation: crate::orchestration::rotation::accounts::AccountRotationService {
+                paths: rotation_paths,
+                controls: crate::accounts::AccountControlStore::new(
+                    &paths.cooldowns,
+                    &paths.paused,
+                ),
+            },
             handoff: HandoffStore::at_state_dir(&paths.state),
         }
     }

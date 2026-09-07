@@ -8,10 +8,10 @@ use serde::{Deserialize, Deserializer, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::accounts::{
-    quota_support, AccountSnapshot, QuotaSnapshot, QuotaSnapshotSource, QuotaSupport,
+    AccountSnapshot, QuotaSnapshot, QuotaSnapshotSource, QuotaSupport, quota_support,
 };
 use crate::atomic::write_json_atomic;
-use crate::io::{read_file, LocalFileSource, ReadLimits};
+use crate::io::{LocalFileSource, ReadLimits, read_file};
 use crate::runtime::RuntimeEnvironment;
 use crate::{Engine, Result};
 
@@ -93,6 +93,19 @@ impl UsageCacheStore {
     }
 
     pub fn load(&self, engine: Engine, profile: &Path) -> Option<ProviderUsageCache> {
+        self.load_inner(engine, profile, true)
+    }
+
+    pub fn load_read_only(&self, engine: Engine, profile: &Path) -> Option<ProviderUsageCache> {
+        self.load_inner(engine, profile, false)
+    }
+
+    fn load_inner(
+        &self,
+        engine: Engine,
+        profile: &Path,
+        migrate: bool,
+    ) -> Option<ProviderUsageCache> {
         let identity = profile_identity(profile)?;
         let [path, legacy] = self.cache_paths(engine, profile);
         let limits = ReadLimits::new(MAX_CACHE_BYTES, CACHE_READ_TIMEOUT).ok()?;
@@ -106,6 +119,9 @@ impl UsageCacheStore {
                 legacy_is_newer(&path, &legacy) && caches_are_compatible(&native, cache)
             }) {
                 let migrated = with_identity(&legacy_cache, &identity);
+                if !migrate {
+                    return Some(strip_identity(migrated));
+                }
                 if write_json_atomic(&path, &migrated).is_ok() {
                     return Some(strip_identity(migrated));
                 }
@@ -114,6 +130,9 @@ impl UsageCacheStore {
         }
 
         let cache = legacy_cache?;
+        if !migrate {
+            return Some(strip_identity(cache));
+        }
         let migrated = with_identity(&cache, &identity);
         let _ = write_json_atomic(&legacy, &migrated);
         if write_json_atomic(&path, &migrated).is_ok() {
@@ -289,18 +308,34 @@ fn lexical_normalize(path: &Path) -> PathBuf {
     }
 }
 
-fn cache_matches_claude_identity(engine: Engine, profile: &Path, cache: &ProviderUsageCache) -> bool {
+fn cache_matches_claude_identity(
+    engine: Engine,
+    profile: &Path,
+    cache: &ProviderUsageCache,
+) -> bool {
     if engine != Engine::Claude {
         return true;
     }
-    let Some(cached_uuid) = cache.extra.get("acct_uuid").and_then(serde_json::Value::as_str) else {
+    let Some(cached_uuid) = cache
+        .extra
+        .get("acct_uuid")
+        .and_then(serde_json::Value::as_str)
+    else {
         return true;
     };
     let path = crate::orchestration::auth::claude::identity_path(profile);
-    let Ok(limits) = ReadLimits::new(MAX_CACHE_BYTES, CACHE_READ_TIMEOUT) else { return false };
-    let Ok(bytes) = read_file(&LocalFileSource, &path, limits) else { return true };
-    let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) else { return true };
-    value.pointer("/oauthAccount/accountUuid").and_then(serde_json::Value::as_str)
+    let Ok(limits) = ReadLimits::new(MAX_CACHE_BYTES, CACHE_READ_TIMEOUT) else {
+        return false;
+    };
+    let Ok(bytes) = read_file(&LocalFileSource, &path, limits) else {
+        return true;
+    };
+    let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
+        return true;
+    };
+    value
+        .pointer("/oauthAccount/accountUuid")
+        .and_then(serde_json::Value::as_str)
         .is_none_or(|uuid| uuid == cached_uuid)
 }
 

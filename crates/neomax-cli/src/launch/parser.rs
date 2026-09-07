@@ -40,6 +40,8 @@ impl LaunchOptions {
                 let (flag, inline) = split_flag(current);
                 match flag {
                     "--dry-run" => options.dry_run = true,
+                    "--codex-fast" => options.codex_fast = Some(true),
+                    "--codex-standard" => options.codex_fast = Some(false),
                     "--json" => {}
                     "-n" => {
                         mark_solo_forbidden(&mut solo_forbidden_flag, flag);

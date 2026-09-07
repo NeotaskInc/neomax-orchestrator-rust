@@ -21,6 +21,27 @@ pub fn build_status(
     now: i64,
     days: u32,
 ) -> Result<PortalSnapshot> {
+    let sessions = source.sessions(days, now);
+    let mut snapshot = build_status_from_sessions(
+        source,
+        now,
+        days,
+        sessions.as_ref().map(Vec::as_slice).unwrap_or_default(),
+        true,
+    )?;
+    if let Err(error) = sessions {
+        snapshot.errors.push(error_view("sessions", &error));
+    }
+    Ok(snapshot)
+}
+
+pub fn build_status_from_sessions(
+    source: &FilesystemPortalSource,
+    now: i64,
+    days: u32,
+    session_records: &[neomax_core::sessions::SessionRecord],
+    include_usage: bool,
+) -> Result<PortalSnapshot> {
     let mut errors = Vec::new();
     let (run_records, skipped_runs) = run_source::read_records(&source.paths.runs)?;
     if skipped_runs > 0 {
@@ -29,21 +50,18 @@ pub fn build_status(
             message: format!("{skipped_runs} oversized or malformed run record(s) omitted"),
         });
     }
-    let session_records = match source.sessions(days, now) {
-        Ok(value) => value,
-        Err(error) => {
-            errors.push(error_view("sessions", &error));
-            Vec::new()
+    let usage_report = if include_usage {
+        match source.usage(days, now) {
+            Ok(value) => Some(value),
+            Err(error) => {
+                errors.push(error_view("usage", &error));
+                None
+            }
         }
+    } else {
+        None
     };
-    let usage_report = match source.usage(days, now) {
-        Ok(value) => Some(value),
-        Err(error) => {
-            errors.push(error_view("usage", &error));
-            None
-        }
-    };
-    let engines = match accounts::account_views(source, &run_records, &session_records, now, days) {
+    let engines = match accounts::account_views(source, &run_records, session_records, now, days) {
         Ok(value) => value,
         Err(error) => {
             errors.push(error_view("accounts", &error));
@@ -104,7 +122,7 @@ pub fn build_status(
             None
         }
     };
-    let (ambient, _) = sessions::ambient_records(session_records);
+    let (ambient, _) = sessions::ambient_records(session_records.to_vec());
     let probe = SystemProcessProbe;
     let runs = runs::run_views(&run_records, &projects, &probe);
     let (worktrees, skipped_worktrees) =

@@ -49,13 +49,8 @@ pub(crate) fn stage(
     for engine in Engine::ALL {
         for profile in profiles.get(&engine).into_iter().flatten() {
             for workflow in WORKFLOWS {
-                let target = workflow_target(
-                    engine,
-                    profile,
-                    workflow,
-                    &home,
-                    allow_process_environment,
-                );
+                let target =
+                    workflow_target(engine, profile, workflow, &home, allow_process_environment);
                 if !targets.insert(target.clone()) {
                     continue;
                 }
@@ -66,8 +61,8 @@ pub(crate) fn stage(
                 let source = stage_dir.join(format!("{index}.md"));
                 index += 1;
                 fs::write(&source, content.as_bytes())?;
-                preflight_workflow_target(&target, engine, workflow, &previous, force)?;
                 let hash = sha256(&source)?;
+                preflight_workflow_target(&target, engine, workflow, &previous, force, &hash)?;
                 replacements.push(Replacement {
                     source,
                     target: target.clone(),
@@ -95,6 +90,7 @@ pub(crate) fn stage(
                         KIMI_AGENT_RECORD,
                         &previous,
                         force,
+                        &sha256(&source)?,
                     )?;
                     let hash = sha256(&source)?;
                     replacements.push(Replacement {
@@ -113,7 +109,7 @@ pub(crate) fn stage(
     }
 
     for profile in profiles.get(&Engine::Claude).into_iter().flatten() {
-        let target = profile.join("settings.json");
+        let target = shared_settings_target(&profile.join("settings.json"), &home)?;
         if !targets.insert(target.clone()) {
             continue;
         }
@@ -317,7 +313,7 @@ pub(crate) fn ensure_profile_workflows_at(
             }
         }
         if engine == Engine::Claude {
-            let settings_path = profile.join("settings.json");
+            let settings_path = shared_settings_target(&profile.join("settings.json"), home)?;
             if let Some(parent) = settings_path.parent() {
                 guards.push(PathGuard::ensure_directory(parent)?);
             }
@@ -352,7 +348,9 @@ pub(crate) fn ensure_profile_workflows_at(
             source: manifest_source,
             target: install_paths.workflow_manifest_path(),
         });
-        guards.push(PathGuard::for_path(&install_paths.workflow_manifest_path())?);
+        guards.push(PathGuard::for_path(
+            &install_paths.workflow_manifest_path(),
+        )?);
         super::super::transaction::replace_all(
             &replacements,
             home.parent().unwrap_or(Path::new(".")),
@@ -366,6 +364,7 @@ fn preflight_workflow_target(
     workflow: &str,
     previous: &WorkflowManifest,
     force: bool,
+    incoming_hash: &str,
 ) -> Result<()> {
     let target_path = path_to_string("workflow target", target)?;
     if !path_exists(target) {
@@ -378,6 +377,9 @@ fn preflight_workflow_target(
         )));
     }
     if force {
+        return Ok(());
+    }
+    if sha256(target)? == incoming_hash {
         return Ok(());
     }
     let Some(old) = previous.files.iter().find(|file| {
@@ -405,4 +407,19 @@ fn preflight_settings_target(target: &Path) -> Result<()> {
         )));
     }
     Ok(())
+}
+
+fn shared_settings_target(target: &Path, home: &Path) -> Result<std::path::PathBuf> {
+    if fs::symlink_metadata(target).is_ok_and(|metadata| metadata.file_type().is_symlink()) {
+        let resolved = fs::canonicalize(target)?;
+        let primary = fs::canonicalize(home.join(".claude/settings.json"))?;
+        if resolved != primary
+            || !resolved.starts_with(fs::canonicalize(home)?)
+            || !fs::symlink_metadata(&resolved)?.is_file()
+        {
+            return Err(Error::Conflict("shared Claude settings must link to the primary profile's settings.json within the user home".into()));
+        }
+        return Ok(resolved);
+    }
+    Ok(target.to_path_buf())
 }

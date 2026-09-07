@@ -1,6 +1,6 @@
 use super::super::{
-    all_specs, default_model_id, spec, supports_native_interactive_resume, supports_native_resume,
-    AuthMethod, ModelDiscoverySupport, CODEX_SERVICE_TIER,
+    AuthMethod, CODEX_SERVICE_TIER, ModelDiscoverySupport, all_specs, default_model_id, spec,
+    supports_native_interactive_resume, supports_native_resume,
 };
 use crate::Engine;
 
@@ -18,7 +18,7 @@ fn every_provider_spec_has_a_complete_runtime_contract() {
         assert!(provider.capabilities.worker);
     }
     assert_eq!(spec(Engine::Codex).default_model, "gpt-6-astra");
-    assert_eq!(CODEX_SERVICE_TIER, "fast");
+    assert_eq!(CODEX_SERVICE_TIER, "default");
 }
 
 #[test]
@@ -46,10 +46,12 @@ fn opencode_auth_supports_api_key_and_oauth_and_scrubs_auth_content() {
         provider.capabilities.auth_methods.as_slice(),
         &[AuthMethod::ApiKey, AuthMethod::OAuth]
     );
-    assert!(provider
-        .scrub
-        .iter()
-        .any(|key| key == "OPENCODE_AUTH_CONTENT"));
+    assert!(
+        provider
+            .scrub
+            .iter()
+            .any(|key| key == "OPENCODE_AUTH_CONTENT")
+    );
 }
 
 #[test]

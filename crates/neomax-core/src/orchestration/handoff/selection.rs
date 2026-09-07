@@ -33,6 +33,7 @@ pub enum TargetEligibility {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TargetPolicy {
+    pub reset_aware: bool,
     pub five_hour_skip_percent: f64,
     pub weekly_soft_percent: f64,
     pub weekly_hard_percent: f64,
@@ -44,6 +45,7 @@ pub struct TargetPolicy {
 impl Default for TargetPolicy {
     fn default() -> Self {
         Self {
+            reset_aware: false,
             five_hour_skip_percent: FIVE_HOUR_SOFT_PERCENT,
             weekly_soft_percent: WEEKLY_SOFT_PERCENT,
             weekly_hard_percent: WEEKLY_HARD_PERCENT,
@@ -55,8 +57,15 @@ impl Default for TargetPolicy {
 }
 
 impl TargetPolicy {
+    pub fn from_settings(settings: &crate::EffectiveSettings) -> Self {
+        Self {
+            reset_aware: settings.reset_aware_ranking,
+            ..Self::default()
+        }
+    }
     fn account_ranking(&self) -> AccountRankingPolicy {
         AccountRankingPolicy {
+            reset_aware: self.reset_aware,
             live_weight: self.live_weight,
             weekly_tiebreak_weight: self.weekly_reset_weight,
         }

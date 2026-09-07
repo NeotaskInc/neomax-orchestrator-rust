@@ -5,8 +5,8 @@ use serde_json::Value;
 use crate::{Engine, Result};
 
 use super::activity::ActivityState;
-use super::artifacts::{json_lines, ArtifactKind, ArtifactSource};
-use super::filters::{apply_context, DiscoveryContext};
+use super::artifacts::{ArtifactKind, ArtifactSource, json_lines};
+use super::filters::{DiscoveryContext, apply_context};
 use super::headers::{
     codex_head_meta, codex_session_live, codex_tail_activity, session_id_from_path,
 };
@@ -20,11 +20,17 @@ pub fn discover<S: ArtifactSource>(
     context: &DiscoveryContext,
     cutoff: i64,
 ) -> Result<Vec<SessionRecord>> {
-    let mut rows = source
-        .discover(profile, ArtifactKind::CodexRollout, cutoff)?
-        .into_iter()
-        .filter_map(|artifact| parse_rollout(&artifact, account, context))
-        .collect::<Vec<_>>();
+    let mut rows = Vec::new();
+    source.visit(
+        profile,
+        ArtifactKind::CodexRollout,
+        cutoff,
+        &mut |artifact| {
+            if let Some(record) = parse_rollout(&artifact, account, context) {
+                rows.push(record);
+            }
+        },
+    )?;
     rows.sort_by_key(|record| std::cmp::Reverse(record.last_active.unwrap_or_default()));
     Ok(rows)
 }
@@ -43,7 +49,12 @@ pub fn parse_rollout(
     let live = codex_session_live(&tail, context.now, artifact.modified, context.active_window);
     let working = codex_tail_activity(&tail, context.now, artifact.modified, context.active_window);
     let mut record = SessionRecord::with_identity(id, Engine::Codex, account);
-    record.kind = SessionKind::Main;
+    record.parent_id = meta.parent_id;
+    record.kind = if record.parent_id.is_some() {
+        SessionKind::NativeSubagent
+    } else {
+        SessionKind::Main
+    };
     record.model = model(&head);
     record.cwd = meta.cwd.map(PathBuf::from);
     record.branch = meta.branch;
@@ -53,7 +64,10 @@ pub fn parse_rollout(
     record.active = live == ActivityState::Active;
     record.working = working == ActivityState::Active;
     record.done = live == ActivityState::Stopped;
-    record.tokens = tokens(&artifact.text());
+    let (tokens, activity) = tokens(&artifact.text());
+    record.tokens = tokens;
+    record.model = activity.model.clone().or(record.model);
+    record.activity = Some(activity);
     record.children = subagents::child_records_from_events(json_lines(&artifact.text()), &record);
     record.extra = meta.extra;
     if !apply_context(&mut record, context).ok()? {
@@ -76,9 +90,35 @@ fn model(text: &str) -> Option<String> {
     })
 }
 
-fn tokens(text: &str) -> SessionTokens {
+fn tokens(text: &str) -> (SessionTokens, super::transcript::TranscriptActivity) {
     let mut total = SessionTokens::default();
+    let mut activity = super::transcript::TranscriptActivity::default();
     for event in json_lines(text) {
+        activity.observe_codex(&event);
+        let payload = event.get("payload").unwrap_or(&event);
+        if payload.get("type").and_then(Value::as_str) == Some("token_count") {
+            if let Some(usage) = payload
+                .get("info")
+                .and_then(|info| info.get("total_token_usage"))
+                .filter(|usage| usage.is_object())
+            {
+                let input = integer(usage, &["input_tokens"]);
+                let output = integer(usage, &["output_tokens"]);
+                let cached = integer(usage, &["cached_input_tokens"]);
+                total = SessionTokens {
+                    input: input.saturating_sub(cached),
+                    output,
+                    cache_read: cached,
+                    reasoning: integer(usage, &["reasoning_output_tokens"]),
+                    total: usage
+                        .get("total_tokens")
+                        .and_then(Value::as_u64)
+                        .unwrap_or_else(|| input.saturating_add(output)),
+                    ..SessionTokens::default()
+                };
+                continue;
+            }
+        }
         let usage = event
             .get("usage")
             .or_else(|| {
@@ -101,7 +141,7 @@ fn tokens(text: &str) -> SessionTokens {
         };
         total.add_assign(&current);
     }
-    total
+    (total, activity)
 }
 
 fn integer(value: &Value, keys: &[&str]) -> u64 {

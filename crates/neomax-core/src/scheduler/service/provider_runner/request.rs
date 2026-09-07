@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use super::super::super::runtime::{DispatchError, DispatchRequest, DispatchResult};
 use super::ProviderExecution;
-use crate::accounts::{select_account, AccountControlStore, AccountInventory, AccountSelector};
+use crate::accounts::{AccountControlStore, AccountInventory, AccountSelector, select_account};
 use crate::runs::{RunLiveWorkSource, RunRecord, RunStore, SystemProcessProbe};
 use crate::usage::UsageCacheStore;
 use crate::{Error, Result, WorkerScope};
@@ -32,13 +32,18 @@ impl ProviderExecution {
         };
         let now = self.inner.clock.now();
         let model = resolve_scheduler_model(
-            &self.inner.settings.config_path, request.engine, request.model.as_deref(),
+            &self.inner.settings.config_path,
+            request.engine,
+            request.model.as_deref(),
             &model_environment(&request.environment),
-        ).map_err(|error| DispatchError::terminal(error.to_string()))?;
+        )
+        .map_err(|error| DispatchError::terminal(error.to_string()))?;
         let accounts = inventory
             .routing_snapshots(&WorkerScope::only(request.engine), now)
             .map_err(classify_selection_error)?
-            .into_iter().map(|account| account.for_model(&model, now)).collect::<Vec<_>>();
+            .into_iter()
+            .map(|account| account.for_model(&model, now))
+            .collect::<Vec<_>>();
         let decision = select_account(
             &accounts,
             &AccountSelector::Auto,
@@ -108,6 +113,36 @@ impl ProviderExecution {
         run.base = request.base.clone();
         run.tag = Some(request.plan_id.clone());
         run.environment = request.environment.clone();
+        run.environment
+            .entry(crate::settings::CODEX_FAST_ENV.into())
+            .or_insert_with(|| {
+                if self.inner.settings.codex_fast {
+                    "1"
+                } else {
+                    "0"
+                }
+                .into()
+            });
+        run.environment
+            .entry(crate::settings::CODEX_FAST_ENV.into())
+            .or_insert_with(|| {
+                if self.inner.settings.codex_fast {
+                    "1"
+                } else {
+                    "0"
+                }
+                .into()
+            });
+        run.environment
+            .entry(crate::settings::CODEX_FAST_ENV.into())
+            .or_insert_with(|| {
+                if self.inner.settings.codex_fast {
+                    "1"
+                } else {
+                    "0"
+                }
+                .into()
+            });
         run.extra
             .insert("scheduler_run_id".into(), json!(request.run_id));
         run.extra

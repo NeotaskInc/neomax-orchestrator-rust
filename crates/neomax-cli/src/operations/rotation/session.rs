@@ -104,7 +104,9 @@ impl SessionOptions {
                     (name, Some(value))
                 });
             match flag {
-                "--json" | "--all" | "--active" => options.passthrough.push(current.clone()),
+                "--json" | "--all" | "--active" | "--dry-run" => {
+                    options.passthrough.push(current.clone())
+                }
                 "--engine" | "--workers" => {
                     options.passthrough.push(current.clone());
                     if inline.is_none() {

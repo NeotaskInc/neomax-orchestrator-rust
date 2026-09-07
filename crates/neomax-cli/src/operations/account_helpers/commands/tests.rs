@@ -57,6 +57,7 @@ fn kimi_oauth_and_api_key_runs_forward_models_correctly() {
         "kimi-code/k3",
         Path::new("/fixture/home"),
         Path::new("/fixture/workspace"),
+        false,
     )
     .unwrap();
     assert!(
@@ -72,6 +73,7 @@ fn kimi_oauth_and_api_key_runs_forward_models_correctly() {
         "kimi-code/k3",
         Path::new("/fixture/home"),
         Path::new("/fixture/workspace"),
+        false,
     )
     .unwrap();
     assert!(!api_key.args.contains(&"-m".into()));
@@ -82,6 +84,7 @@ fn kimi_oauth_and_api_key_runs_forward_models_correctly() {
         "kimi-code/k2.7",
         Path::new("/fixture/home"),
         Path::new("/fixture/workspace"),
+        false,
     )
     .unwrap();
     assert!(explicit.args.contains(&"kimi-code/k2.7".into()));
@@ -235,6 +238,7 @@ fn opencode_run_sets_qualified_model_policy_and_profile_data_home() {
         "local/big-pickle",
         Path::new("/fixture/home"),
         Path::new("/fixture/workspace"),
+        false,
     )
     .unwrap();
     assert_eq!(

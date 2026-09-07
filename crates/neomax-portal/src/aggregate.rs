@@ -4,6 +4,7 @@ mod status;
 mod usage;
 
 pub use status::build_status;
+pub use status::build_status_from_sessions;
 
 #[cfg(test)]
 mod tests {

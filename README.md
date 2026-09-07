@@ -7,38 +7,57 @@ away from exhausted accounts, track usage, and clean generated worktree data.
 
 ## Connect multiple accounts, launch by email
 
-Multiple accounts and email selection work across Claude, Codex, OpenCode,
-Kimi, and Grok. After [installing Neomax](#install), connect each account once.
-For example, add two Codex accounts, completing each login with a different
-account:
+Use the same command to sign in and launch. An authenticated account opens
+immediately; an account without credentials starts the provider's login flow
+and opens after login succeeds. For example:
 
 ```bash
-cdx login 1 oauth
-cdx login 2 oauth
-cdx status
+neomax codex 1
+neomax codex 2
+neomax codex status
 ```
 
 Choose an orchestrator account by its saved email or number:
 
 | Provider | Launch by email | Launch account 2 |
 | --- | --- | --- |
-| Claude | `cmax developer@example.com` | `cmax 2` |
-| Codex | `cdxmax developer@example.com` | `cdxmax 2` |
-| OpenCode | `ocmax developer@example.com` | `ocmax 2` |
-| Kimi | `kmax developer@example.com` | `kmax 2` |
-| Grok | `gmax developer@example.com` | `gmax 2` |
+| Claude | `neomax claude developer@example.com` | `neomax claude 2` |
+| Codex | `neomax codex developer@example.com` | `neomax codex 2` |
+| OpenCode | `neomax opencode developer@example.com` | `neomax opencode 2` |
+| Kimi | `neomax kimi developer@example.com` | `neomax kimi 2` |
+| Grok | `neomax grok developer@example.com` | `neomax grok 2` |
 
-Account helpers also accept emails, such as `cdx developer@example.com`,
-`ocx developer@example.com`, `kmx developer@example.com`, and
-`gmx developer@example.com`. For a numbered Codex session, use `cdx run 2`.
-The account number is a separate argument; Neomax does not install commands
-named `codex1` or `cdxmax1`, and the upstream `codex` command stays unchanged.
+The account number is a separate argument. Neomax does not replace the native
+`codex`, `claude`, or other provider commands. Old launcher and account-helper
+aliases remain available for existing scripts.
 
-Email selection requires Neomax 0.1.1 or newer and an existing profile with
-local email metadata. Lookup stays within the selected provider; unknown or
-ambiguous emails produce an error. Use the account number when a profile has
-no email metadata. See [Accounts](#accounts) for each provider's login commands
-and authentication methods.
+Email lookup stays within the selected provider. A new email starts login in
+an unused profile, and Neomax checks the saved identity before launching.
+Ambiguous emails stop with an error. If the provider does not expose an email,
+use the account number. Saved profile directory names also work as selectors.
+Put initial task text after `--`, for example
+`neomax codex 2 -- "Review this project"`.
+
+Rotate a numbered profile without moving its session files:
+
+```bash
+neomax codex 2 rotate --dry-run --json
+neomax codex 2 rotate --with 4
+neomax claude 2 rotate --with developer@example.com
+neomax doctor --json
+```
+
+Rotation swaps OAuth credentials between eligible accounts of the same
+provider. Without `--with`, Neomax selects a replacement using quota,
+cooldown, pause, and live-work evidence. Email selectors follow the credentials
+after a swap; numbers continue to identify profile directories. Open providers
+may need to reload authentication or resume. Swapping credentials alone does
+not prove that a running provider continued its task.
+
+`doctor` reads local credential health, quota freshness, configuration, and
+tool-manifest evidence. It does not log in, refresh tokens, run providers, or
+repair files. A refresh token's presence means refresh may be possible, not
+that the provider has accepted it.
 
 ## Install
 
@@ -102,26 +121,26 @@ cd path/to/project
 neomax
 ```
 
-`neomax` selects an eligible orchestrator from the providers available on the
-machine. Use a pinned launcher when you want a specific main provider:
+`neomax` opens the terminal workspace. Choose Launch to start an orchestrator
+inside it, or use a direct command:
 
 | Command | Main orchestrator |
 | --- | --- |
-| `neomax` | Dynamic selection |
-| `cmax` | Claude |
-| `cdxmax` | Codex |
-| `ocmax` | OpenCode |
-| `kmax` | Kimi |
-| `gmax` | Grok |
+| `neomax orchestrator` | Dynamic selection, without the TUI |
+| `neomax claude` | Claude |
+| `neomax codex` | Codex |
+| `neomax opencode` | OpenCode |
+| `neomax kimi` | Kimi |
+| `neomax grok` | Grok |
 
 Pinning the main orchestrator does not restrict its worker pool. These are all
 valid:
 
 ```bash
-neomax --workers all
-cmax --workers codex,opencode,kimi
-ocmax --workers claude+grok
-kmax --model kimi-code/k3 --workers all
+neomax orchestrator --workers all
+neomax claude --workers codex,opencode,kimi
+neomax opencode --workers claude+grok
+neomax kimi --model kimi-code/k3 --workers all
 ```
 
 Inspect a launch before starting it:
@@ -141,13 +160,13 @@ Neomax can route by explicit provider or model choices, task and repository
 context, scheduler part, connected accounts, current usage, live load, recent
 project selection, and provider priority. Explicit choices win.
 
-| Provider | Default model | Pinned launcher | Account helper |
-| --- | --- | --- | --- |
-| Claude | `claude-fable-5-1[1m]` | `cmax` | `cmax ACCOUNT` |
-| Codex | `gpt-6-astra` | `cdxmax` | `cdx` |
-| OpenCode | `opencode/big-pickle` | `ocmax` | `ocx` |
-| Kimi | `kimi-code/k3` | `kmax` | `kmx` |
-| Grok | `grok-4.6` | `gmax` | `gmx` |
+| Provider | Default model | Launch or sign in |
+| --- | --- | --- |
+| Claude | `claude-fable-5-1[1m]` | `neomax claude [ACCOUNT]` |
+| Codex | `gpt-6-astra` | `neomax codex [ACCOUNT]` |
+| OpenCode | `opencode/big-pickle` | `neomax opencode [ACCOUNT]` |
+| Kimi | `kimi-code/k3` | `neomax kimi [ACCOUNT]` |
+| Grok | `grok-4.6` | `neomax grok [ACCOUNT]` |
 
 Every provider accepts model IDs supported by its local CLI. OpenCode model
 IDs use `provider/model`. Claude Opus is opt-in. Codex uses GPT-6 Astra as its
@@ -187,23 +206,23 @@ Provider CLIs own authentication. Neomax keeps each account in its provider's
 normal profile format and never prints or copies credential values.
 
 ```bash
-# Claude opens the selected profile; use /login inside Claude when needed
-cmax 2
-cmax 2 /login
+# Sign in if needed, then open the selected account
+neomax claude 2
+neomax codex 2
 
-# Other provider account helpers
-cdx login 2 oauth
-ocx login 2 PROVIDER oauth
-kmx login 2 oauth
-gmx login 2 oauth
+# Choose a specific login method when needed
+neomax codex login 2 oauth
+neomax opencode login 2 PROVIDER oauth
+neomax kimi login 2 oauth
+neomax grok login 2 oauth
 
-cdx status
-ocx status
-kmx status
-gmx status
+neomax codex status
+neomax opencode status
+neomax kimi status
+neomax grok status
 ```
 
-Supported helper shapes:
+The older account helpers remain compatible:
 
 | Helper | Login modes | Other operations |
 | --- | --- | --- |
@@ -219,20 +238,22 @@ provider.
 Select an existing profile by its local account email or directory alias:
 
 ```bash
-cdx person@example.com
-cdxmax person@example.com --dry-run --json
+neomax codex person@example.com
+neomax codex person@example.com --dry-run --json
 neomax --engine codex --account person@example.com
-cdx run alias:.codex-acct2
+neomax codex alias:.codex-acct2
 ```
 
-Email lookup is case-insensitive and provider-specific. Missing or duplicate
-matches produce an error instead of choosing another account. Numbered
+Email lookup is case-insensitive and provider-specific. Duplicate matches
+produce an error instead of choosing another account. Numbered
 accounts still work. `alias:NAME` matches an existing profile directory name;
 it does not create a new login. Providers must expose email metadata locally
-for email selection to work. The upstream `codex` command is unchanged.
+for email selection to work. The new provider commands can start login for a
+previously unknown email; legacy aliases still require an existing match.
+The upstream `codex` command is unchanged.
 
-These selectors require Neomax 0.1.1 or newer. Re-run the installer above to
-upgrade to the latest published release while keeping your accounts and config.
+Legacy email and alias selectors require Neomax 0.1.1 or newer. The unified
+`neomax PROVIDER` commands and terminal workspace are new in 0.1.2.
 
 ## Automatic quota survival
 
@@ -351,6 +372,44 @@ neomax issue next --json
 neomax ci-sync
 ```
 
+### Terminal workspace
+
+Run `neomax` (or `neomax tui`) to open Launch. Press Enter on Start Neomax,
+then Enter to confirm. Automatic routing chooses an eligible orchestrator and
+opens its interactive terminal in Chat. Provider narrows the choice; More opens
+account, model, worker, speed and initial-task settings.
+
+Fleet shows native session history, including sessions opened outside Neomax.
+Rows show the last activity date and a Neomax ownership marker when recorded.
+Enter opens dates, task text, the last assistant message and tool call from
+Claude/Codex transcripts, plus managed-run output when available. Native activity
+is not proof of a live process. `v` filters the view; `d` changes its date range.
+
+Accounts lists profiles by email when available, provider counts, authentication,
+eligibility and cached shared/model-specific allowances. Use `[` / `]` to filter
+providers and `l` to carry an eligible account into Launch. Usage shows recorded
+model totals over 1, 7 or 30 days. The persistent header has its own 24h/7d/30d
+spend window (`s`). Costs are API-equivalent estimates, not subscription invoices.
+
+Use left/right or Tab to move through Launch, Chat, Fleet, Tasks, Accounts and
+Usage. Up/down selects a row; Enter opens details or edits a launch choice.
+While editing a choice, left/right changes its value and Enter saves it.
+Esc finishes editing an initial task. `?` opens keyboard help.
+
+Codex uses standard mode by default. Choose Codex speed on the Launch page
+or pass `--codex-fast` to opt in for the new orchestrator and its Codex workers.
+`--codex-standard` explicitly turns it off. `NEOMAX_CODEX_FAST=1` is the equivalent
+process-level choice, including account-helper launches. Neomax does not change
+the provider's saved configuration. An open Codex terminal also supports
+`/fast on`, `/fast off`, and `/fast status`; see the
+[Codex speed reference](https://learn.chatgpt.com/docs/agent-configuration/speed).
+
+On Chat, Enter focuses keyboard input in the provider terminal.
+Ctrl+] releases input focus so you can return to the dashboard while it runs.
+Page Up/Down scrolls a bounded display history. Native session transcripts remain
+the durable history. Quitting asks before stopping the orchestrator opened in
+this TUI; sessions opened elsewhere are view-only.
+
 ### Local portal and usage service
 
 ```bash
@@ -376,7 +435,7 @@ usage, session, subagent, run, scheduler, task, queue, and worktree state.
 | Tasks | `task`, `queue`, `run-all`, `reconcile`, `ack`, `audit`, `find` |
 | Review | `shepherd`, `premerge`, `pr`, `issue`, `ci-sync`, `subagent-diff` |
 | Maintenance | `usage`, `usage-watch`, `clean`, `tidy`, `keepalive` |
-| Services | `portal`, `neomax-portal`, `neomax-usage-agent`, `neomax-worktrees` |
+| Services | `tui`, `portal`, `neomax-portal`, `neomax-usage-agent`, `neomax-worktrees` |
 | Product | `config`, `install`, `uninstall`, `help`, `--version` |
 
 See [Complete command and environment reference](docs/REFERENCE.md) for every

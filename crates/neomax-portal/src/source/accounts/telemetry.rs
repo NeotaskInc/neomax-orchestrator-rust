@@ -77,6 +77,7 @@ pub(crate) fn telemetry_for(
 
 pub(crate) fn is_live_main(record: &SessionRecord, now: i64) -> bool {
     !record.is_child()
+        && !record.worker
         && !record.archived
         && !record.done
         && record.active
@@ -85,6 +86,7 @@ pub(crate) fn is_live_main(record: &SessionRecord, now: i64) -> bool {
 
 pub(crate) fn is_working_subagent(record: &SessionRecord, now: i64) -> bool {
     record.is_child()
+        && !record.worker
         && !record.archived
         && !record.done
         && record.working
@@ -180,5 +182,18 @@ mod tests {
 
         child.last_active = Some(now - LIVE_SESSION_WINDOW_SECONDS - 1);
         assert!(!is_working_subagent(&child, now));
+    }
+
+    #[test]
+    fn managed_workers_are_not_counted_again_as_ambient_sessions() {
+        let now = 1_800_000_000;
+        let mut worker = SessionRecord::with_identity("managed", Engine::Codex, "1");
+        worker.active = true;
+        worker.working = true;
+        worker.worker = true;
+        worker.last_active = Some(now);
+        assert!(!is_live_main(&worker, now));
+        worker.parent_id = Some("root".into());
+        assert!(!is_working_subagent(&worker, now));
     }
 }

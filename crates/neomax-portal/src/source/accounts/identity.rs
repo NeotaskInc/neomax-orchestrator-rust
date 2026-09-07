@@ -62,8 +62,7 @@ pub(crate) fn identity_for(
                 payload.get("name").and_then(Value::as_str).map(Into::into),
             )
         }
-        Engine::Opencode => (None, Some("Go".into()), Some("OX Alpha Free".into())),
-        Engine::Kimi => (None, Some("Kimi Code".into()), Some("K3 / K2.7".into())),
+        Engine::Opencode | Engine::Kimi => (None, None, None),
         Engine::Grok => {
             let Some(Value::Object(root)) = read_json(&profile.join("auth.json")) else {
                 return (None, None, None);

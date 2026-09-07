@@ -6,8 +6,8 @@ use serde_json::Value;
 use crate::{Engine, Result};
 
 use super::activity::ActivityState;
-use super::artifacts::{json_lines, ArtifactKind, ArtifactSource};
-use super::filters::{apply_context, DiscoveryContext};
+use super::artifacts::{ArtifactKind, ArtifactSource, json_lines};
+use super::filters::{DiscoveryContext, apply_context};
 use super::headers::{claude_head_meta, claude_tail_activity, session_id_from_path, workflow_id};
 use super::subagents;
 use super::types::{FileActivity, SessionKind, SessionRecord};
@@ -19,17 +19,22 @@ pub fn discover<S: ArtifactSource>(
     context: &DiscoveryContext,
     cutoff: i64,
 ) -> Result<Vec<SessionRecord>> {
-    let mut records = source
-        .discover(profile, ArtifactKind::ClaudeMain, cutoff)?
-        .into_iter()
-        .filter_map(|artifact| parse_main(&artifact, account, context))
-        .collect::<Vec<_>>();
-    records.extend(
-        source
-            .discover(profile, ArtifactKind::ClaudeSubagent, cutoff)?
-            .into_iter()
-            .filter_map(|artifact| parse_subagent(&artifact, account, context)),
-    );
+    let mut records = Vec::new();
+    source.visit(profile, ArtifactKind::ClaudeMain, cutoff, &mut |artifact| {
+        if let Some(record) = parse_main(&artifact, account, context) {
+            records.push(record);
+        }
+    })?;
+    source.visit(
+        profile,
+        ArtifactKind::ClaudeSubagent,
+        cutoff,
+        &mut |artifact| {
+            if let Some(record) = parse_subagent(&artifact, account, context) {
+                records.push(record);
+            }
+        },
+    )?;
     records.sort_by_key(|record| std::cmp::Reverse(record.last_active.unwrap_or_default()));
     Ok(records)
 }
@@ -59,7 +64,10 @@ pub fn parse_main(
     record.working = record.active;
     record.done = activity == ActivityState::Idle;
     record.tokens = super::headers::claude_token_usage(&artifact.text());
-    record.files = claude_files(&artifact.text());
+    let (files, activity) = claude_files(&artifact.text());
+    record.files = files;
+    record.model = activity.model.clone().or(record.model);
+    record.activity = Some(activity);
     record.extra = meta.extra;
     if !apply_context(&mut record, context).ok()? {
         return None;
@@ -101,7 +109,10 @@ pub fn parse_subagent(
     record.working = record.active;
     record.done = activity == ActivityState::Idle;
     record.tokens = super::headers::claude_token_usage(&artifact.text());
-    record.files = claude_files(&artifact.text());
+    let (files, activity) = claude_files(&artifact.text());
+    record.files = files;
+    record.model = activity.model.clone().or(record.model);
+    record.activity = Some(activity);
     record.extra = meta.extra;
     if !apply_context(&mut record, context).ok()? {
         return None;
@@ -144,9 +155,11 @@ fn parent_from_path(path: &Path) -> Option<String> {
         .map(str::to_string)
 }
 
-fn claude_files(text: &str) -> Vec<FileActivity> {
+fn claude_files(text: &str) -> (Vec<FileActivity>, super::transcript::TranscriptActivity) {
     let mut files = BTreeMap::<String, FileActivity>::new();
+    let mut activity = super::transcript::TranscriptActivity::default();
     for event in json_lines(text) {
+        activity.observe_claude(&event);
         let Some(content) = event
             .get("message")
             .and_then(|message| message.get("content"))
@@ -188,7 +201,7 @@ fn claude_files(text: &str) -> Vec<FileActivity> {
             }
         }
     }
-    files.into_values().collect()
+    (files.into_values().collect(), activity)
 }
 
 fn line_count(value: Option<&Value>) -> u64 {

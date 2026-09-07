@@ -140,6 +140,8 @@ pub struct AccountView {
     pub paused: bool,
     pub token_expired: bool,
     #[serde(default)]
+    pub credential: Option<neomax_core::providers::catalog::CredentialEvidence>,
+    #[serde(default)]
     pub eligibility: ProfileEligibilityView,
     #[serde(default)]
     pub usage: Option<Value>,

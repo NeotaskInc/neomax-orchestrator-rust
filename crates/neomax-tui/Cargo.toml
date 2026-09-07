@@ -1,0 +1,25 @@
+[package]
+name = "neomax-tui"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description.workspace = true
+readme.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+neomax-core.workspace = true
+neomax-portal = { path = "../neomax-portal", version = "0.1.2" }
+serde_json.workspace = true
+ratatui = "0.29"
+crossterm = "0.28"
+portable-pty = "0.9"
+vt100 = "0.15"
+
+[dev-dependencies]
+tempfile.workspace = true

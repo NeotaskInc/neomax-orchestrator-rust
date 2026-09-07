@@ -9,6 +9,53 @@ use super::super::super::prepare_attempt;
 use super::support::{orchestrator_profile, settings};
 
 #[test]
+fn codex_speed_choice_survives_preparation_for_every_orchestrator_provider() {
+    let temp = tempfile::tempdir().unwrap();
+    let paths = StatePaths::new(temp.path(), temp.path().join("state"));
+    let settings = settings();
+    let providers = ProviderRegistry::standard();
+    for engine in Engine::ALL {
+        let profile = orchestrator_profile(temp.path(), &format!("speed-{engine}"), engine);
+        let mut run = RunRecord::new(
+            format!("speed-{engine}"),
+            engine,
+            crate::providers::catalog::default_model_id(engine),
+            "fixture task",
+            profile,
+            temp.path(),
+            1,
+        );
+        run.launch_role = LaunchRole::Orchestrator;
+        run.environment
+            .insert(crate::settings::CODEX_FAST_ENV.into(), "1".into());
+        let prepared = prepare_attempt(
+            providers.get(engine).unwrap(),
+            &run,
+            &settings,
+            &paths,
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            prepared
+                .command()
+                .env
+                .get(OsStr::new(crate::settings::CODEX_FAST_ENV)),
+            Some(&"1".into()),
+            "{engine} lost the Codex worker speed choice"
+        );
+        if engine == Engine::Codex {
+            assert!(
+                prepared
+                    .command()
+                    .args_lossy()
+                    .contains(&"service_tier=fast".into())
+            );
+        }
+    }
+}
+
+#[test]
 fn orchestrator_propagates_each_worker_model_to_every_provider_environment() {
     let temp = tempfile::tempdir().unwrap();
     let paths = StatePaths::new(temp.path(), temp.path().join("state"));

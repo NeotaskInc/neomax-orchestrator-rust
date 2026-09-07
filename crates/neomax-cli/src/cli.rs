@@ -6,8 +6,12 @@ mod agent_normalize;
 mod authorization;
 #[path = "cli/dispatch.rs"]
 mod dispatch;
+#[path = "cli/doctor.rs"]
+pub(crate) mod doctor;
 #[path = "cli/help.rs"]
 mod help;
+#[path = "cli/provider_entry.rs"]
+mod provider_entry;
 
 pub use authorization::authorize_agent_invocation;
 #[cfg(test)]

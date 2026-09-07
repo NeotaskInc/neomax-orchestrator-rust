@@ -135,7 +135,6 @@ pub(crate) fn account_views(
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
-    use std::path::PathBuf;
 
     use neomax_core::providers::catalog::{
         AuthMethod, AuthStatus, BinaryStatus, CatalogSnapshot, ProfileEligibility, ProfileSnapshot,
@@ -146,39 +145,40 @@ mod tests {
 
     #[test]
     fn account_views_use_the_injected_catalog_eligibility() {
-        let source = FilesystemPortalSource::new("/fixture/home", "/fixture/state").with_catalog(
-            CatalogSnapshot {
-                providers: BTreeMap::from([(
-                    Engine::Kimi,
-                    ProviderSnapshot {
-                        spec: spec(Engine::Kimi),
-                        binary: BinaryStatus {
-                            program: "kimi".into(),
-                            available: true,
-                            version: Some("fixture".into()),
+        let temp = tempfile::tempdir().unwrap();
+        let source =
+            FilesystemPortalSource::new(temp.path().join("home"), temp.path().join("state"))
+                .with_catalog(CatalogSnapshot {
+                    providers: BTreeMap::from([(
+                        Engine::Kimi,
+                        ProviderSnapshot {
+                            spec: spec(Engine::Kimi),
+                            binary: BinaryStatus {
+                                program: "kimi".into(),
+                                available: true,
+                                version: Some("fixture".into()),
+                            },
+                            profiles: vec![ProfileSnapshot {
+                                engine: Engine::Kimi,
+                                account: "1".into(),
+                                path: temp.path().join("kimi-profile"),
+                                reserved: false,
+                                auth: AuthStatus::Authenticated {
+                                    methods: vec![AuthMethod::ApiKey],
+                                },
+                                eligibility: ProfileEligibility {
+                                    credential_present: true,
+                                    authenticated: true,
+                                    worker_eligible: true,
+                                    orchestrator_eligible: true,
+                                    rotation_eligible: false,
+                                    managed_pool_eligible: true,
+                                },
+                            }],
+                            models: vec!["kimi-code/k3".into()],
                         },
-                        profiles: vec![ProfileSnapshot {
-                            engine: Engine::Kimi,
-                            account: "1".into(),
-                            path: PathBuf::from("/fixture/kimi-profile"),
-                            reserved: false,
-                            auth: AuthStatus::Authenticated {
-                                methods: vec![AuthMethod::ApiKey],
-                            },
-                            eligibility: ProfileEligibility {
-                                credential_present: true,
-                                authenticated: true,
-                                worker_eligible: true,
-                                orchestrator_eligible: true,
-                                rotation_eligible: false,
-                                managed_pool_eligible: true,
-                            },
-                        }],
-                        models: vec!["kimi-code/k3".into()],
-                    },
-                )]),
-            },
-        );
+                    )]),
+                });
         let views = account_views(&source, &[], &[], 1_800_000_000, 30).unwrap();
         let kimi = &views["kimi"].accounts;
         assert_eq!(kimi.len(), 1);
@@ -193,39 +193,40 @@ mod tests {
 
     #[test]
     fn account_views_keep_authenticated_profiles_when_the_binary_is_missing() {
-        let source = FilesystemPortalSource::new("/fixture/home", "/fixture/state").with_catalog(
-            CatalogSnapshot {
-                providers: BTreeMap::from([(
-                    Engine::Kimi,
-                    ProviderSnapshot {
-                        spec: spec(Engine::Kimi),
-                        binary: BinaryStatus {
-                            program: "kimi".into(),
-                            available: false,
-                            version: None,
+        let temp = tempfile::tempdir().unwrap();
+        let source =
+            FilesystemPortalSource::new(temp.path().join("home"), temp.path().join("state"))
+                .with_catalog(CatalogSnapshot {
+                    providers: BTreeMap::from([(
+                        Engine::Kimi,
+                        ProviderSnapshot {
+                            spec: spec(Engine::Kimi),
+                            binary: BinaryStatus {
+                                program: "kimi".into(),
+                                available: false,
+                                version: None,
+                            },
+                            profiles: vec![ProfileSnapshot {
+                                engine: Engine::Kimi,
+                                account: "1".into(),
+                                path: temp.path().join("kimi-profile"),
+                                reserved: false,
+                                auth: AuthStatus::Authenticated {
+                                    methods: vec![AuthMethod::ApiKey],
+                                },
+                                eligibility: ProfileEligibility {
+                                    credential_present: true,
+                                    authenticated: true,
+                                    worker_eligible: true,
+                                    orchestrator_eligible: true,
+                                    rotation_eligible: false,
+                                    managed_pool_eligible: true,
+                                },
+                            }],
+                            models: vec!["kimi-code/k3".into()],
                         },
-                        profiles: vec![ProfileSnapshot {
-                            engine: Engine::Kimi,
-                            account: "1".into(),
-                            path: PathBuf::from("/fixture/kimi-profile"),
-                            reserved: false,
-                            auth: AuthStatus::Authenticated {
-                                methods: vec![AuthMethod::ApiKey],
-                            },
-                            eligibility: ProfileEligibility {
-                                credential_present: true,
-                                authenticated: true,
-                                worker_eligible: true,
-                                orchestrator_eligible: true,
-                                rotation_eligible: false,
-                                managed_pool_eligible: true,
-                            },
-                        }],
-                        models: vec!["kimi-code/k3".into()],
-                    },
-                )]),
-            },
-        );
+                    )]),
+                });
         let views = account_views(&source, &[], &[], 1_800_000_000, 30).unwrap();
         let kimi = &views["kimi"].accounts;
         assert_eq!(kimi.len(), 1);
@@ -273,7 +274,9 @@ mod tests {
 
     #[test]
     fn empty_provider_profiles_still_publish_catalog_capabilities_for_all_engines() {
-        let source = FilesystemPortalSource::new("/fixture/home", "/fixture/state");
+        let temp = tempfile::tempdir().unwrap();
+        let source =
+            FilesystemPortalSource::new(temp.path().join("home"), temp.path().join("state"));
         let views = account_views(&source, &[], &[], 1_800_000_000, 30).unwrap();
         assert_eq!(views.len(), Engine::ALL.len());
         for engine in Engine::ALL {

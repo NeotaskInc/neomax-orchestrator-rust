@@ -70,12 +70,14 @@ neomax projects
 neomax config show
 ```
 
-Use `neomax` for dynamic orchestrator selection. Pin only the main
-orchestrator when the user requests a provider:
+Bare `neomax` opens the terminal workspace: Launch, Chat, Fleet, Tasks,
+Accounts, and Usage. Browsing does not start a provider. Use
+`neomax orchestrator` for a direct dynamically selected session, or pin the
+main orchestrator when the user requests a provider:
 
 | Command | Main orchestrator |
 | --- | --- |
-| `neomax` | Dynamic selection |
+| `neomax orchestrator` | Dynamic selection |
 | `cmax` | Claude |
 | `cdxmax` | Codex |
 | `ocmax` | OpenCode |
@@ -131,6 +133,11 @@ separate worktrees. Review results before reporting completion.
 
 Provider CLIs own authentication. Never print, copy, or commit credentials.
 
+`neomax PROVIDER ACCOUNT` opens an authenticated profile or signs in first
+when needed. ACCOUNT accepts a number, profile directory name, or saved email.
+Email selection follows the current credentials, including after rotation.
+Put initial task text after `--`. The native provider commands are unchanged.
+
 ```bash
 cmax ACCOUNT
 cdx login ACCOUNT MODE
@@ -138,6 +145,9 @@ ocx login ACCOUNT PROVIDER MODE
 kmx login ACCOUNT MODE
 gmx login ACCOUNT MODE
 neomax usage --json
+neomax doctor --json
+neomax codex 2
+neomax codex developer@example.com -- "Review this project"
 ```
 
 Neomax avoids accounts at the 99 percent wall and proactively prefers another
@@ -152,7 +162,26 @@ Rotation is provider-neutral:
 neomax rotate --active --dry-run --json
 neomax rotate --active
 neomax session-rotate SESSION_ID
+neomax codex 2 rotate --dry-run --json
+neomax codex 2 rotate --with 4
 ```
+
+Account-targeted rotation supports Claude/Codex OAuth credential swaps. It
+preserves session files, moves quota and cooldown evidence with credentials,
+and does not restart a native provider. An open provider may require an auth
+reload or resume. A model-free tick does not start replacement model processes
+or prove that a task continued. Managed worker coordinators own supervised
+resume; do not describe bare provider processes as automatically managed.
+
+Use `doctor` for read-only local credential and quota evidence. Refreshable
+credentials are distinct from login-required credentials; neither a cached
+token nor its expiry proves remote access. `why --json` includes quota age and
+freshness. Do not infer zero usage from missing data.
+
+Codex uses standard service by default. `--codex-fast` opts into fast service;
+`--codex-standard` selects standard service explicitly. Preserve that choice.
+`neomax config set reset-aware-ranking true` opts into finer weekly-reset
+ranking without changing eligibility; false restores the default day buckets.
 
 ## Concurrency and worktrees
 

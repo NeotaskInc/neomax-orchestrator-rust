@@ -8,6 +8,19 @@ use super::types::{Artifact, ArtifactKind};
 pub trait ArtifactSource: Send + Sync {
     fn discover(&self, profile: &Path, kind: ArtifactKind, cutoff: i64) -> Result<Vec<Artifact>>;
 
+    fn visit(
+        &self,
+        profile: &Path,
+        kind: ArtifactKind,
+        cutoff: i64,
+        visitor: &mut dyn FnMut(Artifact),
+    ) -> Result<()> {
+        for artifact in self.discover(profile, kind, cutoff)? {
+            visitor(artifact);
+        }
+        Ok(())
+    }
+
     fn index(&self, profile: &Path, cutoff: i64) -> Result<ArtifactIndex> {
         let mut artifacts = Vec::new();
         for kind in ArtifactKind::ALL {

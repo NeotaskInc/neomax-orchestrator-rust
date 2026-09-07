@@ -6,12 +6,22 @@ pub const CLAUDE_DEFAULT_MODEL: &str = "claude-fable-5-1[1m]";
 pub const CLAUDE_OPUS_MODEL: &str = "claude-opus-5";
 pub const CLAUDE_OPUS_MODEL_1M: &str = "claude-opus-5[1m]";
 pub const CODEX_DEFAULT_MODEL: &str = "gpt-6-astra";
-pub const CODEX_SUBAGENT_MODELS: &[&str] = &[
-    "gpt-5.6-sol",
-    "gpt-5.6-terra",
-    "gpt-5.6-luna",
-];
-pub const CODEX_SERVICE_TIER: &str = "fast";
+pub const CODEX_SUBAGENT_MODELS: &[&str] = &["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"];
+pub const CODEX_SERVICE_TIER: &str = "default";
+pub use crate::settings::CODEX_FAST_ENV;
+
+pub fn codex_service_tier(
+    environment: &std::collections::BTreeMap<String, String>,
+) -> &'static str {
+    if environment
+        .get(CODEX_FAST_ENV)
+        .is_some_and(|value| matches!(value.as_str(), "1" | "true" | "on"))
+    {
+        "fast"
+    } else {
+        CODEX_SERVICE_TIER
+    }
+}
 pub const OPENCODE_DEFAULT_MODEL: &str = "opencode/big-pickle";
 pub const KIMI_DEFAULT_MODEL: &str = "kimi-code/k3";
 pub const GROK_DEFAULT_MODEL: &str = "grok-4.6";

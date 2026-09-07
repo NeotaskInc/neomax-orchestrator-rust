@@ -66,7 +66,7 @@ pub fn apply_with_rollback<W: CredentialWriter>(
     Ok(())
 }
 
-fn rollback_after_failure<W: CredentialWriter>(
+pub(super) fn rollback_after_failure<W: CredentialWriter>(
     writer: &W,
     snapshots: &[FileState],
     original: Error,

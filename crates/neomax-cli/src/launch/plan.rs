@@ -27,6 +27,7 @@ pub(crate) fn build(
         Launcher::AccountHelper(engine) => (LaunchMode::AccountHelper, Some(engine)),
     };
     let orchestrator = options.engine.or(pinned_engine);
+    let codex_fast = options.codex_fast.unwrap_or(context.settings.codex_fast);
 
     let worker_scope = scope::effective(launcher, options.worker_scope.clone())?;
     let worker_engines = worker_scope
@@ -58,19 +59,24 @@ pub(crate) fn build(
             } else {
                 "worker-pool"
             };
+            let mut environment = environment::environment_plan(
+                context,
+                engine,
+                role,
+                models
+                    .get(&engine.to_string())
+                    .map(|model| model.model.as_str()),
+            );
+            environment.variables.insert(
+                neomax_core::settings::CODEX_FAST_ENV.into(),
+                if codex_fast { "1" } else { "0" }.into(),
+            );
             AdapterPlan {
                 provider: adapter.label.to_owned(),
                 executable: adapter.executable.to_owned(),
                 role: role.into(),
                 execution: "not-run".into(),
-                environment: environment::environment_plan(
-                    context,
-                    engine,
-                    role,
-                    models
-                        .get(&engine.to_string())
-                        .map(|model| model.model.as_str()),
-                ),
+                environment,
             }
         })
         .collect();
@@ -82,6 +88,7 @@ pub(crate) fn build(
         parser::join_positionals(options.positionals)
     };
     Ok(LaunchPlan {
+        codex_fast,
         invocation: invocation_name(launcher).into(),
         mode,
         orchestrator: orchestrator.map(|engine| engine.to_string()),

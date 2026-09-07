@@ -20,7 +20,10 @@ pub(crate) fn build(
     }
     command = command
         .arg("-c")
-        .arg("service_tier=fast")
+        .arg(format!(
+            "service_tier={}",
+            crate::providers::catalog::codex_service_tier(&request.environment.variables)
+        ))
         .arg("-a")
         .arg("never")
         .arg("-s")

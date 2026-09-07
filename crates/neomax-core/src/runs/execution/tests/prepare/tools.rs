@@ -2,9 +2,9 @@ use std::ffi::OsStr;
 use std::path::PathBuf;
 
 use crate::agent_tools::{
-    LaunchRole, MANIFEST_RELATIVE_PATH, ManifestStore, NEOMAX_BIN_ENV, NEOMAX_TOOL_DEPTH_ENV,
-    NEOMAX_TOOL_INSTRUCTION_ENV, NEOMAX_TOOL_MANIFEST_ENV, NEOMAX_TOOL_POLICY_ENV, ToolManifest,
-    ToolPolicy,
+    LaunchRole, ManifestStore, NEOMAX_BIN_ENV, NEOMAX_TOOL_DEPTH_ENV, NEOMAX_TOOL_INSTRUCTION_ENV,
+    NEOMAX_TOOL_MANIFEST_ENV, NEOMAX_TOOL_POLICY_ENV, ToolManifest, ToolPolicy,
+    canonical_manifest_relative_path,
 };
 use crate::providers::{ORCHESTRATOR_DIRECTIVE, ProviderRegistry};
 use crate::runs::RunRecord;
@@ -19,7 +19,7 @@ fn every_orchestrator_provider_launch_receives_full_tools_and_role_contract() {
     let paths = StatePaths::new(temp.path(), temp.path().join("state"));
     let settings = settings();
     let providers = ProviderRegistry::standard();
-    let manifest_path = paths.state.join(MANIFEST_RELATIVE_PATH);
+    let manifest_path = paths.state.join(canonical_manifest_relative_path());
     let manifest = ToolManifest::canonical();
     manifest.validate().unwrap();
     assert!(

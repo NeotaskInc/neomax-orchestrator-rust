@@ -67,6 +67,9 @@ fn run() -> Result<()> {
         if command == "install" {
             return cli::execute_install(&args[1..]);
         }
+        if command == "doctor" {
+            return cli::doctor::run(&args[1..]);
+        }
         if command == "uninstall" {
             return cli::execute_uninstall(&args[1..]);
         }

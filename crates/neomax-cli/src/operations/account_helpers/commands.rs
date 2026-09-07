@@ -108,6 +108,7 @@ pub(crate) fn run_command(
     model: &str,
     home: &Path,
     cwd: &Path,
+    codex_fast: bool,
 ) -> Result<ProcessInvocation> {
     let mut command = base_command(request.engine, profile, home, cwd)?.interactive();
     match request.engine {
@@ -123,7 +124,14 @@ pub(crate) fn run_command(
                 .arg("-m")
                 .arg(model)
                 .arg("-c")
-                .arg("service_tier=fast")
+                .arg(format!(
+                    "service_tier={}",
+                    if codex_fast {
+                        "fast"
+                    } else {
+                        neomax_core::providers::catalog::CODEX_SERVICE_TIER
+                    }
+                ))
                 .arg("-a")
                 .arg("never")
                 .arg("-s")

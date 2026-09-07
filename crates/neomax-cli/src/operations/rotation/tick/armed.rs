@@ -267,7 +267,7 @@ fn rotate_untracked(
         now: timestamp(context.now),
         policy: &TargetPolicy {
             allow_reserved: true,
-            ..TargetPolicy::default()
+            ..TargetPolicy::from_settings(&context.settings)
         },
     })?;
     if is_rooted_but_not_absolute(&target.account.profile) {

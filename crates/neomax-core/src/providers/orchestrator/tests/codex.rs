@@ -1,6 +1,20 @@
-use super::support::{args, request, CWD};
-use crate::providers::catalog;
+use super::support::{CWD, args, request};
 use crate::Engine;
+use crate::providers::catalog;
+
+#[test]
+fn fast_mode_is_explicit_for_root_and_solo_sessions() {
+    for solo in [false, true] {
+        for (value, tier) in [("0", "default"), ("1", "fast")] {
+            let mut request = request(Engine::Codex).with_solo(solo);
+            request
+                .environment
+                .variables
+                .insert(catalog::CODEX_FAST_ENV.into(), value.into());
+            assert!(args(Engine::Codex, &request).contains(&format!("service_tier={tier}")));
+        }
+    }
+}
 
 #[test]
 fn no_task_uses_interactive_shape() {
@@ -10,7 +24,7 @@ fn no_task_uses_interactive_shape() {
             "-m",
             catalog::CODEX_DEFAULT_MODEL,
             "-c",
-            "service_tier=fast",
+            "service_tier=default",
             "-a",
             "never",
             "-s",
@@ -53,7 +67,9 @@ fn native_resume_without_a_follow_up_task_does_not_send_a_new_prompt() {
         pair.first().map(String::as_str) == Some("resume")
             && pair.get(1).map(String::as_str) == Some("session-42")
     }));
-    assert!(!args
-        .iter()
-        .any(|argument| argument.contains("You are the Neomax orchestrator")));
+    assert!(
+        !args
+            .iter()
+            .any(|argument| argument.contains("You are the Neomax orchestrator"))
+    );
 }

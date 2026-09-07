@@ -66,6 +66,7 @@ fn solo_mode_rejects_worktree_and_worker_controls() {
 #[test]
 fn text_dry_run_reports_read_only_plan_guarantees() {
     let plan = LaunchPlan {
+        codex_fast: false,
         invocation: "neomax".into(),
         mode: LaunchMode::Dynamic,
         orchestrator: Some("codex".into()),

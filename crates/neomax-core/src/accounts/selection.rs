@@ -28,6 +28,7 @@ pub enum SelectionTier {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SelectionPolicy {
+    pub reset_aware: bool,
     pub live_concurrency_cap: u32,
     pub live_spread_weight: f64,
     pub five_skip_percent: f64,
@@ -41,6 +42,7 @@ pub struct SelectionPolicy {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct AccountRankingPolicy {
+    pub reset_aware: bool,
     pub live_weight: f64,
     pub weekly_tiebreak_weight: f64,
 }
@@ -48,6 +50,7 @@ pub struct AccountRankingPolicy {
 impl Default for AccountRankingPolicy {
     fn default() -> Self {
         Self {
+            reset_aware: false,
             live_weight: DEFAULT_LIVE_SPREAD_WEIGHT,
             weekly_tiebreak_weight: DEFAULT_WEEKLY_TIEBREAK_WEIGHT,
         }
@@ -64,6 +67,7 @@ pub struct AccountRank {
 impl Default for SelectionPolicy {
     fn default() -> Self {
         Self {
+            reset_aware: false,
             live_concurrency_cap: 10,
             live_spread_weight: DEFAULT_LIVE_SPREAD_WEIGHT,
             five_skip_percent: FIVE_HOUR_SOFT_PERCENT,
@@ -80,6 +84,7 @@ impl Default for SelectionPolicy {
 impl SelectionPolicy {
     pub fn from_settings(settings: &EffectiveSettings) -> Self {
         Self {
+            reset_aware: settings.reset_aware_ranking,
             live_concurrency_cap: settings.concurrency.max_sessions_per_account,
             ..Self::default()
         }
@@ -87,6 +92,7 @@ impl SelectionPolicy {
 
     pub fn ranking(&self) -> AccountRankingPolicy {
         AccountRankingPolicy {
+            reset_aware: self.reset_aware,
             live_weight: self.live_spread_weight,
             weekly_tiebreak_weight: self.weekly_tiebreak_weight,
         }
@@ -111,7 +117,8 @@ pub fn rank_account(
             && five_hour >= FIVE_HOUR_HARD_PERCENT,
         score: five_hour
             + f64::from(contention) * policy.live_weight
-            + weekly_deadline_tier(account.weekly_reset_at, now) * policy.weekly_tiebreak_weight,
+            + reset_deadline_rank(account.weekly_reset_at, now, policy.reset_aware)
+                * policy.weekly_tiebreak_weight,
         weekly_percent: account.weekly_at(now),
     }
 }
@@ -121,6 +128,21 @@ pub fn compare_account_rank(left: AccountRank, right: AccountRank) -> std::cmp::
         .cmp(&right.at_five_hour_hard_wall)
         .then_with(|| left.score.total_cmp(&right.score))
         .then_with(|| left.weekly_percent.total_cmp(&right.weekly_percent))
+}
+
+fn reset_deadline_rank(reset: Option<DateTime<Utc>>, now: DateTime<Utc>, enabled: bool) -> f64 {
+    if !enabled {
+        return weekly_deadline_tier(reset, now);
+    }
+    reset.filter(|reset| *reset > now).map_or(
+        super::windows::WEEKLY_HORIZON_SECONDS / super::windows::WEEKLY_BUCKET_SECONDS,
+        |reset| {
+            ((reset - now).num_milliseconds() as f64
+                / 1000.0
+                / super::windows::WEEKLY_BUCKET_SECONDS)
+                .min(super::windows::WEEKLY_HORIZON_SECONDS / super::windows::WEEKLY_BUCKET_SECONDS)
+        },
+    )
 }
 
 pub fn select_account<'a>(

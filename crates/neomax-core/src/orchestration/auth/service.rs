@@ -46,6 +46,20 @@ impl<W: CredentialWriter> RotationService<W> {
         reason: Option<String>,
     ) -> Result<RotationEffects> {
         copy_allowed(engine)?;
+        crate::atomic::with_exclusive_lock(&self.paths.backup_dir.join("transaction.lock"), || {
+            self.copy_locked(engine, destination, source, timestamp, reason)
+        })
+    }
+
+    fn copy_locked(
+        &self,
+        engine: Engine,
+        destination: &Path,
+        source: &Path,
+        timestamp: i64,
+        reason: Option<String>,
+    ) -> Result<RotationEffects> {
+        copy_allowed(engine)?;
         match engine {
             Engine::Claude => {
                 let plan = claude::prepare_copy(&self.writer, destination, source)?;
@@ -118,6 +132,20 @@ impl<W: CredentialWriter> RotationService<W> {
         reason: Option<String>,
     ) -> Result<RotationEffects> {
         copy_allowed(engine)?;
+        crate::atomic::with_exclusive_lock(&self.paths.backup_dir.join("transaction.lock"), || {
+            self.swap_locked(engine, first, second, timestamp, reason)
+        })
+    }
+
+    fn swap_locked(
+        &self,
+        engine: Engine,
+        first: &Path,
+        second: &Path,
+        timestamp: i64,
+        reason: Option<String>,
+    ) -> Result<RotationEffects> {
+        copy_allowed(engine)?;
         match engine {
             Engine::Claude => {
                 let plan = claude::prepare_swap(&self.writer, first, second)?;
@@ -152,7 +180,10 @@ impl<W: CredentialWriter> RotationService<W> {
                         from_email: plan.first_email,
                         to_email: plan.second_email,
                         reason,
-                    }))?;
+                    }))
+                    .or_else(|error| {
+                        super::transaction::rollback_after_failure(&self.writer, &snapshots, error)
+                    })?;
                 Ok(effects)
             }
             Engine::Codex => {
@@ -188,7 +219,10 @@ impl<W: CredentialWriter> RotationService<W> {
                         from_email: None,
                         to_email: None,
                         reason,
-                    }))?;
+                    }))
+                    .or_else(|error| {
+                        super::transaction::rollback_after_failure(&self.writer, &snapshots, error)
+                    })?;
                 Ok(effects)
             }
             _ => unreachable!("provider restriction is checked above"),
@@ -196,6 +230,20 @@ impl<W: CredentialWriter> RotationService<W> {
     }
 
     pub fn restore(
+        &self,
+        engine: Engine,
+        destination: &Path,
+        backup: Option<&Path>,
+        timestamp: i64,
+        reason: Option<String>,
+    ) -> Result<RotationEffects> {
+        copy_allowed(engine)?;
+        crate::atomic::with_exclusive_lock(&self.paths.backup_dir.join("transaction.lock"), || {
+            self.restore_locked(engine, destination, backup, timestamp, reason)
+        })
+    }
+
+    fn restore_locked(
         &self,
         engine: Engine,
         destination: &Path,

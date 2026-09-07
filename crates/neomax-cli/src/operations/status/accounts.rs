@@ -51,7 +51,7 @@ pub(super) fn views(
             continue;
         };
         for profile in &provider.profiles {
-            output.push(view(AccountViewInput {
+            let mut account = view(AccountViewInput {
                 profile,
                 snapshot: by_profile.get(&(engine, profile.path.clone())),
                 binary_available: provider.binary.available,
@@ -63,7 +63,19 @@ pub(super) fn views(
                     .copied()
                     .unwrap_or(0),
                 session_snapshot,
-            }));
+            });
+            let environment =
+                neomax_core::providers::catalog::MapEnvironment::new(std::env::vars())
+                    .with_home(&context.paths.home)
+                    .with_current_dir(&context.cwd);
+            account.credential = Some(neomax_core::providers::catalog::credential_evidence(
+                profile,
+                &context.paths.home,
+                &environment,
+                &neomax_core::providers::catalog::RealFileSystem,
+                context.now,
+            ));
+            output.push(account);
         }
     }
     Ok(output)
@@ -194,6 +206,7 @@ fn view(input: AccountViewInput<'_>) -> AccountView {
         auth_status,
         auth_methods: methods,
         credential_present: eligibility.credential_present,
+        credential: None,
         authenticated,
         worker_eligible: eligibility.worker_eligible && binary_available,
         orchestrator_eligible: eligibility.orchestrator_eligible && binary_available,

@@ -1,4 +1,6 @@
+mod account;
 mod auth;
+pub(crate) use account::execute as rotate_account;
 mod live;
 mod render;
 mod session;

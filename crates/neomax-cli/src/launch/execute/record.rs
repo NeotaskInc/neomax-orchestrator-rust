@@ -34,6 +34,7 @@ pub(super) struct NewRunInput<'a> {
     pub(super) plan_mode: bool,
     pub(super) open_pull_request: bool,
     pub(super) ultra: bool,
+    pub(super) codex_fast: Option<bool>,
     pub(super) opus: bool,
     pub(super) brief: bool,
     pub(super) solo: bool,
@@ -66,6 +67,7 @@ pub(super) fn new_run(input: NewRunInput<'_>) -> RunRecord {
         plan_mode,
         open_pull_request,
         ultra,
+        codex_fast,
         opus,
         brief,
         solo,
@@ -124,6 +126,15 @@ pub(super) fn new_run(input: NewRunInput<'_>) -> RunRecord {
     run.environment
         .insert("NEOMAX_ENGINE".into(), engine.to_string());
     run.environment.insert("NEOMAX_FLEET".into(), scope.csv());
+    run.environment.insert(
+        neomax_core::providers::catalog::CODEX_FAST_ENV.into(),
+        if codex_fast.unwrap_or(context.settings.codex_fast) {
+            "1"
+        } else {
+            "0"
+        }
+        .into(),
+    );
     if launch_role.is_orchestrator() && prompt.trim().is_empty() {
         if let Ok(orientation) =
             crate::operations::no_task_orientation(launcher, engine, scope, &worker_models, context)
@@ -374,6 +385,7 @@ mod tests {
             plan_mode: false,
             open_pull_request: false,
             ultra: false,
+            codex_fast: None,
             opus: false,
             brief: false,
             solo: false,

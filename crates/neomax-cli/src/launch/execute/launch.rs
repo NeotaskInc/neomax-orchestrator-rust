@@ -155,6 +155,7 @@ pub(crate) fn run_with_registry(
         plan_mode: options.plan_mode,
         open_pull_request: options.open_pull_request,
         ultra: options.ultra,
+        codex_fast: options.codex_fast,
         opus: options.opus,
         brief: options.brief,
         solo: options.solo,

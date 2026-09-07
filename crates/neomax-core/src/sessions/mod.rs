@@ -9,16 +9,17 @@ pub mod kimi;
 pub mod opencode;
 pub mod portal;
 pub mod subagents;
+pub mod transcript;
 pub mod types;
 
 #[cfg(test)]
 mod tests;
 
-pub use activity::{age_seconds, classify_activity, ActivityInput, ActivityState};
+pub use activity::{ActivityInput, ActivityState, age_seconds, classify_activity};
 pub use artifacts::{
     Artifact, ArtifactIndex, ArtifactKind, ArtifactLocator, ArtifactSource, FsArtifactSource,
     MemoryArtifactSource, ProviderArtifactIndex,
 };
 pub use filters::{DiscoveryContext, ExclusionReason, ProjectResolver};
-pub use portal::{flatten_native_children, portal_snapshot, PortalSnapshot};
+pub use portal::{PortalSnapshot, flatten_native_children, portal_snapshot};
 pub use types::{FileActivity, SessionKind, SessionRecord, SessionSummary, SessionTokens};

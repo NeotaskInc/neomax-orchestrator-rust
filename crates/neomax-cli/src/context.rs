@@ -95,6 +95,18 @@ impl RuntimeContext {
             .map(Ok)
             .unwrap_or_else(ProviderRuntime::discover_process)?)
     }
+
+    pub fn after_login(&self) -> Result<Self> {
+        Ok(Self {
+            paths: self.paths.clone(),
+            settings: self.settings.clone(),
+            cwd: self.cwd.clone(),
+            now: unix_now(),
+            liveness: self.liveness.clone(),
+            provider_runtime: Some(ProviderRuntime::discover_process()?),
+            local_seed: self.local_seed.clone(),
+        })
+    }
 }
 
 fn resolve_path_from_cwd(cwd: &Path, value: &str) -> PathBuf {

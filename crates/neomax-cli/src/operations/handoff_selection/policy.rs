@@ -72,7 +72,7 @@ pub(crate) fn select_with_profile(
     )?;
     let policy = TargetPolicy {
         allow_reserved: true,
-        ..TargetPolicy::default()
+        ..TargetPolicy::from_settings(&context.settings)
     };
     let request = HandoffTargetRequest {
         accounts: &accounts,

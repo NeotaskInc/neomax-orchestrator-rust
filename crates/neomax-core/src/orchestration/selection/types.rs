@@ -6,13 +6,13 @@ use serde::{Deserialize, Serialize};
 use crate::Engine;
 use crate::accounts::{
     AccountRankingPolicy, AccountSnapshot, DEFAULT_WEEKLY_TIEBREAK_WEIGHT,
-    LIVE_ROTATION_FIVE_PERCENT, WEEKLY_BUCKET_SECONDS, WEEKLY_HARD_PERCENT,
-    WEEKLY_HORIZON_SECONDS,
+    LIVE_ROTATION_FIVE_PERCENT, WEEKLY_BUCKET_SECONDS, WEEKLY_HARD_PERCENT, WEEKLY_HORIZON_SECONDS,
 };
 use crate::orchestration::registry::OrchestratorRecord;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct OrchestratorPolicy {
+    pub reset_aware: bool,
     pub hard_percent: f64,
     pub rotate_five_percent: f64,
     pub anti_stack_weight: f64,
@@ -25,6 +25,7 @@ pub struct OrchestratorPolicy {
 impl Default for OrchestratorPolicy {
     fn default() -> Self {
         Self {
+            reset_aware: false,
             hard_percent: WEEKLY_HARD_PERCENT,
             rotate_five_percent: LIVE_ROTATION_FIVE_PERCENT,
             anti_stack_weight: 100_000.0,
@@ -37,8 +38,15 @@ impl Default for OrchestratorPolicy {
 }
 
 impl OrchestratorPolicy {
+    pub fn from_settings(settings: &crate::EffectiveSettings) -> Self {
+        Self {
+            reset_aware: settings.reset_aware_ranking,
+            ..Self::default()
+        }
+    }
     pub fn account_ranking(&self) -> AccountRankingPolicy {
         AccountRankingPolicy {
+            reset_aware: self.reset_aware,
             live_weight: self.live_weight,
             weekly_tiebreak_weight: self.weekly_tiebreak_weight,
         }

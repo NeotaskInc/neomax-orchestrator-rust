@@ -222,6 +222,21 @@ fn rotate_one(
         source_rotation_eligible,
     )
     .with_observed_quota(source_quota);
+    if execution == RotationExecution::ModelFree
+        && !(source_rotation_eligible
+            && target.account.rotation_eligible
+            && run.engine == target.account.engine
+            && matches!(
+                run.engine,
+                neomax_core::Engine::Claude | neomax_core::Engine::Codex
+            ))
+    {
+        let _ = claims.release(&claim_profile);
+        return Ok(without_target(
+            original,
+            "resume required; model-free tick left the worker and run unchanged".into(),
+        ));
+    }
     let outcome = match continuation.continue_after_limit(&request) {
         Ok(outcome) => outcome,
         Err(error) => {
@@ -282,13 +297,13 @@ fn rotate_one(
             run.supervisor_pid = None;
             run.worker_pid = None;
         }
-        run.status = RunStatus::Running;
-        run.ended = None;
+        run.status = original.status;
+        run.ended = original.ended;
         runs.save_preserving_control_markers(&run)?;
         let _ = claims.release(&claim_profile);
         return Ok(RotationReport {
             run_id: run.id,
-            status: "continued (model-free)".into(),
+            status: "credentials swapped; provider reload or resume may be required".into(),
             source_engine: source_engine.to_string(),
             source_account,
             target_engine: Some(outcome.target_engine.to_string()),
@@ -349,4 +364,85 @@ fn rotate_one(
 
 fn timestamp(seconds: i64) -> DateTime<Utc> {
     DateTime::from_timestamp(seconds, 0).unwrap_or_else(Utc::now)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use neomax_core::{Engine, accounts::AccountSnapshot};
+
+    #[test]
+    fn model_free_handoff_preserves_limited_and_running_records_without_provider_access() {
+        let fixture = crate::tests::fixture();
+        let context = &fixture.context;
+        let source = context.paths.home.join(".grok");
+        let replacement = context.paths.home.join(".grok-acct2");
+        let runs = RunStore::new(&context.paths.runs);
+        let controls = AccountControlStore::new(&context.paths.cooldowns, &context.paths.paused);
+        let claims =
+            RotationClaimStore::new(&context.paths.rotation_claims, &context.paths.rotation_lock);
+        let continuation =
+            FilesystemContinuation::in_paths(&context.paths, Some(context.paths.usage.clone()));
+        let accounts =
+            [(&source, "1"), (&replacement, "2")].map(|(profile, account)| AccountSnapshot {
+                engine: Engine::Grok,
+                account: account.into(),
+                profile: profile.clone(),
+                binary_available: true,
+                authenticated: true,
+                rotation_eligible: false,
+                paused: false,
+                reserved: false,
+                live_workers: 0,
+                five_hour_percent: None,
+                weekly_percent: None,
+                model_weekly: Default::default(),
+                cooldown_until: None,
+                five_hour_reset_at: None,
+                weekly_reset_at: None,
+            });
+        for status in [RunStatus::Running, RunStatus::Limit] {
+            let mut run = RunRecord::new(
+                "fixture-handoff",
+                Engine::Grok,
+                "grok-4.6",
+                "Preserve this task",
+                &source,
+                &context.cwd,
+                context.now,
+            );
+            run.status = status;
+            run.session = Some("fixture-session".into());
+            run.branch = Some("fixture-branch".into());
+            runs.save(&run).unwrap();
+            let before = serde_json::to_value(runs.load(&run.id).unwrap()).unwrap();
+            let report = rotate_one(
+                &run,
+                &runs,
+                &ProviderRegistry::new([]),
+                &accounts,
+                &controls,
+                &claims,
+                &continuation,
+                &SelectionPolicy::default(),
+                &WorkerScope::only(Engine::Grok),
+                &context.paths,
+                &context.settings,
+                RotationTrigger::Tick,
+                timestamp(context.now),
+                RotationExecution::ModelFree,
+            )
+            .unwrap();
+            assert!(
+                report.status.contains("resume required"),
+                "{}",
+                report.status
+            );
+            assert_eq!(
+                serde_json::to_value(runs.load(&run.id).unwrap()).unwrap(),
+                before
+            );
+            assert!(!context.paths.auth_rotations.exists());
+        }
+    }
 }

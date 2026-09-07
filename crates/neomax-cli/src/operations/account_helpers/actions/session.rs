@@ -41,7 +41,14 @@ pub(super) fn run(
         );
     }
     let model = effective_model(request, context)?;
-    let invocation = run_command(request, &profile, &model, &context.paths.home, &context.cwd)?;
+    let invocation = run_command(
+        request,
+        &profile,
+        &model,
+        &context.paths.home,
+        &context.cwd,
+        context.settings.codex_fast,
+    )?;
     let outcome = process.invoke(&invocation)?;
     let report =
         ActionReport::from_outcome(request, &profile, "run", Some(model), &invocation, &outcome);

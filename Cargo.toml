@@ -5,6 +5,7 @@ members = [
     "crates/neomax-portal",
     "crates/neomax-usage-agent",
     "crates/neomax-worktrees",
+    "crates/neomax-tui",
 ]
 resolver = "3"
 

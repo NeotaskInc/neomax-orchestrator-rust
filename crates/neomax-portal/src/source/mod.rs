@@ -38,6 +38,25 @@ pub use files::read_run_log;
 
 pub trait PortalSource: Send + Sync {
     fn status(&self, now: i64, days: u32) -> Result<PortalSnapshot>;
+    fn status_with_sessions(
+        &self,
+        now: i64,
+        days: u32,
+        _sessions: &[SessionRecord],
+        _include_usage: bool,
+    ) -> Result<PortalSnapshot> {
+        self.status(now, days)
+    }
+    fn sessions_with_progress(
+        &self,
+        days: u32,
+        now: i64,
+        report: &mut dyn FnMut(&[SessionRecord], &str) -> bool,
+    ) -> Result<Vec<SessionRecord>> {
+        let sessions = self.sessions(days, now)?;
+        report(&sessions, "Session history loaded");
+        Ok(sessions)
+    }
     fn history(&self, limit: usize) -> Result<Vec<HistorySummary>>;
     fn modes(&self) -> Result<ModesResponse>;
     fn usage(&self, days: u32, now: i64) -> Result<UsageReport>;
@@ -187,6 +206,25 @@ fn absolute_root(path: PathBuf, current_dir: &Path, label: &str) -> Result<PathB
 }
 
 impl PortalSource for FilesystemPortalSource {
+    fn status_with_sessions(
+        &self,
+        now: i64,
+        days: u32,
+        sessions: &[SessionRecord],
+        include_usage: bool,
+    ) -> Result<PortalSnapshot> {
+        crate::aggregate::build_status_from_sessions(self, now, days, sessions, include_usage)
+    }
+
+    fn sessions_with_progress(
+        &self,
+        days: u32,
+        now: i64,
+        report: &mut dyn FnMut(&[SessionRecord], &str) -> bool,
+    ) -> Result<Vec<SessionRecord>> {
+        sessions::discover_sessions_with_progress(self, days, now, true, report)
+    }
+
     fn status(&self, now: i64, days: u32) -> Result<PortalSnapshot> {
         crate::aggregate::build_status(self, now, days)
     }

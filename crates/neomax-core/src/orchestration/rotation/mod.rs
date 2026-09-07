@@ -1,3 +1,4 @@
+pub mod accounts;
 mod armed;
 mod cooldown;
 mod policy;

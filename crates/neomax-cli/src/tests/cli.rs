@@ -31,7 +31,7 @@ fn every_multicall_surface_has_its_own_help_and_version_name() {
     for (launcher, name) in launchers {
         let help = crate::cli::help_text(launcher);
         if launcher == Launcher::Universal {
-            assert!(help.starts_with("Neomax Orchestrator"));
+            assert!(help.starts_with("Neomax "));
         } else {
             assert!(help.starts_with(name), "help did not identify {name}");
         }

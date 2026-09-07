@@ -12,6 +12,15 @@ mod types;
 
 pub const MANIFEST_RELATIVE_PATH: &str = "agent-tools/manifest.json";
 
+/// Isolate canonical definitions across concurrently installed versions.
+pub fn canonical_manifest_relative_path() -> String {
+    use sha2::{Digest, Sha256};
+    let bytes = AgentToolManifest::canonical()
+        .json_bytes()
+        .expect("canonical manifest serializes");
+    format!("agent-tools/manifest-{:x}.json", Sha256::digest(bytes))
+}
+
 pub use commands::CANONICAL_COMMANDS;
 pub use environment::{
     EnvironmentInput, NEOMAX_ALLOW_FULL_TOOL_POLICY_ENV, NEOMAX_BIN_ENV, NEOMAX_TOOL_DEPTH_ENV,

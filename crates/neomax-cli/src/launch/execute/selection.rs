@@ -85,7 +85,7 @@ pub(super) fn choose_target(
                 previous_engine: None,
                 current_session: options.session_id.as_deref(),
                 now: Utc::now(),
-                policy: &OrchestratorPolicy::default(),
+                policy: &OrchestratorPolicy::from_settings(&context.settings),
             })
             .ok_or_else(|| {
                 anyhow::anyhow!("account {account} has no eligible authenticated provider")
@@ -151,11 +151,11 @@ pub(super) fn choose_target(
                 dedicated: true,
                 current_session: options.session_id.as_deref(),
                 now: Utc::now(),
-                policy: &OrchestratorPolicy::default(),
+                policy: &OrchestratorPolicy::from_settings(&context.settings),
             })
             .ok_or_else(|| anyhow::anyhow!("reserved account {account} is not eligible"))?
         } else {
-            let policy = OrchestratorPolicy::default();
+            let policy = OrchestratorPolicy::from_settings(&context.settings);
             choose_provider_orchestrator(&ProviderSelectionRequest {
                 accounts: &matches,
                 orchestrators,
@@ -170,7 +170,7 @@ pub(super) fn choose_target(
         return Ok(selected);
     }
     let now = Utc::now();
-    let policy = OrchestratorPolicy::default();
+    let policy = OrchestratorPolicy::from_settings(&context.settings);
     let eligible_accounts = if !restrict_to_scope {
         accounts.to_vec()
     } else {

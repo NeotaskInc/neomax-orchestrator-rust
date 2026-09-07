@@ -28,6 +28,59 @@ usage records remain available to recovery, rotation, the portal, and later
 routing decisions. Explicit model and provider choices always remain
 available; dynamic routing only uses the evidence and scope the caller allows.
 
+## Account diagnostics and rotation
+
+`neomax PROVIDER ACCOUNT rotate [--with ACCOUNT] [--dry-run] [--json]`
+swaps OAuth credentials with another eligible profile. ACCOUNT accepts a
+number, profile name, or unambiguous saved email. In-place swapping is supported
+for Claude and Codex OAuth profiles. Other authentication modes and providers
+require their session-handoff path.
+
+The replacement must pass the existing same-provider quota, pause, cooldown,
+reservation, and live-work checks. Duplicate identities and credentials known
+locally to require login are excluded. Quota cache entries and cooldowns move
+with credentials. Session files and account numbers stay in their original
+directories; an email selector resolves to the directory currently holding
+that identity. Private backups and the rotation journal record the operation.
+No native provider restart or successful authentication reload is implied.
+
+`neomax doctor [--json]` is read-only, including when no state directory
+exists. It reports configuration validity, canonical tool-manifest status,
+local credential evidence, and cached quota freshness without running a
+provider or contacting an authentication endpoint. Credential states include
+`missing`, `unknown`, `locally_present`, `current`,
+`refresh_available`, and `login_required`. These are local observations;
+`remotely_verified` remains false. Refreshable credentials need not be
+replaced merely because their access token expired.
+
+`neomax why --json` includes `quota_evidence`: reported percentages,
+observation time, age, and `fresh`, `stale`, or `unknown` freshness.
+Missing percentages stay null. Evidence older than five minutes, or explicitly
+marked stale or expired, is stale. A missing or future timestamp is unknown.
+
+`neomax config set reset-aware-ranking true` enables fractional weekly-reset
+ranking within the existing selection policy. The default is false and retains
+the existing day buckets. This option breaks otherwise similar load ties more
+precisely; it does not relax eligibility, quotas, or explicit provider choices.
+Use `neomax config set reset-aware-ranking false` to restore the default.
+
+New Codex profiles inherit the primary profile's configuration. When absent,
+Neomax supplies its default model and experimental context management. New
+configurations without an explicit permission policy receive
+`approval_policy = "never"` and `sandbox_mode = "danger-full-access"`.
+Explicit permission and feature settings are preserved, and an existing
+profile's configuration is never overwritten.
+
+A model-free maintenance tick cannot start a replacement model process.
+For a handoff that requires one, it leaves the worker and run unchanged and
+reports that resume is required. An in-place swap preserves the recorded run
+status rather than claiming that a stopped or quota-limited worker is running.
+Managed worker coordinators remain responsible for actual supervised resume.
+
+During installation, an existing workflow without an ownership record can be
+reconciled only when its bytes match the incoming packaged workflow. Edited or
+unrelated files remain protected by the installer's conflict checks.
+
 ## Runtime status
 
 The native runtime has two distinct launch paths. A root interactive launch
@@ -149,7 +202,8 @@ state and service behavior.
 
 ## Dynamic and explicit routing
 
-`neomax` is the universal entry point. Its dynamic selection considers every
+`neomax` opens the terminal workspace. `neomax orchestrator` launches directly,
+without the dashboard. Dynamic selection considers every
 connected provider that has an available binary and an eligible profile. A
 machine with only one provider still works. A machine with OpenCode and Kimi
 can use both. A machine with all five providers can dispatch a mixed worker
@@ -181,7 +235,13 @@ a provider.
 
 | Command | Role |
 | --- | --- |
-| `neomax` | Dynamically select an eligible orchestrator and worker scope |
+| `neomax` or `neomax tui` | Open the terminal workspace |
+| `neomax orchestrator` | Dynamically select an eligible orchestrator without the TUI |
+| `neomax claude [ACCOUNT]` | Launch Claude, signing in if needed |
+| `neomax codex [ACCOUNT]` | Launch Codex, signing in if needed |
+| `neomax opencode [ACCOUNT]` | Launch OpenCode, signing in if needed |
+| `neomax kimi [ACCOUNT]` | Launch Kimi, signing in if needed |
+| `neomax grok [ACCOUNT]` | Launch Grok, signing in if needed |
 | `neomax-cli` | Compatibility alias for the universal launcher |
 | `cmax` | Pin Claude as the main orchestrator |
 | `cdxmax` | Pin Codex as the main orchestrator |
@@ -193,7 +253,15 @@ a provider.
 | `kmx` | Kimi account helper |
 | `gmx` | Grok account helper |
 
-The aliases are symlinks or platform-appropriate copies of the `neomax`
+Account selectors accept a positive number, `orch`, an existing profile
+directory name, or an email. Put initial task text after `--`. With no account
+selector, Neomax chooses an eligible authenticated account; if none is signed
+in, it starts login for account 1. A known exhausted account does not trigger
+login or bypass quota policy. A new email gets an unused profile, and the
+saved login identity must match before work starts. Missing email metadata or
+an ambiguous match requires selection by number. `--dry-run` never starts login.
+
+The old aliases are symlinks or platform-appropriate copies of the `neomax`
 multicall executable. The executable selects its mode from the invocation name.
 `cmax` is only the Claude-pinned launcher. Shared state, tools, portal data,
 usage data, and project helpers use the `neomax` namespace.
@@ -325,7 +393,8 @@ do not bypass the provider's own authentication rules.
 ### Launch, dispatch, and attachment
 
 ```text
-neomax [OPTIONS] [INITIAL_TASK...]
+neomax orchestrator [OPTIONS] [INITIAL_TASK...]
+neomax claude|codex|opencode|kimi|grok [ACCOUNT] [OPTIONS] [-- INITIAL_TASK...]
 cmax|cdxmax|ocmax|gmax [OPTIONS] [INITIAL_TASK...]
 kmax [OPTIONS] [INITIAL_TASK...]
 ```

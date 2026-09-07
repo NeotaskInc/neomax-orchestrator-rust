@@ -25,6 +25,9 @@ pub fn execute_uninstall(args: &[String]) -> Result<()> {
 
 pub fn execute(launcher: Launcher, args: &[String], context: &RuntimeContext) -> Result<()> {
     authorize_agent_invocation(args)?;
+    if args.first().is_some_and(|arg| arg == "doctor") {
+        return super::doctor::run(&args[1..]);
+    }
     if is_version(args) {
         print_version(launcher);
         return Ok(());
@@ -35,6 +38,30 @@ pub fn execute(launcher: Launcher, args: &[String], context: &RuntimeContext) ->
     }
     let normalized_args = normalize_command_args(args);
     let args = normalized_args.as_deref().unwrap_or(args);
+    if let Launcher::AccountHelper(engine) | Launcher::ProviderOrchestrator(engine) = launcher {
+        let values = if args.first().is_some_and(|arg| arg == "run") {
+            &args[1..]
+        } else {
+            args
+        };
+        if values.get(1).is_some_and(|arg| arg == "rotate")
+            && values.first().is_some_and(|arg| !arg.starts_with('-'))
+        {
+            return operations::rotate_account(engine, &values[0], &values[2..], context);
+        }
+    }
+    if launcher == Launcher::Universal {
+        if let Some(engine) = args.first().and_then(|arg| match arg.as_str() {
+            "claude" => Some(neomax_core::Engine::Claude),
+            "codex" => Some(neomax_core::Engine::Codex),
+            "opencode" => Some(neomax_core::Engine::Opencode),
+            "kimi" => Some(neomax_core::Engine::Kimi),
+            "grok" => Some(neomax_core::Engine::Grok),
+            _ => None,
+        }) {
+            return super::provider_entry::run(engine, &args[1..], context);
+        }
+    }
     let selected_args = super::account_selectors::normalize(launcher, args, context)?;
     let args = selected_args.as_deref().unwrap_or(args);
     if let Some(native_resume_args) = provider_native_resume_args(launcher, args) {
@@ -48,6 +75,9 @@ pub fn execute(launcher: Launcher, args: &[String], context: &RuntimeContext) ->
         return operations::account_helper(launcher, args, context);
     }
     let Some(first) = args.first() else {
+        if launcher == Launcher::Universal {
+            return operations::execute(launcher, Command::Tui, &[], context);
+        }
         return launch::run(launcher, args, context);
     };
     if first == "account" {
@@ -70,11 +100,19 @@ pub fn execute(launcher: Launcher, args: &[String], context: &RuntimeContext) ->
     }
     let command = resolve(first).unwrap_or(Command::Dispatch);
     match command {
+        Command::Orchestrator => {
+            if launcher == Launcher::Universal {
+                launch::run(launcher, &args[1..], context)
+            } else {
+                launch::run(launcher, args, context)
+            }
+        }
         Command::Help => {
             print_help(launcher);
             Ok(())
         }
         Command::Config => config::run(context, &args[1..]),
+        Command::Doctor => super::doctor::run(&args[1..]),
         Command::Solo => {
             let mut solo_args = vec!["--solo".to_owned()];
             solo_args.extend_from_slice(&args[1..]);
@@ -139,7 +177,8 @@ pub fn execute(launcher: Launcher, args: &[String], context: &RuntimeContext) ->
         | Command::Pause
         | Command::Unpause
         | Command::Paused
-        | Command::Portal => operations::execute(launcher, command, &args[1..], context),
+        | Command::Portal
+        | Command::Tui => operations::execute(launcher, command, &args[1..], context),
         Command::Install => {
             error::usage(installation::validate_flags(&args[1..]))?;
             installation::install_command(&args[1..])

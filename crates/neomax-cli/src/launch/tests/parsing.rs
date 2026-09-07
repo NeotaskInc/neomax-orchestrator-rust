@@ -5,6 +5,31 @@ use neomax_core::runs::execution::MAX_TIMEOUT_MINUTES;
 use super::super::LaunchOptions;
 
 #[test]
+fn codex_speed_flags_are_explicit_and_last_choice_wins() {
+    assert_eq!(
+        LaunchOptions::parse(Launcher::Universal, &[])
+            .unwrap()
+            .codex_fast,
+        None
+    );
+    assert_eq!(
+        LaunchOptions::parse(Launcher::Universal, &["--codex-fast".into()])
+            .unwrap()
+            .codex_fast,
+        Some(true)
+    );
+    assert_eq!(
+        LaunchOptions::parse(
+            Launcher::Universal,
+            &["--codex-fast".into(), "--codex-standard".into()]
+        )
+        .unwrap()
+        .codex_fast,
+        Some(false)
+    );
+}
+
+#[test]
 fn conflicting_attachment_modes_fail_before_any_provider_selection() {
     let error = LaunchOptions::parse(
         Launcher::Universal,

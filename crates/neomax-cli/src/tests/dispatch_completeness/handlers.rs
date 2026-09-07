@@ -62,6 +62,11 @@ fn every_canonical_manifest_command_reaches_a_handler_or_safe_dispatch() {
 fn canonical_args(command: &str, cwd: &str) -> Vec<String> {
     let values = match command {
         "help" => vec!["help"],
+        "doctor" => vec!["doctor", "--help"],
+        "orchestrator" | "claude" | "codex" | "opencode" | "kimi" | "grok" => {
+            vec![command, "--dry-run", "--json"]
+        }
+        "tui" => vec!["tui", "--unsupported-contract-option"],
         "config show" => vec!["config", "show", "--json"],
         "config set" => vec!["config", "set", "max-subagents", "1", "--json"],
         "dispatch" => vec![

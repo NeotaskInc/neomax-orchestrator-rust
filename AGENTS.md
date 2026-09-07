@@ -46,6 +46,12 @@ described in `README.md`.
 - Keep binaries thin. Argument parsing, process wiring, rendering, and
   platform integration belong at the executable boundary; routing, state,
   persistence, provider behavior, and policy belong in their domain modules.
+- `neomax-tui` provides terminal rendering and interaction over the shared
+  portal projections and normal launcher. It must not own a separate routing
+  policy or start providers while the user is browsing.
+- Bare `neomax` opens the TUI. `neomax orchestrator` starts a direct root
+  session. `neomax PROVIDER [ACCOUNT]` signs in only when needed, then follows
+  the normal pinned launch policy. Preserve old aliases for compatibility.
 - Preserve typed boundaries between provider adapters and shared behavior.
   Provider command construction, environment isolation, event parsing, model
   resolution, authentication detection, and usage collection must remain
@@ -89,6 +95,9 @@ described in `README.md`.
   must remain qualified as `provider/model`. Claude Opus is opt-in only.
   Never add silent model fallback. Record the effective model on every run,
   usage row, portal row, and scheduler part where that record exists.
+- Codex uses standard service by default. Fast mode requires an explicit user
+  choice. Preserve that choice through worker preparation and recovery without
+  changing the provider's saved configuration.
 - A scheduler part owns its engine, model, dependencies, and affected areas.
   Validate scope, reject dependency cycles, acquire all required area locks
   atomically, and release locks only for the owning run.

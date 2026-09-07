@@ -16,6 +16,48 @@ const fn command(
 
 pub const CANONICAL_COMMANDS: &[CanonicalCommand] = &[
     command(
+        CommandFamily::Accounts,
+        "doctor",
+        CommandClass::ReadOnly,
+        "Inspect local account health, quota freshness, settings, and manifest without changing state.",
+    ),
+    command(
+        CommandFamily::Orchestration,
+        "orchestrator",
+        CommandClass::External,
+        "Launch a direct interactive orchestrator without the dashboard.",
+    ),
+    command(
+        CommandFamily::Accounts,
+        "claude",
+        CommandClass::External,
+        "Open a Claude account, signing in when needed.",
+    ),
+    command(
+        CommandFamily::Accounts,
+        "codex",
+        CommandClass::External,
+        "Open a Codex account, signing in when needed.",
+    ),
+    command(
+        CommandFamily::Accounts,
+        "opencode",
+        CommandClass::External,
+        "Open an OpenCode account, signing in when needed.",
+    ),
+    command(
+        CommandFamily::Accounts,
+        "kimi",
+        CommandClass::External,
+        "Open a Kimi account, signing in when needed.",
+    ),
+    command(
+        CommandFamily::Accounts,
+        "grok",
+        CommandClass::External,
+        "Open a Grok account, signing in when needed.",
+    ),
+    command(
         CommandFamily::Help,
         "help",
         CommandClass::ReadOnly,
@@ -302,6 +344,12 @@ pub const CANONICAL_COMMANDS: &[CanonicalCommand] = &[
         "portal",
         CommandClass::ReadOnly,
         "Inspect the shared local usage and session portal.",
+    ),
+    command(
+        CommandFamily::Sessions,
+        "tui",
+        CommandClass::External,
+        "Open the interactive fleet dashboard and orchestrator terminal.",
     ),
     command(
         CommandFamily::Tasks,

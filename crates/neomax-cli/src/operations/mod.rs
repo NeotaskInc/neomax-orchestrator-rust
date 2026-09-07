@@ -1,4 +1,5 @@
 mod account_helpers;
+pub(crate) use account_helpers::{login_profile, provider_operation};
 mod handoff;
 mod maintenance;
 mod orchestrators;
@@ -13,6 +14,7 @@ mod workflows;
 
 pub(crate) use orchestrators::setup_profile;
 pub(crate) use rotation::arm_profile;
+pub(crate) use rotation::rotate_account;
 
 use anyhow::{Result, bail};
 use neomax_core::Engine;
@@ -121,6 +123,16 @@ pub(crate) fn execute(
         Command::Orchestrators => status::orchestrators(context, args),
         Command::Usage => usage::run(context, args),
         Command::Portal => portal::run(args),
+        Command::Tui => neomax_tui::run(
+            neomax_tui::Options {
+                home: context.paths.home.clone(),
+                state: context.paths.state.clone(),
+                cwd: context.cwd.clone(),
+                executable: std::env::current_exe()?,
+                runtime: context.provider_runtime()?,
+            },
+            args,
+        ),
         Command::Rotate
         | Command::RotateTick
         | Command::SessionRotate

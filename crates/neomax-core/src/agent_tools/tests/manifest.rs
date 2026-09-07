@@ -14,6 +14,7 @@ fn canonical_manifest_is_stable_and_complete() {
     );
     for command in [
         "portal",
+        "tui",
         "select",
         "why",
         "projects",
@@ -23,6 +24,35 @@ fn canonical_manifest_is_stable_and_complete() {
         "uninstall",
     ] {
         assert!(first.command(command).is_some(), "missing {command}");
+    }
+}
+
+#[test]
+fn interactive_tui_cannot_bypass_worker_external_policy() {
+    let manifest = ToolManifest::canonical();
+    for command in [
+        "tui",
+        "orchestrator",
+        "claude",
+        "codex",
+        "opencode",
+        "kimi",
+        "grok",
+    ] {
+        assert_eq!(
+            manifest.command(command).unwrap().class,
+            CommandClass::External
+        );
+        assert!(
+            crate::agent_tools::ToolPolicy::worker()
+                .authorize(&manifest, command)
+                .is_err()
+        );
+        assert!(
+            crate::agent_tools::ToolPolicy::orchestrator()
+                .authorize(&manifest, command)
+                .is_ok()
+        );
     }
 }
 

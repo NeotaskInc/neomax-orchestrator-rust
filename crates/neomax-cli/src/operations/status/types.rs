@@ -24,6 +24,7 @@ pub(crate) struct AccountView {
     pub auth_status: String,
     pub auth_methods: Vec<String>,
     pub credential_present: bool,
+    pub credential: Option<neomax_core::providers::catalog::CredentialEvidence>,
     pub authenticated: bool,
     pub worker_eligible: bool,
     pub orchestrator_eligible: bool,

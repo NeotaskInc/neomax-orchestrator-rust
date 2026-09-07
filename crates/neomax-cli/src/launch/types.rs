@@ -33,6 +33,7 @@ pub struct AdapterPlan {
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct LaunchPlan {
+    pub codex_fast: bool,
     pub invocation: String,
     pub mode: LaunchMode,
     pub orchestrator: Option<String>,
@@ -73,6 +74,7 @@ pub struct LaunchPlan {
 
 #[derive(Debug, Clone, Default)]
 pub struct LaunchOptions {
+    pub(crate) codex_fast: Option<bool>,
     pub(crate) dry_run: bool,
     pub(crate) engine: Option<Engine>,
     pub(crate) model: Option<String>,

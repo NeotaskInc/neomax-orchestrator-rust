@@ -74,7 +74,7 @@ fn pick_orchestrator(launcher: Launcher, args: &[String], context: &RuntimeConte
     let orchestrators = OrchestratorStore::new(&context.paths.orchestrators)
         .all(&SystemProcessProbe, context.now)?;
     let current_session = current_session();
-    let policy = OrchestratorPolicy::default();
+    let policy = OrchestratorPolicy::from_settings(&context.settings);
     let selected = choose_provider_orchestrator(&ProviderSelectionRequest {
         accounts: &accounts,
         orchestrators: &orchestrators,
@@ -149,7 +149,7 @@ fn pick_neomax_with_explanation(
         previous_engine,
         current_session: current_session.as_deref(),
         now,
-        policy: &OrchestratorPolicy::default(),
+        policy: &OrchestratorPolicy::from_settings(&context.settings),
     })
     .ok_or_else(|| {
         anyhow::anyhow!("no eligible authenticated provider orchestrator is available")
@@ -157,8 +157,18 @@ fn pick_neomax_with_explanation(
     if options.record {
         state.record(&cwd, choice.engine, context.now)?;
     }
+    let usage = UsageCacheStore::new(&context.paths.usage);
+    let quota = neomax_core::orchestration::diagnostics::quota_evidence(
+        usage
+            .load_read_only(choice.engine, &choice.profile)
+            .as_ref(),
+        context.now,
+    );
     if options.json {
-        return output::json(&choice);
+        let mut report = serde_json::to_value(&choice)?;
+        report["quota_evidence"] = serde_json::to_value(&quota)?;
+        report["reset_aware_ranking"] = context.settings.reset_aware_ranking.into();
+        return output::json(&report);
     }
     if explanation {
         println!(
@@ -172,6 +182,22 @@ fn pick_neomax_with_explanation(
                 .join(",")
         );
         println!("neomax -> {}", choice.reason);
+        println!(
+            "quota evidence: {}{}; reset-aware ranking {}",
+            quota.freshness,
+            quota
+                .age_seconds
+                .map(|age| format!(" ({age:.0}s old)"))
+                .unwrap_or_default(),
+            if context.settings.reset_aware_ranking {
+                "on"
+            } else {
+                "off"
+            }
+        );
+        if quota.freshness != "fresh" {
+            println!("Selection uses local evidence; current quota headroom is not confirmed.");
+        }
     } else {
         println!("{}", choice.engine);
     }

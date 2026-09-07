@@ -1,6 +1,6 @@
 use std::ffi::{OsStr, OsString};
 
-use crate::providers::catalog::{CODEX_DEFAULT_MODEL, CODEX_SERVICE_TIER};
+use crate::providers::catalog::{CODEX_DEFAULT_MODEL, codex_service_tier};
 use crate::providers::worker::{apply_profile, base_command, composed_prompt};
 use crate::providers::{
     AuthState, ParsedEvents, Provider, ProviderCommand, ProviderProfile, WorkerLaunchContext, auth,
@@ -63,7 +63,10 @@ impl Provider for Codex {
                     .unwrap_or(if request.ultra { "xhigh" } else { "high" })
             ))
             .arg("-c")
-            .arg(format!("service_tier={CODEX_SERVICE_TIER}"))
+            .arg(format!(
+                "service_tier={}",
+                codex_service_tier(&request.agent_environment)
+            ))
             .arg("-C")
             .arg(request.cwd.as_os_str())
             .arg("--skip-git-repo-check")
@@ -96,7 +99,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn pins_fast_mode_effort_model_and_workdir() {
+    fn pins_standard_mode_effort_model_and_workdir() {
         let profile = ProviderProfile {
             engine: Engine::Codex,
             account: "2".into(),
@@ -114,7 +117,7 @@ mod tests {
             .args_lossy();
         assert_eq!(&args[..2], ["exec", "--json"]);
         assert!(args.contains(&"model_reasoning_effort=xhigh".into()));
-        assert!(args.contains(&"service_tier=fast".into()));
+        assert!(args.contains(&"service_tier=default".into()));
         assert!(args.last().unwrap().contains("OBJECTIVE"));
     }
 
@@ -134,5 +137,29 @@ mod tests {
             .unwrap()
             .args_lossy();
         assert!(args.contains(&"model_reasoning_effort=xhigh".into()));
+    }
+
+    #[test]
+    fn worker_fast_mode_requires_explicit_environment_choice() {
+        let profile = ProviderProfile {
+            engine: Engine::Codex,
+            account: "1".into(),
+            path: PathBuf::from("fixture-profile"),
+            reserved: false,
+        };
+        for (value, expected) in [("0", "default"), ("1", "fast")] {
+            let mut request = WorkerRequest::new(profile.clone(), "fixture", "fixture task");
+            request
+                .agent_environment
+                .insert(catalog::CODEX_FAST_ENV.into(), value.into());
+            let command = Codex::new("codex")
+                .worker_command(&WorkerLaunchContext::for_test(request))
+                .unwrap();
+            assert!(
+                command
+                    .args_lossy()
+                    .contains(&format!("service_tier={expected}"))
+            );
+        }
     }
 }

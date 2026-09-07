@@ -19,8 +19,28 @@ pub(crate) fn discover_sessions(
     days: u32,
     now: i64,
 ) -> Result<Vec<SessionRecord>> {
+    discover_sessions_with_progress(source, days, now, false, &mut |_, _| true)
+}
+
+pub(crate) fn discover_sessions_with_progress(
+    source: &FilesystemPortalSource,
+    days: u32,
+    now: i64,
+    include_managed: bool,
+    report: &mut dyn FnMut(&[SessionRecord], &str) -> bool,
+) -> Result<Vec<SessionRecord>> {
     let (runs, _) = super::runs::read_records(&source.paths.runs)?;
-    let context = discovery_context(source, &runs, now);
+    let orchestrators = if include_managed {
+        read_orchestrator_identities(source)?
+    } else {
+        BTreeSet::new()
+    };
+    let mut context = discovery_context(source, &runs, now);
+    if include_managed {
+        context.state_root = None;
+        context.worktrees.clear();
+        context.dispatched_sessions.clear();
+    }
     let cutoff = if days == 0 {
         0
     } else {
@@ -33,6 +53,12 @@ pub(crate) fn discover_sessions(
         for profile in profiles {
             if !safe_absolute(&profile.path) {
                 continue;
+            }
+            if !report(
+                &records,
+                &format!("Scanning {engine} account {}", profile.account),
+            ) {
+                anyhow::bail!("session discovery cancelled");
             }
             let result = match engine {
                 Engine::Claude => claude::discover(
@@ -70,7 +96,31 @@ pub(crate) fn discover_sessions(
                     cutoff,
                 ),
             };
-            if let Ok(rows) = result {
+            if let Ok(mut rows) = result {
+                if include_managed {
+                    for row in &mut rows {
+                        row.worker = runs.iter().any(|run| {
+                            run.engine == row.engine
+                                && (run.session.as_deref() == Some(&row.id)
+                                    || run
+                                        .session_history
+                                        .iter()
+                                        .any(|entry| entry.session == row.id))
+                        });
+                        row.orchestrator = runs.iter().any(|run| {
+                            run.engine == row.engine && run.orch_session.as_deref() == Some(&row.id)
+                        }) || orchestrators.contains(&(
+                            row.engine,
+                            profile
+                                .path
+                                .file_name()
+                                .and_then(|s| s.to_str())
+                                .unwrap_or_default()
+                                .to_owned(),
+                            row.id.clone(),
+                        ));
+                    }
+                }
                 records.extend(rows);
             }
         }
@@ -80,6 +130,28 @@ pub(crate) fn discover_sessions(
         .into_iter()
         .filter(|record| record.last_active.unwrap_or_default() >= cutoff)
         .collect::<Vec<_>>())
+}
+
+fn read_orchestrator_identities(
+    source: &FilesystemPortalSource,
+) -> Result<BTreeSet<(Engine, String, String)>> {
+    let entries = match std::fs::read_dir(&source.paths.orchestrators) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(BTreeSet::new()),
+        Err(error) => return Err(error.into()),
+    };
+    let mut identities = BTreeSet::new();
+    for entry in entries.flatten() {
+        if entry.path().extension().and_then(|value| value.to_str()) != Some("json") {
+            continue;
+        }
+        if let Ok(Some(record)) =
+            state::load::<neomax_core::orchestration::registry::OrchestratorRecord>(&entry.path())
+        {
+            identities.insert((record.engine, record.account_dir, record.session));
+        }
+    }
+    Ok(identities)
 }
 
 fn flatten_children(records: impl IntoIterator<Item = SessionRecord>) -> Vec<SessionRecord> {
@@ -169,6 +241,21 @@ mod tests {
 
     use super::*;
     use crate::source::FilesystemPortalSource;
+
+    #[test]
+    fn ownership_registry_scan_is_read_only_and_keeps_provider_profile_identity() {
+        let temp = tempfile::tempdir().unwrap();
+        let source = FilesystemPortalSource::new(temp.path(), temp.path().join("state"));
+        std::fs::create_dir_all(&source.paths.orchestrators).unwrap();
+        let path = source.paths.orchestrators.join("old.json");
+        let bytes = serde_json::to_vec(&serde_json::json!({"session":"same-id","engine":"codex","account_dir":".codex2","started":1,"last_seen":1})).unwrap();
+        std::fs::write(&path, &bytes).unwrap();
+        let identities = read_orchestrator_identities(&source).unwrap();
+        assert!(identities.contains(&(Engine::Codex, ".codex2".into(), "same-id".into())));
+        assert!(!identities.contains(&(Engine::Codex, ".codex".into(), "same-id".into())));
+        assert!(!identities.contains(&(Engine::Claude, ".codex2".into(), "same-id".into())));
+        assert_eq!(std::fs::read(path).unwrap(), bytes);
+    }
 
     #[test]
     fn empty_relocated_installation_has_no_discovered_sessions() {

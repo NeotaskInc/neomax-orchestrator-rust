@@ -42,7 +42,9 @@ impl<'a> WorkerToolingInput<'a> {
 }
 
 pub(crate) fn manifest_path(paths: &StatePaths) -> PathBuf {
-    paths.state.join(crate::agent_tools::MANIFEST_RELATIVE_PATH)
+    paths
+        .state
+        .join(crate::agent_tools::canonical_manifest_relative_path())
 }
 
 pub(crate) fn default_install_bin(paths: &StatePaths) -> PathBuf {

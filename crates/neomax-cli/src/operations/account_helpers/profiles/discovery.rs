@@ -128,8 +128,18 @@ fn seed_config(engine: Engine, profile: &Path, home: &Path, cwd: &Path) -> Resul
         return Ok(());
     };
     let target = profile.join("config.toml");
-    if source != target && source.is_file() && !target.exists() {
-        fs::copy(source, target).context("could not seed provider profile configuration")?;
+    if !target.exists() {
+        use neomax_core::providers::catalog::FileSystem;
+        let bytes = RealFileSystem.read(&source)?.unwrap_or_default();
+        let source =
+            std::str::from_utf8(&bytes).context("Codex seed configuration is not UTF-8")?;
+        let seed = catalog::codex_config_seed(source)?;
+        use std::io::Write;
+        let mut file = tempfile::NamedTempFile::new_in(profile)?;
+        file.write_all(seed.as_bytes())?;
+        file.as_file().sync_all()?;
+        file.persist_noclobber(target)
+            .context("could not create provider profile configuration")?;
     }
     Ok(())
 }

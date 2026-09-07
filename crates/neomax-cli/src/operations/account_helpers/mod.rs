@@ -20,6 +20,24 @@ use self::process::{LocalProcessPort, ProcessPort};
 use self::profiles::{AuthPort, FileAuthPort};
 use self::request::AccountHelperRequest;
 
+pub(crate) fn login_profile(engine: Engine, account: &str, context: &RuntimeContext) -> Result<()> {
+    run_with_ports(
+        engine,
+        &["login".into(), account.into()],
+        context,
+        &FileAuthPort,
+        &LocalProcessPort,
+    )
+}
+
+pub(crate) fn provider_operation(
+    engine: Engine,
+    args: &[String],
+    context: &RuntimeContext,
+) -> Result<()> {
+    run_with_ports(engine, args, context, &FileAuthPort, &LocalProcessPort)
+}
+
 pub(crate) fn run(launcher: Launcher, args: &[String], context: &RuntimeContext) -> Result<()> {
     let engine = match launcher {
         Launcher::AccountHelper(engine) => engine,

@@ -5,6 +5,7 @@ use crate::{Engine, WorkerScope};
 pub mod auth;
 pub mod commands;
 pub mod continuation;
+pub mod diagnostics;
 pub mod handoff;
 pub mod registry;
 pub mod rotation;
