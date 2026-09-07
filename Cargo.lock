@@ -991,7 +991,7 @@ dependencies = [
 
 [[package]]
 name = "neomax-cli"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1008,7 +1008,7 @@ dependencies = [
 
 [[package]]
 name = "neomax-core"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "base64",
  "chrono",
@@ -1030,7 +1030,7 @@ dependencies = [
 
 [[package]]
 name = "neomax-portal"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "anyhow",
  "base64",
@@ -1044,7 +1044,7 @@ dependencies = [
 
 [[package]]
 name = "neomax-tui"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1060,7 +1060,7 @@ dependencies = [
 
 [[package]]
 name = "neomax-usage-agent"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1079,7 +1079,7 @@ dependencies = [
 
 [[package]]
 name = "neomax-worktrees"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "anyhow",
  "clap",

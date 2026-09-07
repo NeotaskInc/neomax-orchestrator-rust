@@ -253,7 +253,7 @@ previously unknown email; legacy aliases still require an existing match.
 The upstream `codex` command is unchanged.
 
 Legacy email and alias selectors require Neomax 0.1.1 or newer. The unified
-`neomax PROVIDER` commands and terminal workspace are new in 0.1.2.
+`neomax PROVIDER` commands and terminal workspace are new in 0.1.3.
 
 ## Automatic quota survival
 
