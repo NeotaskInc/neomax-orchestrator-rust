@@ -16,6 +16,13 @@ pub(crate) fn text(output: &UsageOutput) -> Result<()> {
         report.grand.rate_limits,
         report.grand.cost
     );
+    println!(
+        "cache_read={} cache_write={} (local API estimate)",
+        report.grand.cache_read, report.grand.cache_write
+    );
+    for warning in &report.warnings {
+        println!("warning: {warning}");
+    }
     print_provider_rows(report);
     print_account_rows(report);
     print_model_rows(report);

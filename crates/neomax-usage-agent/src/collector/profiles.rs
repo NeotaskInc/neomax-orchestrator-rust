@@ -37,6 +37,17 @@ impl ProfileCatalog {
     }
 
     pub fn discover(paths: &AgentPaths) -> Self {
+        let mut catalog = Self::configured(paths);
+        for (engine, path) in neomax_core::usage::local_usage_roots(&paths.home) {
+            let roots = catalog.by_engine.entry(engine).or_default();
+            if !roots.contains(&path) {
+                roots.push(path);
+            }
+        }
+        catalog
+    }
+
+    fn configured(paths: &AgentPaths) -> Self {
         if let Some(snapshot) = paths.provider_catalog() {
             return Self::from_catalog(snapshot);
         }

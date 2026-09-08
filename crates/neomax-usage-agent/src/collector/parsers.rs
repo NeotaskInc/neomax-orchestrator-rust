@@ -44,20 +44,18 @@ pub(crate) fn validate_numeric_usage(line: &str, engine: Engine) -> bool {
 
 pub(crate) fn codex_model_in_line(line: &str) -> Option<String> {
     let value = serde_json::from_str::<serde_json::Value>(line).ok()?;
-    find_string(&value, "model").filter(|model| model.starts_with("gpt-"))
-}
-
-fn find_string(value: &serde_json::Value, key: &str) -> Option<String> {
-    match value {
-        serde_json::Value::Object(map) => {
-            if let Some(value) = map.get(key).and_then(|value| value.as_str()) {
-                return Some(value.to_owned());
-            }
-            map.values().find_map(|value| find_string(value, key))
-        }
-        serde_json::Value::Array(values) => values.iter().find_map(|value| find_string(value, key)),
-        _ => None,
+    if !matches!(
+        value.get("type").and_then(serde_json::Value::as_str),
+        Some("turn_context" | "session_meta")
+    ) {
+        return None;
     }
+    value
+        .get("payload")
+        .and_then(|payload| payload.get("model"))
+        .and_then(serde_json::Value::as_str)
+        .filter(|model| !model.trim().is_empty())
+        .map(str::to_owned)
 }
 
 pub(crate) fn stable_digest(value: &str) -> String {

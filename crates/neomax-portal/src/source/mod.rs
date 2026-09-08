@@ -190,6 +190,31 @@ impl FilesystemPortalSource {
         })
         .collect())
     }
+
+    pub(crate) fn usage_profiles(
+        &self,
+        engine: neomax_core::Engine,
+    ) -> Result<Vec<ProviderProfile>> {
+        let mut profiles = self.provider_profiles(engine)?;
+        for (_, path) in neomax_core::usage::local_usage_roots(&self.home)
+            .into_iter()
+            .filter(|(provider, _)| *provider == engine)
+        {
+            if !profiles.iter().any(|profile| profile.path == path) {
+                profiles.push(ProviderProfile {
+                    engine,
+                    account: path
+                        .file_name()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .into_owned(),
+                    path,
+                    reserved: false,
+                });
+            }
+        }
+        Ok(profiles)
+    }
 }
 
 fn absolute_root(path: PathBuf, current_dir: &Path, label: &str) -> Result<PathBuf> {

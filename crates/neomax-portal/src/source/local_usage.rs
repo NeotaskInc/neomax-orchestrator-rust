@@ -27,7 +27,7 @@ pub(crate) fn read_details(
         .into_iter()
         .enumerate()
     {
-        for profile in source.provider_profiles(engine)? {
+        for profile in source.usage_profiles(engine)? {
             let detail = match engine {
                 Engine::Opencode => opencode::detail(source, &profile, days, cutoff),
                 Engine::Kimi | Engine::Grok => {

@@ -15,7 +15,7 @@ pub(crate) fn discover(
     let artifacts = FsArtifactSource::new(source.max_artifact_bytes);
     let mut records = Vec::new();
     for engine in [Engine::Kimi, Engine::Grok] {
-        for profile in source.provider_profiles(engine)? {
+        for profile in source.usage_profiles(engine)? {
             let discovered = match engine {
                 Engine::Kimi => kimi::discover(
                     &artifacts,

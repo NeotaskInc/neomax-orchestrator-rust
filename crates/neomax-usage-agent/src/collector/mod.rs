@@ -50,6 +50,8 @@ pub struct SweepReport {
     pub records_skipped: u64,
     pub errors: u64,
     pub rate_limits: u64,
+    pub pending_files: u64,
+    pub pending_bytes: u64,
     pub providers: Vec<ProviderSweep>,
 }
 
@@ -86,19 +88,19 @@ pub enum SweepMode {
 #[derive(Debug, Clone)]
 pub struct UsageCollector {
     paths: AgentPaths,
-    now: i64,
+    now: Option<i64>,
 }
 
 impl UsageCollector {
     pub fn new(paths: AgentPaths) -> Self {
-        Self {
-            paths,
-            now: Utc::now().timestamp(),
-        }
+        Self { paths, now: None }
     }
 
     pub fn with_now(paths: AgentPaths, now: i64) -> Self {
-        Self { paths, now }
+        Self {
+            paths,
+            now: Some(now),
+        }
     }
 
     pub fn state_path(&self) -> &Path {
@@ -120,24 +122,46 @@ impl UsageCollector {
         recent_days: u32,
     ) -> Result<SweepReport> {
         state.validate()?;
+        let now = self.now.unwrap_or_else(|| Utc::now().timestamp());
         let since = if matches!(mode, SweepMode::Full) || recent_days == 0 {
             0
         } else {
-            self.now.saturating_sub(i64::from(recent_days) * 86_400)
+            now.saturating_sub(i64::from(recent_days) * 86_400)
         };
         self.paths.state.ensure_runtime_dirs()?;
         let profiles = ProfileCatalog::discover(&self.paths);
+        let sources = files::discover_sources(&profiles, 0);
+        let parser_version = state
+            .extra
+            .get("usage_parser_version")
+            .and_then(serde_json::Value::as_u64)
+            .unwrap_or(0);
+        if parser_version < 3 {
+            if mode != SweepMode::Baseline {
+                for source in sources.iter().filter(|source| {
+                    source.engine == Engine::Claude
+                        || (parser_version < 2 && source.engine == Engine::Codex)
+                }) {
+                    state.files.remove(&source_key(&source.path));
+                }
+                if parser_version < 2 {
+                    state.codex_model.clear();
+                    state.codex_total.clear();
+                }
+            }
+            state.extra.insert("usage_parser_version".into(), 3.into());
+        }
         let mut output = SweepReport::default();
         let mut records = Vec::new();
         let mut changed = BTreeMap::<Engine, u64>::new();
-        for source in files::discover_sources(&profiles, since) {
+        for source in sources {
             let mut provider = ProviderSweep {
                 provider: source.engine,
                 files_seen: 1,
                 ..ProviderSweep::default()
             };
             let old_len = records.len();
-            let result = files::scan_source(&source, state, mode, self.now);
+            let result = files::scan_source(&source, state, mode, now);
             match result {
                 Ok(scan) => {
                     provider.records_skipped = scan.records_skipped;
@@ -155,6 +179,17 @@ impl UsageCollector {
                 }
             }
             provider.records_emitted = (records.len() - old_len) as u64;
+            if let Ok(size) = crate::io::file_len(&source.path) {
+                let offset = state
+                    .files
+                    .get(&source_key(&source.path))
+                    .copied()
+                    .unwrap_or(0);
+                if size > offset {
+                    output.pending_files += 1;
+                    output.pending_bytes = output.pending_bytes.saturating_add(size - offset);
+                }
+            }
             output.add_provider(provider);
         }
         let mut database_report = ProviderSweep {
@@ -162,7 +197,7 @@ impl UsageCollector {
             ..ProviderSweep::default()
         };
         let db_records =
-            opencode::collect_databases(&self.paths.home, &profiles, state, mode, since, self.now)
+            opencode::collect_databases(&self.paths.home, &profiles, state, mode, since, now)
                 .context("collect OpenCode local telemetry")?;
         database_report.files_seen = db_records.databases_seen;
         database_report.records_skipped = db_records.records_skipped;
@@ -192,6 +227,15 @@ impl UsageCollector {
             }
         }
         output.providers.sort_by_key(|item| item.provider);
+        state.extra.insert(
+            "usage_import".into(),
+            serde_json::json!({
+                "pending_files": output.pending_files,
+                "pending_bytes": output.pending_bytes,
+                "errors": output.errors,
+                "updated_at": now
+            }),
+        );
         Ok(output)
     }
 

@@ -75,13 +75,13 @@ impl UsageRange {
     ) -> Result<Vec<neomax_core::usage::LedgerRecord>> {
         match self {
             Self::Days(days) => Ok(ledger
-                .read_deduplicated(*days, now)
+                .read_windowed(*days, now)
                 .map_err(|error| anyhow::anyhow!(error.to_string()))?),
             Self::Since { seconds } => Ok(ledger
-                .read_deduplicated_since(now.saturating_sub(*seconds))
+                .read_windowed_since(now.saturating_sub(*seconds), now)
                 .map_err(|error| anyhow::anyhow!(error.to_string()))?),
             Self::All => Ok(ledger
-                .read_deduplicated_since(0)
+                .read_windowed_since(0, now)
                 .map_err(|error| anyhow::anyhow!(error.to_string()))?),
         }
     }
@@ -129,12 +129,13 @@ pub(crate) fn collect(
     let range = error::usage(UsageRange::parse(args))?;
     let ledger = UsageLedger::new(&context.paths.usage_ledger);
     let records = range.records(&ledger, context.now)?;
-    let report = build_usage_report(
+    let mut report = build_usage_report(
         &records,
         range.report_days(),
         context.now,
         &PriceCatalog::default(),
     );
+    neomax_core::usage::append_import_warnings(&mut report, &context.paths.usage_watch);
     let output = UsageOutput {
         report,
         range: range.label(),

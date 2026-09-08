@@ -59,6 +59,8 @@ pub struct AgentUsageRow {
 pub struct UsageReport {
     pub days: u32,
     pub now: i64,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub warnings: Vec<String>,
     pub grand: UsageMetrics,
     pub by_provider: Vec<ProviderUsageRow>,
     pub by_account: Vec<AccountUsageRow>,

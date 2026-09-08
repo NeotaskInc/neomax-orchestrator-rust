@@ -49,14 +49,18 @@ pub(crate) fn discover_sources(catalog: &super::ProfileCatalog, since: i64) -> V
                 SourceKind::Transcript,
                 since,
             ),
-            Engine::Codex => collect_walk(
-                &mut output,
-                profile,
-                "sessions",
-                engine,
-                SourceKind::Transcript,
-                since,
-            ),
+            Engine::Codex => {
+                for child in ["sessions", "archived_sessions"] {
+                    collect_walk(
+                        &mut output,
+                        profile,
+                        child,
+                        engine,
+                        SourceKind::Transcript,
+                        since,
+                    );
+                }
+            }
             Engine::Kimi => collect_kimi(&mut output, profile, since),
             Engine::Grok => collect_grok(&mut output, profile, since),
             Engine::Opencode => {}
@@ -288,6 +292,7 @@ fn parse_line(
             }
             parse_claude_line(line, &source.account, fallback_ts).map(|mut record| {
                 record.rate_limits = u64::from(line_is_rate_limit(line));
+                record.extra.insert("usage_parser_version".into(), 3.into());
                 record
             })
         }
@@ -310,10 +315,13 @@ fn parse_line(
                 parse_codex_line(line, &source.account, session, model, fallback_ts);
             if let Some(candidate) = candidate.as_mut() {
                 candidate.rate_limits = u64::from(line_is_rate_limit(line));
+                candidate
+                    .extra
+                    .insert("usage_parser_version".into(), 2.into());
             }
             if let Some(candidate) = candidate {
                 let total = candidate.total_tokens();
-                if total <= state.codex_total.get(&state_key).copied().unwrap_or(0)
+                if total == state.codex_total.get(&state_key).copied().unwrap_or(0)
                     && candidate.rate_limits == 0
                 {
                     return Ok(None);

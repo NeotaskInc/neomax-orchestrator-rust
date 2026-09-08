@@ -72,6 +72,10 @@ impl PriceCatalog {
     }
 
     pub fn price_for(&self, model: &str) -> ModelPrice {
+        self.known_price_for(model).unwrap_or(self.fallback)
+    }
+
+    pub fn known_price_for(&self, model: &str) -> Option<ModelPrice> {
         let normalized = model
             .to_ascii_lowercase()
             .replace("[1m]", "")
@@ -89,7 +93,6 @@ impl PriceCatalog {
                     .max_by_key(|(name, _)| name.len())
                     .map(|(_, price)| *price)
             })
-            .unwrap_or(self.fallback)
     }
 
     pub fn estimate(

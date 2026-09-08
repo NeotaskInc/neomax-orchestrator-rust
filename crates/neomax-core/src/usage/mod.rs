@@ -7,6 +7,10 @@ mod model_quota;
 pub use model_quota::{claude_model_family, claude_limit_family, claude_model_windows};
 mod report;
 mod types;
+mod sources;
+pub use sources::local_usage_roots;
+mod coverage;
+pub use coverage::append_import_warnings;
 
 pub use aggregate::{aggregate_by_engine, UsageAggregate};
 pub use cache::{ProviderUsageCache, QuotaWindow, UsageCacheStore};

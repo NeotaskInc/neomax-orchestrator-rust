@@ -39,10 +39,16 @@ fn reads_opencode_sqlite_without_touching_auth_tables() {
         )
         .unwrap();
 
-    let collector = UsageCollector::with_now(paths.clone(), 1_800_000_100);
+    let collector = UsageCollector::with_now(paths.clone(), 1_800_000_100 + 10 * 86_400);
     let mut state = WatchState::default();
-    let report = collector.sweep(&mut state, SweepMode::Full, 0).unwrap();
+    let report = collector
+        .sweep(&mut state, SweepMode::Incremental, 2)
+        .unwrap();
     assert_eq!(report.records_emitted, 1);
+    let repeated = collector
+        .sweep(&mut state, SweepMode::Incremental, 2)
+        .unwrap();
+    assert_eq!(repeated.records_emitted, 0);
     let records = UsageLedger::new(paths.state.usage_ledger)
         .read_deduplicated(0, 1_800_000_200)
         .unwrap();

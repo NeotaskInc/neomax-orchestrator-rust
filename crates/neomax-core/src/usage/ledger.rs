@@ -11,6 +11,8 @@ use crate::Result;
 
 use super::types::{LedgerKind, LedgerRecord};
 
+mod window;
+
 const MAX_LEDGER_FILE_BYTES: usize = 64 * 1024 * 1024;
 const MAX_LEDGER_LINE_BYTES: usize = 2 * 1024 * 1024;
 const LEDGER_READ_TIMEOUT: Duration = Duration::from_secs(30);
@@ -57,9 +59,40 @@ impl UsageLedger {
     }
 
     pub fn read_deduplicated_since(&self, cutoff: i64) -> Result<Vec<LedgerRecord>> {
+        let mut adds = BTreeMap::<String, LedgerRecord>::new();
+        let mut totals = BTreeMap::<String, LedgerRecord>::new();
+        self.visit_records(|record| {
+            if cutoff != 0 && record.ts < cutoff {
+                return;
+            }
+            if record.kind == LedgerKind::Total {
+                keep_largest(&mut totals, record, cumulative_tokens);
+            } else {
+                keep_largest(&mut adds, record, |item| item.output);
+            }
+        })?;
+        Ok(adds.into_values().chain(totals.into_values()).collect())
+    }
+
+    pub fn read_windowed(&self, days: u32, now: i64) -> Result<Vec<LedgerRecord>> {
+        let cutoff = if days == 0 {
+            0
+        } else {
+            now.saturating_sub(i64::from(days) * 86_400)
+        };
+        self.read_windowed_since(cutoff, now)
+    }
+
+    pub fn read_windowed_since(&self, cutoff: i64, now: i64) -> Result<Vec<LedgerRecord>> {
+        let mut window = window::Window::new(cutoff, now);
+        self.visit_records(|record| window.push(record))?;
+        Ok(window.finish())
+    }
+
+    fn visit_records(&self, mut visit: impl FnMut(LedgerRecord)) -> Result<()> {
         let entries = match fs::read_dir(&self.directory) {
             Ok(entries) => entries,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
             Err(error) => return Err(error.into()),
         };
         let mut files = entries
@@ -68,20 +101,16 @@ impl UsageLedger {
             .filter(|path| path.extension().and_then(|value| value.to_str()) == Some("jsonl"))
             .collect::<Vec<_>>();
         files.sort();
-        let mut adds = BTreeMap::<String, LedgerRecord>::new();
-        let mut totals = BTreeMap::<String, LedgerRecord>::new();
         for path in files {
-            self.read_file(&path, cutoff, &mut adds, &mut totals);
+            self.read_file(&path, &mut visit);
         }
-        Ok(adds.into_values().chain(totals.into_values()).collect())
+        Ok(())
     }
 
     fn read_file(
         &self,
         path: &Path,
-        cutoff: i64,
-        adds: &mut BTreeMap<String, LedgerRecord>,
-        totals: &mut BTreeMap<String, LedgerRecord>,
+        visit: &mut impl FnMut(LedgerRecord),
     ) {
         let source = LocalFileSource;
         let Ok(metadata) = source.metadata(path) else {
@@ -100,14 +129,7 @@ impl UsageLedger {
             let Ok(record) = serde_json::from_slice::<LedgerRecord>(line) else {
                 return Ok(());
             };
-            if cutoff != 0 && record.ts < cutoff {
-                return Ok(());
-            }
-            if record.kind == LedgerKind::Total {
-                keep_largest(totals, record, cumulative_tokens);
-            } else {
-                keep_largest(adds, record, |item| item.output);
-            }
+            visit(record);
             Ok(())
         });
     }
@@ -120,7 +142,8 @@ fn keep_largest(
 ) {
     let replace = records
         .get(&candidate.id)
-        .is_none_or(|current| billed_value(&candidate) > billed_value(current));
+        .is_none_or(|current| (billed_value(&candidate), parser_version(&candidate))
+            > (billed_value(current), parser_version(current)));
     if replace {
         records.insert(candidate.id.clone(), candidate);
     }
@@ -131,6 +154,11 @@ fn cumulative_tokens(record: &LedgerRecord) -> u64 {
         .input
         .saturating_add(record.cache_read)
         .saturating_add(record.output)
+}
+
+fn parser_version(record: &LedgerRecord) -> u64 {
+    record.extra.get("usage_parser_version")
+        .and_then(serde_json::Value::as_u64).unwrap_or(0)
 }
 
 fn lock_path(path: &Path) -> PathBuf {

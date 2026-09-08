@@ -623,6 +623,36 @@ local deduplicated ledger, defaults to 30 days, and reports input, output,
 reasoning, requests, completions, errors, rate limits, cost, provider,
 account, model, session, and agent dimensions.
 
+The 24-hour, 7-day, and 30-day windows are rolling durations, not calendar
+months. The terminal header totals all discovered local providers and profiles;
+changing pages or selecting an account does not filter that total. It uses the
+same usage report as the portal. Input and output are shown separately from
+cache-read and cache-write tokens, whose charges are included in the estimate.
+
+Usage includes supported CLIs launched directly, by another app or through
+Neomax. It requires neither Neomax session ownership nor an authenticated
+account. Discovery includes native default directories, configured profile
+roots, sibling named profiles, Codex archives and local Claude desktop session
+directories. Custom directories outside those locations must be supplied through
+the provider profile configuration. Remote-only or deleted records cannot be
+recovered from this machine.
+
+The importer resumes unfinished files regardless of their age. While it catches
+up, usage reports show unread files and bytes. Unknown model prices remain
+explicitly marked as unverified fallback estimates; their tokens are retained.
+
+Codex cumulative snapshots are split into increments before the window and
+model rates are applied. Earlier usage supplies the window baseline. When a
+counter restarts, the collector preserves per-request usage so the report does
+not discard subsequent work or charge restored history again. Older reset
+records without that evidence produce a partial-estimate warning; the report
+does not invent the missing interval's cost. Raw ledger entries are retained.
+
+Costs use recorded charges when available, otherwise standard model rates.
+Other devices and cloud-only sessions are not synchronized. Unrecorded
+fast-mode or long-context premiums, cache writes, and tool fees can be missing.
+The estimate is not a subscription invoice or a complete subsidy calculation.
+
 ### Orchestrator selection and account controls
 
 ```text

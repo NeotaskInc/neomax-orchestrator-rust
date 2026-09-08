@@ -388,8 +388,12 @@ is not proof of a live process. `v` filters the view; `d` changes its date range
 Accounts lists profiles by email when available, provider counts, authentication,
 eligibility and cached shared/model-specific allowances. Use `[` / `]` to filter
 providers and `l` to carry an eligible account into Launch. Usage shows recorded
-model totals over 1, 7 or 30 days. The persistent header has its own 24h/7d/30d
-spend window (`s`). Costs are API-equivalent estimates, not subscription invoices.
+model totals over the last 1, 7 or 30 days, not the calendar month. The persistent
+header has its own rolling 24h/7d/30d spend window (`s`) and includes uncached
+input, output, cache reads and cache writes across discovered local profiles.
+Costs use recorded charges or standard model rates. Other devices, cloud-only
+sessions and unrecorded pricing premiums are outside this local estimate;
+subscription invoices are separate. Usage details explain coverage limits.
 
 Use left/right or Tab to move through Launch, Chat, Fleet, Tasks, Accounts and
 Usage. Up/down selects a row; Enter opens details or edits a launch choice.

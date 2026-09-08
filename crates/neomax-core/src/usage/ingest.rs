@@ -83,6 +83,7 @@ pub fn parse_codex_line(
     let usage = payload.get("info")?.get("total_token_usage")?.as_object()?;
     let total_input = value_u64(usage.get("input_tokens"));
     let cached = value_u64(usage.get("cached_input_tokens"));
+    let cache_write = value_u64(usage.get("cache_write_input_tokens"));
     Some(LedgerRecord {
         ts: event_timestamp(&event, fallback_ts),
         engine: Engine::Codex,
@@ -92,17 +93,31 @@ pub fn parse_codex_line(
         kind: LedgerKind::Total,
         session: Some(session_id.into()),
         agent: None,
-        input: total_input.saturating_sub(cached),
+        input: total_input.saturating_sub(cached).saturating_sub(cache_write),
         output: value_u64(usage.get("output_tokens")),
         reasoning: 0,
-        cache_write: 0,
+        cache_write,
         cache_read: cached,
         cost: None,
         requests: None,
         completions: None,
         errors: 0,
         rate_limits: 0,
-        extra: BTreeMap::new(),
+        extra: payload.get("info")
+            .and_then(|info| info.get("last_token_usage"))
+            .and_then(Value::as_object)
+            .filter(|last| last.get("input_tokens").and_then(Value::as_u64).is_some()
+                && last.get("output_tokens").and_then(Value::as_u64).is_some())
+            .map(|last| {
+                let read = value_u64(last.get("cached_input_tokens"));
+                let write = value_u64(last.get("cache_write_input_tokens"));
+                BTreeMap::from([("last_token_usage".into(), serde_json::json!({
+                    "in": value_u64(last.get("input_tokens")).saturating_sub(read).saturating_sub(write),
+                    "out": value_u64(last.get("output_tokens")),
+                    "cw": write,
+                    "cr": read
+                }))])
+            }).unwrap_or_default(),
     })
 }
 
@@ -228,6 +243,19 @@ mod tests {
         assert_eq!(record.input, 70);
         assert_eq!(record.cache_read, 30);
         assert_eq!(record.kind, LedgerKind::Total);
+    }
+
+    #[test]
+    fn codex_preserves_cache_writes_and_per_request_evidence_for_counter_resets() {
+        let record = parse_codex_line(&serde_json::json!({
+            "timestamp":"2026-09-07T12:00:00Z",
+            "payload":{"type":"token_count","info":{
+                "total_token_usage":{"input_tokens":100,"cached_input_tokens":30,"cache_write_input_tokens":20,"output_tokens":15},
+                "last_token_usage":{"input_tokens":40,"cached_input_tokens":10,"cache_write_input_tokens":5,"output_tokens":7}
+            }}
+        }).to_string(), "fixture", "session", Some("gpt-6-astra"), 1).unwrap();
+        assert_eq!((record.input, record.cache_read, record.cache_write), (50, 30, 20));
+        assert_eq!(record.extra["last_token_usage"], serde_json::json!({"in":25,"out":7,"cw":5,"cr":10}));
     }
 
     #[test]

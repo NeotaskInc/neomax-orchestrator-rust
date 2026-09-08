@@ -45,11 +45,24 @@ pub(crate) fn collect_databases(
             continue;
         }
         output.databases_seen += 1;
+        let import_key = format!("usage_database_import:{}", path.display());
         if matches!(mode, super::SweepMode::Baseline) {
+            state.extra.insert(import_key, true.into());
             continue;
         }
-        match collect_database(&path, profile, state, mode, since, now) {
+        let cutoff = if state
+            .extra
+            .get(&import_key)
+            .and_then(serde_json::Value::as_bool)
+            == Some(true)
+        {
+            since
+        } else {
+            0
+        };
+        match collect_database(&path, profile, state, mode, cutoff, now) {
             Ok(mut rows) => {
+                state.extra.insert(import_key, true.into());
                 output.records_skipped += rows.records_skipped;
                 output.records.append(&mut rows.records);
             }

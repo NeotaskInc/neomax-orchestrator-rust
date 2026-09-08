@@ -8,25 +8,74 @@ use neomax_core::usage::{
 
 use super::FilesystemPortalSource;
 
+#[cfg(test)]
+mod window_tests {
+    use super::*;
+    use crate::source::PortalSource;
+
+    #[test]
+    fn portal_and_tui_projection_preserve_core_window_pricing_and_gap_warnings() {
+        let temp = tempfile::tempdir().unwrap();
+        let source = FilesystemPortalSource::new(temp.path(), temp.path().join("state"));
+        let ledger = UsageLedger::new(&source.paths.usage_ledger);
+        let now = 1_800_000_000;
+        let rows = [(now - 40 * 86_400, "gpt-5.6-luna", 100),
+            (now - 20 * 86_400, "gpt-5.6-luna", 200),
+            (now - 3 * 86_400, "gpt-6-astra", 300),
+            (now - 60, "gpt-6-astra", 10)].map(|(ts, model, tokens)| {
+            serde_json::from_value(serde_json::json!({"ts":ts,"provider":"codex","account":"fixture","model":model,"id":"session","kind":"total","in":tokens,"out":tokens,"cr":tokens})).unwrap()
+        });
+        ledger.append(&rows).unwrap();
+        for days in [7, 30] {
+            let report = source.usage(days, now).unwrap();
+            let expected = build_usage_report(
+                &ledger.read_windowed(days, now).unwrap(),
+                days,
+                now,
+                &PriceCatalog::default(),
+            );
+            assert_eq!(
+                serde_json::to_value(&report.grand).unwrap(),
+                serde_json::to_value(&expected.grand).unwrap()
+            );
+            assert_eq!(report.by_model.len(), if days == 7 { 1 } else { 2 });
+            assert_eq!(report.warnings.len(), 1);
+            let serialized = serde_json::to_value(&report).unwrap();
+            assert_eq!(serialized["warnings"].as_array().unwrap().len(), 1);
+        }
+    }
+}
+
 pub(crate) fn read_usage(
     source: &FilesystemPortalSource,
     days: u32,
     now: i64,
 ) -> Result<UsageReport> {
     let mut records =
-        UsageLedger::new(source.paths.usage_ledger.clone()).read_deduplicated(days, now)?;
+        UsageLedger::new(source.paths.usage_ledger.clone()).read_windowed(days, now)?;
     let details = super::local_usage::read_details(source, days, now)?;
     for (engine, provider_details) in [
         (Engine::Opencode, &details[0]),
         (Engine::Kimi, &details[1]),
         (Engine::Grok, &details[2]),
     ] {
+        let profiles = source.usage_profiles(engine)?;
         for detail in provider_details.iter().filter(|detail| detail.available) {
-            records.retain(|record| !(record.engine == engine && record.account == detail.account));
+            let ledger_accounts = profiles
+                .iter()
+                .filter(|profile| profile.account == detail.account)
+                .filter_map(|profile| profile.path.file_name().and_then(|name| name.to_str()))
+                .collect::<Vec<_>>();
+            records.retain(|record| {
+                !(record.engine == engine
+                    && (record.account == detail.account
+                        || ledger_accounts.contains(&record.account.as_str())))
+            });
             records.extend(summary_records(engine, detail, now));
         }
     }
     let mut report = build_usage_report(&records, days, now, &PriceCatalog::default());
+    neomax_core::usage::append_import_warnings(&mut report, &source.paths.usage_watch);
     report.opencode = details[0].clone();
     report.kimi = details[1].clone();
     report.grok = details[2].clone();
@@ -152,6 +201,38 @@ mod tests {
     use super::*;
     use crate::source::FilesystemPortalSource;
     use neomax_core::usage::{LocalModelUsageRow, LocalUsageTotals, UsageCounts, UsageMetrics};
+
+    #[test]
+    fn live_database_summary_replaces_ledger_profile_alias_without_removing_other_accounts() {
+        let temp = tempfile::tempdir().unwrap();
+        let source = FilesystemPortalSource::new(temp.path(), temp.path().join("state"));
+        let database = temp.path().join(".local/share/opencode/opencode.db");
+        std::fs::create_dir_all(database.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(temp.path().join(".opencode")).unwrap();
+        let db = rusqlite::Connection::open(database).unwrap();
+        db.execute_batch("CREATE TABLE session (id TEXT PRIMARY KEY, parent_id TEXT, directory TEXT, title TEXT, agent TEXT, model TEXT, time_created INTEGER, time_updated INTEGER, time_archived INTEGER, tokens_input INTEGER, tokens_output INTEGER, tokens_reasoning INTEGER, tokens_cache_read INTEGER, tokens_cache_write INTEGER, cost REAL); CREATE TABLE message (id TEXT PRIMARY KEY, session_id TEXT, time_created INTEGER, time_updated INTEGER, data TEXT); CREATE TABLE part (id TEXT PRIMARY KEY, message_id TEXT, session_id TEXT, time_created INTEGER, time_updated INTEGER, data TEXT);").unwrap();
+        let now = 1_800_000_000;
+        db.execute("INSERT INTO message VALUES ('m1','s1',?,?,?)", rusqlite::params![now * 1000_i64, now * 1000_i64,
+            serde_json::json!({"role":"assistant","providerID":"opencode","modelID":"big-pickle","tokens":{"input":20,"output":10},"time":{"completed":now*1000_i64},"cost":0}).to_string()]).unwrap();
+        drop(db);
+        let ledger = UsageLedger::new(&source.paths.usage_ledger);
+        let rows = [(".opencode", "m1", 10), (".opencode-spare", "m2", 2)].map(|(account,id,output)| {
+            serde_json::from_value(serde_json::json!({"ts":now,"provider":"opencode","account":account,"model":"opencode/big-pickle","id":id,"kind":"add","in":20,"out":output,"cost":0})).unwrap()
+        });
+        ledger.append(&rows).unwrap();
+        let profiles = source.usage_profiles(Engine::Opencode).unwrap();
+        assert!(profiles.iter().any(|profile| profile.account == "1"));
+        let report = read_usage(&source, 30, now).unwrap();
+        assert_eq!(report.grand.output, 12);
+        assert_eq!(report.grand.input, 40);
+        assert_eq!(report.by_account.len(), 2);
+        assert!(
+            report
+                .by_account
+                .iter()
+                .any(|row| row.account == ".opencode-spare" && row.metrics.output == 2)
+        );
+    }
 
     #[test]
     fn empty_usage_ledger_still_returns_all_report_groups() {

@@ -25,7 +25,7 @@ const DIM: Color = Color::Rgb(119, 133, 151);
 const VIOLET: Color = Color::Rgb(180, 160, 229);
 const TEAL: Color = Color::Rgb(118, 204, 193);
 const AMBER: Color = Color::Rgb(221, 187, 111);
-const LOGO: &str = "⠀⠀⠀⠀⣀⡀⠀⠀⣠⣾⣿⡆⠀⠀\n⠀⠀⠀⢸⡿⢿⣶⣾⠟⢽⡿⠁⠀⠀\n⣠⣴⣶⠾⢿⣿⡿⣿⣿⠿⠷⣶⣦⣄\n⠙⠻⠿⢦⣾⡟⠁⠈⢿⣧⠰⠿⠟⠋\n⠀⠀⢠⣿⣟⣤⡄⠠⣼⣿⡇⠀⠀⠀\n⠀⠀⠸⣿⠿⠋⠀⠀⠈⠉⠀⠀⠀⠀";
+const LOGO: &str = "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣾⠀\n⠀⠀⠀⠀⣀⡀⠀⠀⣠⣾⣿⡆⠀⠀\n⠀⠀⠀⢸⡿⢿⣶⣾⠟⢽⡿⠁⠀⠀\n⣠⣴⣶⠾⢿⣿⡿⣿⣿⠿⠷⣶⣦⣄\n⠙⠻⠿⢦⣾⡟⠁⠈⢿⣧⠰⠿⠟⠋\n⠀⠀⢠⣿⣟⣤⡄⠠⣼⣿⡇⠀⠀⠀\n⠀⠀⠸⣿⠿⠋⠀⠀⠈⠉⠀⠀⠀⠀";
 
 fn panel(title: impl Into<String>) -> Block<'static> {
     Block::default()
@@ -63,13 +63,26 @@ fn spend_header(frame: &mut Frame, app: &App, area: Rect) {
             Style::default().fg(TEAL).add_modifier(Modifier::BOLD),
         )));
         lines.push(Line::from(Span::styled(
-            "API-equivalent spend",
+            if report.warnings.is_empty() {
+                "Local API estimate"
+            } else {
+                "Partial local estimate"
+            },
             Style::default().fg(DIM),
         )));
         lines.push(Line::from(format!(
             "{} in  {} out",
             count(report.grand.input),
             count(report.grand.output)
+        )));
+        lines.push(Line::from(format!(
+            "Cache {} r {} w",
+            count(report.grand.cache_read),
+            count(report.grand.cache_write)
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("{}d · all providers", report.days),
+            Style::default().fg(DIM),
         )));
         let age = chrono::Utc::now()
             .timestamp()
@@ -79,7 +92,7 @@ fn spend_header(frame: &mut Frame, app: &App, area: Rect) {
             if app.usage_error.is_some() {
                 format!("Cached {age}s · refresh failed")
             } else {
-                format!("Updated {age}s ago · s range")
+                format!("Updated {age}s · s range")
             },
             Style::default().fg(if app.usage_error.is_some() {
                 AMBER
@@ -92,7 +105,7 @@ fn spend_header(frame: &mut Frame, app: &App, area: Rect) {
             "Loading usage…",
             Style::default().fg(DIM),
         )));
-        lines.push(Line::from("API-equivalent spend"));
+        lines.push(Line::from("Local API estimate"));
         lines.push(Line::from("s changes range"));
         if app.usage_error.is_some() {
             lines.push(Line::from(Span::styled(
@@ -109,7 +122,7 @@ fn body(area: Rect) -> Vec<Rect> {
         .direction(Direction::Vertical)
         .margin(1)
         .constraints([
-            Constraint::Length(6),
+            Constraint::Length(7),
             Constraint::Length(2),
             Constraint::Min(3),
             Constraint::Length(1),
@@ -338,7 +351,9 @@ fn tokens(session: &SessionRecord) -> String {
 }
 
 fn count(value: u64) -> String {
-    if value >= 1_000_000 {
+    if value >= 1_000_000_000 {
+        format!("{:.1}B", value as f64 / 1_000_000_000.)
+    } else if value >= 1_000_000 {
         format!("{:.1}M", value as f64 / 1_000_000.)
     } else if value >= 1_000 {
         format!("{:.1}k", value as f64 / 1_000.)
@@ -451,7 +466,10 @@ fn usage(frame: &mut Frame, app: &App, area: Rect) {
         return;
     };
     if app.detail_open {
-        let text = report.by_model.get(app.selected).map(|row| format!("{}\n\n{} days · API-equivalent estimate ${:.2}\n\nInput tokens     {}\nOutput tokens    {}\nCache read       {}\nCache write      {}\nRequests         {}\nErrors           {}\n\nThese estimates are separate from subscription billing and account allowances.", row.model, report.days, row.metrics.cost, count(row.metrics.input), count(row.metrics.output), count(row.metrics.cache_read), count(row.metrics.cache_write), row.metrics.requests, row.metrics.errors)).unwrap_or_else(|| "No recorded model usage in this window.".into());
+        let mut text = report.by_model.get(app.selected).map(|row| format!("{}\n\nLast {} days · API estimate ${:.2}\n\nUncached input  {}\nOutput tokens   {}\nCache read      {}\nCache write     {}\nRequests        {}\nErrors          {}\n\nAll discovered local profiles are included, even for work started outside Neomax. Other devices and cloud-only sessions are not synchronized.\n\nCosts use recorded charges or standard model rates. Unrecorded fast-mode or long-context premiums, cache writes and tool fees can be missing. This is not your subscription bill.", row.model, report.days, row.metrics.cost, count(row.metrics.input), count(row.metrics.output), count(row.metrics.cache_read), count(row.metrics.cache_write), row.metrics.requests, row.metrics.errors)).unwrap_or_else(|| "No recorded model usage in this window.".into());
+        for warning in &report.warnings {
+            text.push_str(&format!("\n\n{warning}"));
+        }
         frame.render_widget(
             Paragraph::new(clean(&text))
                 .block(panel("Model usage · Esc back"))
@@ -483,7 +501,11 @@ fn usage(frame: &mut Frame, app: &App, area: Rect) {
                 report.grand.requests, report.grand.errors
             )),
             Line::from(Span::styled(
-                "Recorded token costs, not your subscription bill. Account quotas → Accounts.",
+                if report.warnings.is_empty() {
+                    "Local records, not your subscription bill. Enter shows pricing and coverage."
+                } else {
+                    "Incomplete historical counters. Enter shows the gaps and pricing limits."
+                },
                 Style::default().fg(DIM),
             )),
         ])
@@ -761,10 +783,13 @@ mod tests {
         app.spend = Some(std::sync::Arc::new(neomax_core::usage::UsageReport {
             days: 1,
             now: chrono::Utc::now().timestamp(),
+            warnings: vec![],
             grand: neomax_core::usage::UsageMetrics {
                 cost: 22.4,
                 input: 80_000,
                 output: 12_000,
+                cache_read: 13_600_000_000,
+                cache_write: 229_000_000,
                 ..Default::default()
             },
             by_provider: vec![],
@@ -803,6 +828,14 @@ mod tests {
                 .collect::<Vec<_>>()
                 .join("\n");
             assert!(text.contains("$22.40"), "missing spend on {name}");
+            assert!(
+                text.contains("13.6B") && text.contains("229.0M"),
+                "missing cache totals on {name}"
+            );
+            assert!(
+                text.contains("1d · all providers"),
+                "missing spend scope on {name}"
+            );
             assert!(text.contains("24h") && text.contains("7d") && text.contains("30d"));
             if page == LAUNCH {
                 assert!(text.contains("Start Neomax"));
@@ -819,6 +852,45 @@ mod tests {
                     serde_json::to_vec(&cells).unwrap(),
                 )
                 .unwrap();
+            }
+        }
+        app.spend_range = 2;
+        std::sync::Arc::make_mut(app.spend.as_mut().unwrap()).days = 30;
+        for (width, height) in [(80, 24), (60, 20)] {
+            for (page, name) in PAGES.iter().enumerate() {
+                app.page = page;
+                let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+                terminal
+                    .draw(|frame| draw(frame, &app, Path::new("project")))
+                    .unwrap();
+                let buffer = terminal.backend().buffer();
+                let text = (0..height)
+                    .map(|y| {
+                        (0..width)
+                            .map(|x| buffer[(x, y)].symbol())
+                            .collect::<String>()
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                for label in [
+                    "$22.40",
+                    "Cache 13.6B r 229.0M w",
+                    "30d · all providers",
+                    "Updated",
+                    "s range",
+                ] {
+                    assert!(
+                        text.contains(label),
+                        "missing {label} at {width}x{height} on {}",
+                        name
+                    );
+                }
+                for (y, line) in LOGO.lines().enumerate() {
+                    let rendered = (1..17)
+                        .map(|x| buffer[(x, y as u16 + 1)].symbol())
+                        .collect::<String>();
+                    assert!(rendered.starts_with(line), "logo clipped at row {y}");
+                }
             }
         }
     }

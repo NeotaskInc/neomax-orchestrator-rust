@@ -20,6 +20,8 @@ pub fn build_usage_report(
     prices: &PriceCatalog,
 ) -> UsageReport {
     let mut grand = UsageMetrics::default();
+    let mut counter_gaps = false;
+    let mut fallback_models = std::collections::BTreeSet::new();
     let mut providers = BTreeMap::<Engine, UsageMetrics>::new();
     let mut accounts = BTreeMap::<(Engine, String), UsageMetrics>::new();
     let mut models = BTreeMap::<(Engine, String), UsageMetrics>::new();
@@ -28,6 +30,10 @@ pub fn build_usage_report(
     let mut agents = BTreeMap::<(Engine, String, String), UsageMetrics>::new();
 
     for record in records {
+        if record.cost.is_none() && prices.known_price_for(&record.model).is_none() {
+            fallback_models.insert(record.model.clone());
+        }
+        counter_gaps |= record.extra.get("usage_counter_gap").and_then(serde_json::Value::as_bool) == Some(true);
         let metrics = metrics_for(record, prices);
         grand.add(&metrics);
         providers.entry(record.engine).or_default().add(&metrics);
@@ -62,6 +68,11 @@ pub fn build_usage_report(
     let mut report = UsageReport {
         days,
         now,
+        warnings: if counter_gaps {
+            vec!["Older cumulative counters restarted without per-request usage. Unmeasurable reset intervals are excluded from this estimate.".into()]
+        } else {
+            Vec::new()
+        },
         grand,
         by_provider: providers
             .into_iter()
@@ -109,6 +120,9 @@ pub fn build_usage_report(
         grok: Vec::new(),
         pricing: prices.rates().clone(),
     };
+    if !fallback_models.is_empty() {
+        report.warnings.push(format!("Unverified fallback prices are used for: {}. Their token counts are included, but their dollar values are not verified model rates.", fallback_models.into_iter().collect::<Vec<_>>().join(", ")));
+    }
     sort_report(&mut report);
     report
 }
