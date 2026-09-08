@@ -29,7 +29,7 @@ fn live_collector_reads_time_at_each_sweep_and_fixed_clock_remains_injectable() 
 fn upgrades_legacy_claude_cache_metadata_without_duplicating_usage_or_rewinding_codex() {
     let temp = tempfile::tempdir().unwrap();
     let paths = agent_paths(&temp);
-    let root = paths.home.join(".claude/projects/demo");
+    let root = paths.home.join(".claude").join("projects").join("demo");
     fs::create_dir_all(&root).unwrap();
     let file = root.join("legacy.jsonl");
     let line = r#"{"timestamp":"2026-09-01T12:00:00Z","message":{"role":"assistant","id":"native-message","model":"claude-fable-5","usage":{"input_tokens":10,"output_tokens":9,"cache_creation_input_tokens":1000000,"cache_creation":{"ephemeral_1h_input_tokens":1000000}}}}"#;
@@ -83,7 +83,11 @@ fn upgrades_legacy_claude_cache_metadata_without_duplicating_usage_or_rewinding_
 fn older_standalone_history_finishes_importing_after_the_first_chunk() {
     let temp = tempfile::tempdir().unwrap();
     let paths = agent_paths(&temp);
-    let root = paths.home.join(".claude-solo/projects/demo");
+    let root = paths
+        .home
+        .join(".claude-solo")
+        .join("projects")
+        .join("demo");
     fs::create_dir_all(&root).unwrap();
     let file = root.join("direct-cli.jsonl");
     let mut bytes = b"{}\n".repeat(crate::io::MAX_SOURCE_BYTES_PER_SWEEP / 3 + 1);
@@ -123,7 +127,7 @@ fn older_standalone_history_finishes_importing_after_the_first_chunk() {
 fn archived_direct_codex_usage_preserves_non_gpt_models_without_authentication() {
     let temp = tempfile::tempdir().unwrap();
     let paths = agent_paths(&temp);
-    let root = paths.home.join(".codex-personal/archived_sessions");
+    let root = paths.home.join(".codex-personal").join("archived_sessions");
     fs::create_dir_all(&root).unwrap();
     fs::write(root.join("native.jsonl"), concat!(
         "{\"type\":\"turn_context\",\"payload\":{\"model\":\"router/custom-model\"}}\n",
