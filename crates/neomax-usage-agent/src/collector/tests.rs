@@ -89,7 +89,9 @@ fn older_standalone_history_finishes_importing_after_the_first_chunk() {
     let mut bytes = b"{}\n".repeat(crate::io::MAX_SOURCE_BYTES_PER_SWEEP / 3 + 1);
     bytes.extend_from_slice(b"{\"timestamp\":\"2026-09-01T12:00:00Z\",\"message\":{\"role\":\"assistant\",\"id\":\"native-message\",\"model\":\"claude-fable-5\",\"usage\":{\"input_tokens\":10,\"output_tokens\":9}}}\n");
     fs::write(&file, bytes).unwrap();
-    fs::File::open(&file)
+    fs::OpenOptions::new()
+        .write(true)
+        .open(&file)
         .unwrap()
         .set_times(
             fs::FileTimes::new().set_modified(
