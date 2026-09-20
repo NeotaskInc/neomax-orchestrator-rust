@@ -19,7 +19,7 @@ env:
 
 jobs:
   quality:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v7
       - name: Install quality dependencies
@@ -54,7 +54,7 @@ jobs:
         run: cargo test -p neomax-core --test compatibility --locked
 
   msrv:
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@1.85.0
@@ -70,9 +70,10 @@ jobs:
       fail-fast: false
       matrix:
         runner:
-          - macos-15-intel
-          - macos-14
-          - windows-latest
+          # Native Intel testing is paused with Intel Mac publication.
+          # - [self-hosted, macOS, X64, neotask-intel]
+          - blacksmith-6vcpu-macos-15
+          - blacksmith-4vcpu-windows-2025
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
@@ -82,16 +83,16 @@ jobs:
           cache-on-failure: false
           shared-key: neomax-native-${{ matrix.runner }}
       - name: Assert Windows private ACL enforcement
-        if: matrix.runner == 'windows-latest'
+        if: runner.os == 'Windows'
         shell: bash
         run: cargo test -p neomax-core --lib io::permissions --locked
       - name: Run native workspace tests
         run: cargo test --workspace --all-targets --locked --no-fail-fast
       - name: Check non-Windows process-group boundary
-        if: matrix.runner != 'windows-latest'
+        if: runner.os != 'Windows'
         run: cargo check -p neomax-core --all-targets --locked
       - name: Run Windows process-group tests
-        if: matrix.runner == 'windows-latest'
+        if: runner.os == 'Windows'
         run: cargo test -p neomax-core --lib io::process_group::windows -- --nocapture
 
   native-package:
@@ -100,13 +101,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-24.04
+          - runner: blacksmith-4vcpu-ubuntu-2404
             target: x86_64-unknown-linux-gnu
-          - runner: macos-15-intel
-            target: x86_64-apple-darwin
-          - runner: macos-14
+          # Intel Mac builds paused; retain the native lane for reactivation.
+          # - runner: [self-hosted, macOS, X64, neotask-intel]
+          #   target: x86_64-apple-darwin
+          - runner: blacksmith-6vcpu-macos-15
             target: aarch64-apple-darwin
-          - runner: windows-latest
+          - runner: blacksmith-4vcpu-windows-2025
             target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.runner }}
     env:
@@ -151,7 +153,7 @@ jobs:
 
   cross-package:
     needs: [quality, msrv]
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       fail-fast: false
       matrix:

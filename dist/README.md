@@ -94,14 +94,15 @@ path. It opts out of background service activation, puts fake provider executabl
 directories and never reads an existing login.
 
 `checksums.sh` writes standard SHA256SUMS records for one or more archives. The release workflow
-first uploads one temporary artifact for each of the seven targets, then
-`assemble-release.sh` downloads and validates all seven archives, rejects missing or duplicate
+first uploads one temporary artifact for each of the six active targets, then
+`assemble-release.sh` downloads and validates all six archives, rejects missing or duplicate
 target assets, verifies each per-target checksum, and writes one canonical SHA256SUMS file.
 It also creates a release asset manifest, generated release notes, and a copy of LICENSE. The
 assembly job runs for manual dispatches, but only a verified `v<workspace-version>` tag can run
 the publish job. A verified tagged run creates or updates the non-draft release in
 `NeotaskInc/neomax-orchestrator-rust` with permanent package archives and supporting assets.
-Bootstrap installers are included automatically when a supported installer file exists at the
+Intel Mac builds are paused; their definitions and previously published packages remain
+available for explicit reactivation. Bootstrap installers are included automatically when a supported installer file exists at the
 repository root.
 
 Run the hermetic completeness test locally with:
@@ -110,6 +111,6 @@ Run the hermetic completeness test locally with:
 bash dist/test-release-assets.sh
 ```
 
-The test builds fixture packages from fake binaries, checks the seven-target manifest, and proves
+The test builds fixture packages from fake binaries, checks the six-target manifest, and proves
 that missing workflow assets and duplicate archives are rejected. It never contacts GitHub or a
 provider.

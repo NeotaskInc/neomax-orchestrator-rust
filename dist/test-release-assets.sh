@@ -48,15 +48,18 @@ bash "$SCRIPT_DIR/assemble-release.sh" \
   --output-dir "$output" \
   --repo-root "$ROOT" >/dev/null
 
-[[ "$(find "$output" -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' \) | wc -l | tr -d '[:space:]')" -eq 7 ]] || die 'release assembly did not retain seven archives'
-[[ "$(wc -l < "$output/SHA256SUMS" | tr -d '[:space:]')" -eq 7 ]] || die 'release assembly did not create seven checksum records'
+[[ "$(find "$output" -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' \) | wc -l | tr -d '[:space:]')" -eq 6 ]] || die 'release assembly did not retain six active archives'
+[[ "$(wc -l < "$output/SHA256SUMS" | tr -d '[:space:]')" -eq 6 ]] || die 'release assembly did not create six checksum records'
 [[ -f "$output/LICENSE" ]] || die 'release assembly did not include LICENSE'
 [[ -f "$output/RELEASE-NOTES.md" ]] || die 'release assembly did not generate release notes'
 [[ -f "$output/RELEASE-ASSET-MANIFEST.json" ]] || die 'release assembly did not generate asset manifest'
 [[ -f "$output/install.sh" ]] || die 'release assembly did not include the POSIX installer'
 [[ -f "$output/install.ps1" ]] || die 'release assembly did not include the PowerShell installer'
-grep -Fq '"archive_count": 7' "$output/RELEASE-ASSET-MANIFEST.json" || die 'asset manifest count is incorrect'
-grep -Fq '"asset_count": 13' "$output/RELEASE-ASSET-MANIFEST.json" || die 'asset manifest total is incorrect'
+grep -Fq '"archive_count": 6' "$output/RELEASE-ASSET-MANIFEST.json" || die 'asset manifest count is incorrect'
+grep -Fq '"asset_count": 12' "$output/RELEASE-ASSET-MANIFEST.json" || die 'asset manifest total is incorrect'
+if grep -Fq 'x86_64-apple-darwin' "$output/RELEASE-ASSET-MANIFEST.json"; then
+  die 'release manifest advertised a paused Intel Mac build'
+fi
 assert_exact_release_assets "$output" "$version"
 bash "$SCRIPT_DIR/verify-release-assets.sh" --release-dir "$output" --version "$version" >/dev/null
 
@@ -65,7 +68,7 @@ actual_names="$temporary/actual-release-assets"
 release_asset_names "$version" | sort > "$expected_names"
 find "$output" -mindepth 1 -maxdepth 1 -type f -exec basename {} \; | sort > "$actual_names"
 cmp -s "$expected_names" "$actual_names" || die 'release assembly basenames are not exact'
-[[ "$(wc -l < "$actual_names" | tr -d '[:space:]')" -eq 13 ]] || die 'release assembly did not create exactly thirteen assets'
+[[ "$(wc -l < "$actual_names" | tr -d '[:space:]')" -eq 12 ]] || die 'release assembly did not create exactly twelve assets'
 
 extra_release="$temporary/extra-release"
 cp -R "$output" "$extra_release"
@@ -90,7 +93,7 @@ fi
 
 bad_manifest_release="$temporary/bad-manifest-release"
 cp -R "$output" "$bad_manifest_release"
-sed 's/"asset_count": 13/"asset_count": 14/' "$output/RELEASE-ASSET-MANIFEST.json" > "$bad_manifest_release/RELEASE-ASSET-MANIFEST.json"
+sed 's/"asset_count": 12/"asset_count": 13/' "$output/RELEASE-ASSET-MANIFEST.json" > "$bad_manifest_release/RELEASE-ASSET-MANIFEST.json"
 if bash "$SCRIPT_DIR/verify-release-assets.sh" --release-dir "$bad_manifest_release" --version "$version" >/dev/null 2>&1; then
   die 'release verifier accepted incorrect manifest metadata'
 fi
@@ -128,7 +131,7 @@ expected_operations="$temporary/expected-operations"
 printf '%s\n' \
   'edit draft=true' \
   'delete stale.txt' \
-  'upload 13' \
+  'upload 12' \
   'download' \
   'edit draft=false' > "$expected_operations"
 cmp -s "$expected_operations" "$fake_log" || die 'publication transaction did not preserve draft-first operation order'
@@ -150,7 +153,7 @@ bash "$SCRIPT_DIR/publish-release.sh" \
 assert_exact_release_assets "$fresh_state/assets" "$version"
 printf '%s\n' \
   'create' \
-  'upload 13' \
+  'upload 12' \
   'download' \
   'edit draft=false' > "$expected_operations"
 cmp -s "$expected_operations" "$fresh_log" || die 'new publication did not preserve draft-first operation order'
