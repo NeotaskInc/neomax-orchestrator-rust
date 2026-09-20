@@ -62,8 +62,11 @@ that the provider has accepted it.
 ## Install
 
 [Latest release](https://github.com/NeotaskInc/neomax-orchestrator-rust/releases/latest)
-includes precompiled packages for macOS (Apple Silicon and Intel), Windows
+includes precompiled packages for macOS (Apple Silicon), Windows
 (x64), and Linux (x64 and ARM64, including Ubuntu).
+
+Intel Mac builds are temporarily paused. Previously published Intel packages
+remain available on their existing release pages.
 
 ### Give Neomax to your coding agent
 

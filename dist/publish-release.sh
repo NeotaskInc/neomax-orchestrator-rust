@@ -89,7 +89,7 @@ assets=()
 while IFS= read -r asset_name; do
   assets+=("$release_dir/$asset_name")
 done < <(release_asset_names "$version")
-[[ "${#assets[@]}" -eq 13 ]] || die 'fixed release manifest must contain thirteen assets'
+[[ "${#assets[@]}" -eq 12 ]] || die 'fixed release manifest must contain twelve assets (Intel Mac paused)'
 gh release upload "$tag" --repo "$repository" "${assets[@]}"
 
 remote_names="$(mktemp "${TMPDIR:-/tmp}/neomax-remote-assets.XXXXXX")"

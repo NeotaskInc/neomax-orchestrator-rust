@@ -24,7 +24,7 @@ env:
 jobs:
   release_ref:
     name: Validate release ref
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       tag: ${{ steps.verify.outputs.tag }}
       version: ${{ steps.verify.outputs.version }}
@@ -86,7 +86,7 @@ jobs:
   ci_gate:
     name: Require successful Rust CI for tag commit
     needs: release_ref
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       actions: read
       contents: read
@@ -101,7 +101,7 @@ jobs:
 
   quality:
     needs: release_ref
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v7
       - name: Install quality dependencies
@@ -137,7 +137,7 @@ jobs:
 
   msrv:
     needs: release_ref
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@1.85.0
@@ -150,7 +150,7 @@ jobs:
 
   release-metadata:
     needs: [release_ref, ci_gate, quality, msrv]
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
@@ -177,13 +177,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-24.04
+          - runner: blacksmith-4vcpu-ubuntu-2404
             target: x86_64-unknown-linux-gnu
-          - runner: macos-15-intel
-            target: x86_64-apple-darwin
-          - runner: macos-14
+          # Intel Mac builds paused; retain the native lane for reactivation.
+          # - runner: [self-hosted, macOS, X64, neotask-intel]
+          #   target: x86_64-apple-darwin
+          - runner: blacksmith-6vcpu-macos-15
             target: aarch64-apple-darwin
-          - runner: windows-latest
+          - runner: blacksmith-4vcpu-windows-2025
             target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.runner }}
     env:
@@ -222,7 +223,7 @@ jobs:
 
   cross-package:
     needs: release-metadata
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       fail-fast: false
       matrix:
@@ -261,7 +262,7 @@ jobs:
 
   assemble:
     needs: [release-metadata, native-package, cross-package]
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     env:
       VERSION: ${{ needs.release-metadata.outputs.version }}
     steps:
@@ -291,7 +292,7 @@ jobs:
   publish:
     needs: [release-metadata, assemble]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'NeotaskInc/neomax-orchestrator-rust'
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: write
     env:

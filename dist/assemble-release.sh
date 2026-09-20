@@ -46,7 +46,7 @@ done
 [[ -n "$output_dir" ]] || die '--output-dir is required'
 [[ -d "$repo_root" ]] || die "repository root is missing: $repo_root"
 validate_version "$version"
-[[ "${#RELEASE_TARGETS[@]}" -eq 7 ]] || die 'release target manifest must contain seven targets'
+[[ "${#RELEASE_TARGETS[@]}" -eq 6 ]] || die 'release target manifest must contain six active targets (Intel Mac paused)'
 [[ ! -e "$output_dir" ]] || die "output directory already exists: $output_dir"
 
 mkdir -p "$(dirname "$output_dir")"
@@ -68,7 +68,7 @@ artifact_files=()
 while IFS= read -r artifact_file; do
   artifact_files+=("$artifact_file")
 done < <(find "$artifacts_dir" -type f -print | sort)
-[[ "${#artifact_files[@]}" -eq 14 ]] || die "expected exactly fourteen package artifact files, found ${#artifact_files[@]}"
+[[ "${#artifact_files[@]}" -eq $((${#RELEASE_TARGETS[@]} * 2)) ]] || die "expected one archive and checksum per active target, found ${#artifact_files[@]} files"
 for artifact_file in "${artifact_files[@]}"; do
   case "$(basename "$artifact_file")" in
     SHA256SUMS|*.tar.gz|*.zip) ;;
@@ -121,7 +121,7 @@ for target in "${RELEASE_TARGETS[@]}"; do
 done
 
 bash "$SCRIPT_DIR/checksums.sh" --output "$stage/SHA256SUMS" "${release_archives[@]}" >/dev/null
-[[ "$(wc -l < "$stage/SHA256SUMS" | tr -d '[:space:]')" -eq 7 ]] || die 'canonical SHA256SUMS must contain seven records'
+[[ "$(wc -l < "$stage/SHA256SUMS" | tr -d '[:space:]')" -eq "${#RELEASE_TARGETS[@]}" ]] || die 'canonical SHA256SUMS must contain one record per active target'
 duplicate_checksum_names="$(awk '{ counts[$2] += 1 } END { for (name in counts) if (counts[name] != 1) print name }' "$stage/SHA256SUMS")"
 [[ -z "$duplicate_checksum_names" ]] || die 'canonical SHA256SUMS contains duplicate asset names'
 
@@ -156,8 +156,8 @@ manifest="$stage/RELEASE-ASSET-MANIFEST.json"
   printf '  "schema_version": 1,\n'
   printf '  "product": "%s",\n' "$PRODUCT"
   printf '  "version": "%s",\n' "$version"
-  printf '  "asset_count": 13,\n'
-  printf '  "archive_count": 7,\n'
+  printf '  "asset_count": %s,\n' "$((${#RELEASE_TARGETS[@]} + 6))"
+  printf '  "archive_count": %s,\n' "${#RELEASE_TARGETS[@]}"
   printf '  "archives": [\n'
   for index in "${!release_targets[@]}"; do
     target="${release_targets[$index]}"

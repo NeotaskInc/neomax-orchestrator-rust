@@ -11,7 +11,8 @@ WORKFLOW_ASSETS=(neomax rotate find-issues fix-issues project)
 SHELL_ASSETS=(neomax-aliases.zsh neomax-shell-shortcuts.sh)
 RELEASE_TARGETS=(
   x86_64-unknown-linux-gnu
-  x86_64-apple-darwin
+  # Intel Mac publication is paused; preserve the target for reactivation.
+  # x86_64-apple-darwin
   aarch64-apple-darwin
   x86_64-pc-windows-msvc
   aarch64-unknown-linux-gnu

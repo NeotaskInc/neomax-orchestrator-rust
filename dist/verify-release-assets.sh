@@ -40,7 +40,7 @@ awk 'NF == 2 && $1 ~ /^[0-9a-f]{64}$/ { print $2 }' "$release_dir/SHA256SUMS" | 
 for target in "${RELEASE_TARGETS[@]}"; do
   archive_name "$version" "$target"
 done | sort > "$expected_archives"
-cmp -s "$expected_archives" "$checksum_names" || die 'SHA256SUMS does not name the exact seven archives'
+cmp -s "$expected_archives" "$checksum_names" || die 'SHA256SUMS does not name the exact active target archives'
 
 while read -r expected_hash asset_name extra; do
   [[ -z "${extra:-}" && "$expected_hash" =~ ^[0-9a-f]{64}$ ]] || die 'SHA256SUMS contains an invalid record'
@@ -70,7 +70,7 @@ if set(manifest) != {"schema_version", "product", "version", "asset_count", "arc
     raise SystemExit("release manifest has unexpected or missing fields")
 if manifest["schema_version"] != 1 or manifest["product"] != "neomax" or manifest["version"] != version:
     raise SystemExit("release manifest identity is incorrect")
-if manifest["asset_count"] != 13 or manifest["archive_count"] != 7:
+if manifest["asset_count"] != len(targets) + len(supporting) or manifest["archive_count"] != len(targets):
     raise SystemExit("release manifest counts are incorrect")
 if manifest["supporting_files"] != supporting:
     raise SystemExit("release manifest supporting files are not exact")

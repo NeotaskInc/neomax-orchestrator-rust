@@ -92,8 +92,8 @@ grep -Fq 'run.get("conclusion") == "success"' "$ci_verifier" || die 'CI response
 grep -Fq 'run.get("event") == "push"' "$ci_verifier" || die 'CI response validation must require a push run'
 grep -Fq 'run.get("head_branch") == branch' "$ci_verifier" || die 'CI response validation must require the selected branch'
 grep -Fq 'actions/runs/$run_id/jobs?per_page=100' "$ci_verifier" || die 'CI verifier must inspect the complete job matrix'
-grep -Fq '"native-tests (windows-latest)"' "$ci_verifier" || die 'CI verifier must require the Windows native test job'
-grep -Fq '"native-package (macos-14, aarch64-apple-darwin)"' "$ci_verifier" || die 'CI verifier must require every native package job'
+grep -Fq '"native-tests (blacksmith-4vcpu-windows-2025)"' "$ci_verifier" || die 'CI verifier must require the Windows native test job'
+grep -Fq '"native-package (blacksmith-6vcpu-macos-15, aarch64-apple-darwin)"' "$ci_verifier" || die 'CI verifier must require every native package job'
 grep -Fq '"cross-package (aarch64-unknown-linux-musl)"' "$ci_verifier" || die 'CI verifier must require every cross-package job'
 
 temporary="$(mktemp -d "${TMPDIR:-/tmp}/neomax-workflow-test.XXXXXX")"
@@ -119,13 +119,11 @@ import sys
 names = [
     "quality",
     "msrv",
-    "native-tests (macos-15-intel)",
-    "native-tests (macos-14)",
-    "native-tests (windows-latest)",
-    "native-package (ubuntu-24.04, x86_64-unknown-linux-gnu)",
-    "native-package (macos-15-intel, x86_64-apple-darwin)",
-    "native-package (macos-14, aarch64-apple-darwin)",
-    "native-package (windows-latest, x86_64-pc-windows-msvc)",
+    "native-tests (blacksmith-6vcpu-macos-15)",
+    "native-tests (blacksmith-4vcpu-windows-2025)",
+    "native-package (blacksmith-4vcpu-ubuntu-2404, x86_64-unknown-linux-gnu)",
+    "native-package (blacksmith-6vcpu-macos-15, aarch64-apple-darwin)",
+    "native-package (blacksmith-4vcpu-windows-2025, x86_64-pc-windows-msvc)",
     "cross-package (aarch64-unknown-linux-gnu)",
     "cross-package (x86_64-unknown-linux-musl)",
     "cross-package (aarch64-unknown-linux-musl)",
