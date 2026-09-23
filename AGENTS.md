@@ -88,13 +88,18 @@ described in `README.md`.
   quota event or maintenance tick may fall back to another provider inside the
   worker scope. Do not create one global behavior that assumes every CLI has
   the same session model.
-- Preserve the strict defaults: Claude `claude-fable-5-1[1m]`, Codex
-  `gpt-6-astra`, OpenCode `opencode/big-pickle`, Kimi `kimi-code/k3`,
-  and Grok `grok-4.6`.
+- Preserve the strict defaults: Claude `claude-opus-5-5[1m]` (Claude Opus
+  5.5), Codex `gpt-6-astra`, OpenCode `opencode/big-pickle`, Kimi
+  `kimi-code/k3`, and Grok `grok-4.6`. Opus 5.5 is the only default Claude
+  model. `--opus` and a scheduler part's `opus` flag select Opus 5.5.
 - Every provider accepts explicit locally supported model IDs. OpenCode IDs
-  must remain qualified as `provider/model`. Claude Opus is opt-in only.
-  Never add silent model fallback. Record the effective model on every run,
-  usage row, portal row, and scheduler part where that record exists.
+  must remain qualified as `provider/model`. Claude Fable and earlier Opus
+  models are opt-in only: they run only when a person passes their IDs
+  explicitly. Do not add an advisor model. Never add silent model fallback.
+  Record the effective model on every run, usage row, portal row, and
+  scheduler part where that record exists.
+- Opus 5.5 uses the Opus weekly quota window (`seven_day_opus`), not the Fable
+  window, for account selection, live rotation, and failover.
 - Codex uses standard service by default. Fast mode requires an explicit user
   choice. Preserve that choice through worker preparation and recovery without
   changing the provider's saved configuration.

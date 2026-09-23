@@ -165,15 +165,17 @@ project selection, and provider priority. Explicit choices win.
 
 | Provider | Default model | Launch or sign in |
 | --- | --- | --- |
-| Claude | `claude-fable-5-1[1m]` | `neomax claude [ACCOUNT]` |
+| Claude | `claude-opus-5-5[1m]` (Claude Opus 5.5) | `neomax claude [ACCOUNT]` |
 | Codex | `gpt-6-astra` | `neomax codex [ACCOUNT]` |
 | OpenCode | `opencode/big-pickle` | `neomax opencode [ACCOUNT]` |
 | Kimi | `kimi-code/k3` | `neomax kimi [ACCOUNT]` |
 | Grok | `grok-4.6` | `neomax grok [ACCOUNT]` |
 
 Every provider accepts model IDs supported by its local CLI. OpenCode model
-IDs use `provider/model`. Claude Opus is opt-in. Codex uses GPT-6 Astra as its
-default root model. Codex workers may be assigned a different supported model
+IDs use `provider/model`. Claude Opus 5.5 is the only default Claude model, and
+`--opus` selects it explicitly. Claude Fable and earlier Opus models run only
+when you pass their IDs. Codex uses GPT-6 Astra as its default root model.
+Codex workers may be assigned a different supported model
 explicitly or by the routing policy. The GPT-5.6
 family remains available for explicit worker choices: Luna for lightweight
 work, Terra for balanced coding work, and Sol for heavier general work.

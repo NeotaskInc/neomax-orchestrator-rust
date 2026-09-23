@@ -168,17 +168,21 @@ or RFC3339 values.
 Claude model-specific weekly windows are stored in `model_weekly`, separately
 from shared weekly usage. The collector accepts the CLI's
 `limits[].kind=weekly_scoped` records and structured
-`rate_limits.model_scoped` usage. Fable 5 and Fable 5.1 share the Fable window.
-At its 99 percent wall, Neomax selects another account for Fable; Opus and
-Sonnet remain eligible unless their own limits or the account-wide limits
-are exhausted. Reactive model cooldowns follow the Claude account identity
+`rate_limits.model_scoped` usage. Opus models, including the default Opus
+5.5, share the Opus window (`seven_day_opus`). Fable 5 and Fable 5.1 share the
+Fable window. At a family's 99 percent wall, Neomax selects another account
+for that family; other families remain eligible unless their own limits or the
+account-wide limits are exhausted. Reactive model cooldowns follow the Claude account identity
 through credential swaps. Missing model usage remains unknown.
 
 The portal shows shared and model-specific weekly windows separately.
 Its pricing catalog uses standard API-equivalent rates, not subscription
-charges. Fable 5 cache reads cost $1 per million tokens; Fable 5.1 cache reads
-cost $0.25. Both use $12.50 five-minute and $20 one-hour cache writes;
-one-hour counts are priced separately when the transcript supplies them.
+charges. Opus 5.5, the default Claude model, costs $4 input and $20 output per
+million tokens, with $0.20 cache reads, $5 five-minute cache writes, and $8
+one-hour cache writes. Fable 5 cache reads cost $1 per million tokens; Fable
+5.1 cache reads cost $0.25. Both use $12.50 five-minute and $20 one-hour cache
+writes. One-hour counts are priced separately when the transcript supplies
+them.
 GPT-6 Astra and GPT-5.6 Sol, Terra, and Luna have individual input, output,
 cache-read, and cache-write entries. Cumulative records without request-level
 pricing metadata use standard rates; long-context and service-tier premiums

@@ -113,8 +113,9 @@ neomax config set-model ENGINE MODEL
 neomax config unset-model ENGINE
 ```
 
-OpenCode model IDs use `provider/model`. Claude Opus is opt-in. Never replace
-an unavailable requested model with another model silently.
+OpenCode model IDs use `provider/model`. Claude Opus 5.5 is the default Claude
+model; Claude Fable and earlier Opus models are opt-in. Never replace an
+unavailable requested model with another model silently.
 
 Use guarded worker dispatch from an active orchestrator:
 

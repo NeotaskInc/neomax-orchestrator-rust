@@ -506,7 +506,7 @@ The launch flags are:
 -s MINUTES                     stall-time limit
 -n                             disable automatic account failover
 -u                             request ultra mode
---opus                         explicitly select Claude Opus
+--opus                         explicitly select Claude Opus 5.5
 --version | -V                 print the launcher version
 --help | -h                    show launcher help
 ```
@@ -527,7 +527,7 @@ Provider-specific flags are validated before execution:
 
 | Flag | Claude | Codex | OpenCode | Kimi | Grok |
 | --- | --- | --- | --- | --- | --- |
-| `--opus` | Explicit Opus selection | Rejected | Rejected | Rejected | Rejected |
+| `--opus` | Explicit Opus 5.5 selection | Rejected | Rejected | Rejected | Rejected |
 | `-u` | Maps to `xhigh` when no effort is supplied | Maps to `xhigh` | Rejected | Rejected | Rejected |
 | `-e LEVEL` | Accepts the Claude CLI effort value | `low`, `medium`, `high`, or `xhigh` | Rejected | Rejected | Rejected |
 
@@ -984,7 +984,7 @@ Defaults are explicit and provider-specific:
 
 | Provider | Default model | Model discovery |
 | --- | --- | --- |
-| Claude | `claude-fable-5-1[1m]` | No Neomax model-list command; explicit local-CLI-supported IDs are accepted |
+| Claude | `claude-opus-5-5[1m]` (Claude Opus 5.5) | No Neomax model-list command; explicit local-CLI-supported IDs are accepted |
 | Codex | `gpt-6-astra` | No Neomax model-list command; explicit local-CLI-supported IDs are accepted |
 | OpenCode | `opencode/big-pickle` | Best-effort local registry discovery |
 | Kimi | `kimi-code/k3` | Best-effort local CLI discovery |
@@ -995,8 +995,12 @@ supports. Neomax validates basic shape and lets the provider validate the
 provider-specific model. OpenCode IDs must use the qualified `provider/model`
 form. Codex keeps the GPT-5.6 `luna`, `terra`, and `sol` choices for explicit
 worker routing: Luna is intended for lightweight work, Terra for balanced
-coding work, and Sol for heavier general work. Kimi keeps `k3` and `k2.7` aliases. Claude Opus is never
-implicit; select it explicitly when the connected Claude CLI supports it.
+coding work, and Sol for heavier general work. Kimi keeps `k3` and `k2.7` aliases. Claude Opus 5.5
+is the only default Claude model. `--opus`, or `opus: true` on a scheduler
+part, selects Opus 5.5 explicitly and conflicts with any other explicit Claude
+model. Claude Fable and earlier Opus models are never implicit; pass their IDs
+explicitly when the connected Claude CLI supports them. Neomax does not
+configure an advisor model.
 
 Model overrides are stored separately from the main settings file so a
 provider model change does not discard unrelated configuration:
@@ -1005,7 +1009,7 @@ provider model change does not discard unrelated configuration:
 neomax config show
 neomax config models
 neomax config set-model opencode opencode/big-pickle
-neomax config set-model claude 'claude-fable-5-1[1m]'
+neomax config set-model claude 'claude-opus-5-5[1m]'
 neomax config unset-model opencode
 ```
 
