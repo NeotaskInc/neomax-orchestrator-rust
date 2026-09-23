@@ -38,7 +38,7 @@ fn validates_provider_specific_options() {
 }
 
 #[test]
-fn keeps_fable_default_and_requires_explicit_opus() {
+fn leaves_the_default_model_implicit_and_accepts_explicit_opus() {
     let plan = Plan::from_value(
         json!({"parts": [{"prompt": "work", "engine": "claude"}]}),
         &WorkerScope::all(),
@@ -54,6 +54,31 @@ fn keeps_fable_default_and_requires_explicit_opus() {
     .unwrap();
     assert!(plan.parts[0].opus);
     assert_eq!(plan.parts[0].model, None);
+
+    for model in ["claude-opus-5-5[1m]", "claude-opus-5-5"] {
+        let plan = Plan::from_value(
+            json!({"parts": [{"prompt": "work", "engine": "claude", "opus": true, "model": model}]}),
+            &WorkerScope::all(),
+        )
+        .unwrap();
+        assert!(plan.parts[0].opus, "{model}");
+        assert_eq!(plan.parts[0].model.as_deref(), Some(model));
+    }
+    for model in ["claude-opus-5", "claude-fable-5-1[1m]"] {
+        let plan = Plan::from_value(
+            json!({"parts": [{"prompt": "work", "engine": "claude", "model": model}]}),
+            &WorkerScope::all(),
+        )
+        .unwrap();
+        assert!(!plan.parts[0].opus, "{model}");
+        assert_eq!(plan.parts[0].model.as_deref(), Some(model));
+        let error = Plan::from_value(
+            json!({"parts": [{"prompt": "work", "engine": "claude", "opus": true, "model": model}]}),
+            &WorkerScope::all(),
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("different Claude model"), "{model}");
+    }
 }
 
 #[test]

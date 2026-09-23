@@ -1,6 +1,6 @@
 use super::super::{
     default_model_id, resolve_model, MapEnvironment, ModelDefaults, ModelOrigin,
-    CLAUDE_DEFAULT_MODEL, CLAUDE_OPUS_MODEL,
+    CLAUDE_DEFAULT_MODEL, CLAUDE_OPUS_MODEL, CLAUDE_OPUS_MODEL_1M,
 };
 use crate::Engine;
 
@@ -14,19 +14,26 @@ fn compatibility_model_defaults_are_derived_from_the_catalog() {
 }
 
 #[test]
-fn opus_is_explicit_only_and_never_a_catalog_default() {
+fn opus_5_5_is_the_claude_default_and_other_claude_models_stay_explicit() {
     assert_eq!(default_model_id(Engine::Claude), CLAUDE_DEFAULT_MODEL);
-    assert_ne!(default_model_id(Engine::Claude), CLAUDE_OPUS_MODEL);
-    assert_eq!(
-        resolve_model(
-            Engine::Claude,
-            Some(CLAUDE_OPUS_MODEL),
-            &MapEnvironment::default()
-        )
-        .unwrap()
-        .id,
-        CLAUDE_OPUS_MODEL
-    );
+    assert_eq!(CLAUDE_DEFAULT_MODEL, "claude-opus-5-5[1m]");
+    assert_eq!(CLAUDE_DEFAULT_MODEL, CLAUDE_OPUS_MODEL_1M);
+    assert_eq!(CLAUDE_OPUS_MODEL, "claude-opus-5-5");
+    let implicit = resolve_model(Engine::Claude, None, &MapEnvironment::default()).unwrap();
+    assert_eq!(implicit.id, "claude-opus-5-5[1m]");
+    assert_eq!(implicit.origin, ModelOrigin::StrictDefault);
+    for model in [
+        CLAUDE_OPUS_MODEL,
+        "claude-opus-5",
+        "claude-opus-5[1m]",
+        "claude-fable-5-1[1m]",
+        "claude-fable-5",
+    ] {
+        let resolved = resolve_model(Engine::Claude, Some(model), &MapEnvironment::default())
+            .unwrap();
+        assert_eq!(resolved.id, model);
+        assert_eq!(resolved.origin, ModelOrigin::Explicit);
+    }
 }
 
 #[test]
@@ -37,7 +44,7 @@ fn model_precedence_keeps_strict_defaults_and_passes_local_ids() {
         resolve_model(Engine::Claude, None, &environment)
             .unwrap()
             .id,
-        "claude-fable-5-1[1m]"
+        "claude-opus-5-5[1m]"
     );
     let environment = MapEnvironment::new([
         ("NEOMAX_DEFAULT_MODEL".into(), "claude-local".into()),

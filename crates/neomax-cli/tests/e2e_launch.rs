@@ -117,7 +117,7 @@ fn universal_launch_selects_the_only_connected_provider_and_runs_the_fake_cli() 
 #[test]
 fn each_provider_pinned_launcher_selects_its_provider_without_authenticating_any_other() {
     let cases = [
-        ("cmax", Engine::Claude, "claude-fable-5-1[1m]"),
+        ("cmax", Engine::Claude, "claude-opus-5-5[1m]"),
         ("cdxmax", Engine::Codex, "gpt-6-astra"),
         ("ocmax", Engine::Opencode, "opencode/big-pickle"),
         ("kmax", Engine::Kimi, "kimi-code/k3"),
@@ -146,6 +146,51 @@ fn each_provider_pinned_launcher_selects_its_provider_without_authenticating_any
         assert_root_argv(&invocations[0], engine, launcher);
         assert_not_worker_tagged(&invocations[0], launcher);
         harness.assert_hermetic_invocations();
+    }
+}
+
+#[test]
+fn cmax_defaults_to_opus_5_5_and_keeps_other_claude_models_explicit() {
+    for (flags, model) in [
+        (vec![], "claude-opus-5-5[1m]"),
+        (vec!["--opus"], "claude-opus-5-5[1m]"),
+        (vec!["--claude-model", "claude-opus-5"], "claude-opus-5"),
+        (
+            vec!["--claude-model", "claude-fable-5-1[1m]"],
+            "claude-fable-5-1[1m]",
+        ),
+    ] {
+        let harness = E2eHarness::new([Engine::Claude]);
+        let mut args = vec!["--json", "--foreground"];
+        args.extend(flags.iter().copied());
+        args.push("fixture task");
+        let result = harness.run_alias("cmax", args);
+        result.assert_success();
+        let report = result.json();
+        assert_eq!(report["model"], model, "{flags:?}");
+        let invocations = harness.invocations();
+        assert_eq!(invocations.len(), 1, "{flags:?}");
+        assert_eq!(invocations[0].model_arg(), Some(model), "{flags:?}");
+        harness.assert_hermetic_invocations();
+    }
+
+    for model in ["claude-opus-5", "claude-fable-5-1[1m]"] {
+        let harness = E2eHarness::new([Engine::Claude]);
+        let result = harness.run_alias(
+            "cmax",
+            [
+                "--json",
+                "--foreground",
+                "--opus",
+                "--claude-model",
+                model,
+                "fixture task",
+            ],
+        );
+        assert!(!result.status.success(), "{model}");
+        let output = format!("{}\n{}", result.stdout, result.stderr);
+        assert!(output.contains("--opus conflicts"), "{model}");
+        assert!(harness.invocations().is_empty(), "{model}");
     }
 }
 
@@ -185,7 +230,7 @@ fn cmax_solo_uses_a_plain_claude_session_and_arms_local_rotation() {
     let report = result.json();
     assert_eq!(report["status"], "done");
     assert_eq!(report["engine"], "claude");
-    assert_eq!(report["model"], "claude-fable-5-1[1m]");
+    assert_eq!(report["model"], "claude-opus-5-5[1m]");
 
     let invocations = harness.invocations();
     assert_eq!(invocations.len(), 1);

@@ -1,5 +1,6 @@
 use anyhow::{Result, bail};
 use neomax_core::orchestration::commands::Launcher;
+use neomax_core::providers::catalog::CLAUDE_OPUS_MODEL;
 use neomax_core::runs::execution::MAX_TIMEOUT_MINUTES;
 use neomax_core::{Engine, WorkerScope};
 use std::env;
@@ -324,7 +325,7 @@ pub(crate) fn normalize_provider_options(
             if !model
                 .split_once('[')
                 .map_or(model, |(base, _)| base)
-                .eq_ignore_ascii_case("claude-opus-5")
+                .eq_ignore_ascii_case(CLAUDE_OPUS_MODEL)
             {
                 bail!("--opus conflicts with the explicit Claude model {model:?}");
             }

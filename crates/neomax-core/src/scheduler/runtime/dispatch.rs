@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
+use crate::providers::catalog::CLAUDE_OPUS_MODEL_1M;
 use crate::{Engine, Error, Result};
 
 use super::super::{Part, Plan};
@@ -104,7 +105,10 @@ impl DispatchRequest {
             .model
             .clone()
             .or_else(|| part.codex_model.clone())
-            .or_else(|| part.kimi_model.clone());
+            .or_else(|| part.kimi_model.clone())
+            .or_else(|| {
+                (part.opus && part.engine == Engine::Claude).then(|| CLAUDE_OPUS_MODEL_1M.into())
+            });
         Ok(Self {
             plan_id,
             part_id: part.id.clone(),

@@ -845,7 +845,7 @@ mod tests {
     }
 
     #[test]
-    fn provider_change_resets_account_and_model_without_implicitly_selecting_opus() {
+    fn provider_change_resets_account_and_model_without_passing_an_explicit_model() {
         let mut app = App::new(BTreeMap::from([(
             Engine::Claude,
             vec!["claude-opus-5".into()],

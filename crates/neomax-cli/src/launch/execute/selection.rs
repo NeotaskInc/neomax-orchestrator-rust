@@ -8,6 +8,7 @@ use neomax_core::orchestration::selection::{
     NeomaxSelectionRequest, OrchestratorPolicy, ProviderSelectionRequest,
     choose_neomax_orchestrator, choose_provider_orchestrator, engine_priority,
 };
+use neomax_core::providers::catalog::CLAUDE_OPUS_MODEL_1M;
 use neomax_core::{Engine, WorkerScope};
 
 use crate::context::RuntimeContext;
@@ -238,7 +239,7 @@ pub(super) fn selected_model(
         .map(String::as_str)
         .or_else(|| {
             if options.opus && engine == Engine::Claude {
-                Some("claude-opus-5[1m]")
+                Some(CLAUDE_OPUS_MODEL_1M)
             } else {
                 options.model.as_deref()
             }
@@ -262,7 +263,7 @@ pub(super) fn worker_models(
                 .or_else(|| {
                     if engine == orchestrator {
                         if options.opus && engine == Engine::Claude {
-                            Some("claude-opus-5[1m]")
+                            Some(CLAUDE_OPUS_MODEL_1M)
                         } else {
                             options.model.as_deref()
                         }

@@ -51,7 +51,7 @@ mod tests {
             resolve_model(Engine::Kimi, Some("2.7"), &environment).unwrap(),
             "kimi-code/kimi-for-coding"
         );
-        assert_ne!(CLAUDE_DEFAULT_MODEL, CLAUDE_OPUS_MODEL_1M);
+        assert_eq!(CLAUDE_DEFAULT_MODEL, CLAUDE_OPUS_MODEL_1M);
     }
 
     #[test]
