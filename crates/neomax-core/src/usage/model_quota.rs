@@ -95,4 +95,24 @@ mod tests {
         assert_eq!(windows["fable"].used_percent, Some(99.0));
         assert_eq!(windows["opus"].used_percent, Some(12.0));
     }
+
+    #[test]
+    fn opus_5_5_default_uses_the_opus_weekly_window_not_fable() {
+        for model in [
+            crate::providers::catalog::CLAUDE_DEFAULT_MODEL,
+            "claude-opus-5-5",
+            "claude-opus-5-5[1m]",
+            "Opus 5.5",
+            "opus",
+        ] {
+            assert_eq!(claude_model_family(model), Some("opus"), "{model}");
+        }
+        assert_eq!(claude_limit_family("seven_day_opus"), Some("opus"));
+        let windows = claude_model_windows(&json!({"limits": [
+            {"kind":"weekly_scoped","percent":97,"resets_at":"2040-01-01T00:00:00Z","scope":{"model":{"display_name":"Opus 5.5"}}}
+        ]}));
+        assert_eq!(windows.len(), 1);
+        assert_eq!(windows["opus"].used_percent, Some(97.0));
+        assert!(!windows.contains_key("fable"));
+    }
 }

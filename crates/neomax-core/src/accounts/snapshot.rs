@@ -140,7 +140,7 @@ mod tests {
             assert!(account.for_model(model, now).at_hard_wall(now));
             assert_eq!(account.limiting_model_family(model, now), Some("fable"));
         }
-        for model in ["claude-opus-5[1m]", "claude-sonnet-5", "future-model"] {
+        for model in ["claude-opus-5-5[1m]", "claude-opus-5[1m]", "claude-sonnet-5", "future-model"] {
             assert!(!account.for_model(model, now).at_hard_wall(now));
         }
         assert_eq!(account.weekly_percent, Some(40.0));
@@ -150,5 +150,28 @@ mod tests {
         assert!(account.for_model("claude-opus-5", now).at_hard_wall(now));
         assert!(account.for_model("fable", now).at_hard_wall(now));
         assert_eq!(account.limiting_model_family("fable", now), None);
+    }
+
+    #[test]
+    fn opus_allowance_limits_the_opus_5_5_default_without_disabling_fable() {
+        let now = DateTime::from_timestamp(1_800_000_000, 0).unwrap();
+        let account: AccountSnapshot = serde_json::from_value(json!({
+            "engine":"claude", "account":"1", "profile":"/profiles/one", "authenticated":true,
+            "five_hour_percent":20, "weekly_percent":40,
+            "model_weekly":{"opus":{"used_percent":99,"resets_at":1_800_003_600}}
+        })).unwrap();
+        let default = crate::providers::catalog::CLAUDE_DEFAULT_MODEL;
+        for model in [default, "claude-opus-5-5", "claude-opus-5"] {
+            let scoped = account.for_model(model, now);
+            assert!(scoped.at_hard_wall(now), "{model}");
+            assert_eq!(scoped.weekly_reset_at, DateTime::from_timestamp(1_800_003_600, 0));
+            assert_eq!(account.limiting_model_family(model, now), Some("opus"));
+        }
+        for model in ["claude-fable-5-1[1m]", "claude-fable-5", "claude-sonnet-5"] {
+            assert!(!account.for_model(model, now).at_hard_wall(now), "{model}");
+            assert_eq!(account.limiting_model_family(model, now), None);
+        }
+        let after_reset = now + chrono::Duration::hours(2);
+        assert!(!account.for_model(default, after_reset).at_hard_wall(after_reset));
     }
 }

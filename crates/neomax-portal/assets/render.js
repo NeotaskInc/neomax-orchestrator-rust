@@ -153,7 +153,7 @@ function accountCard(account) {
 
 function modelQuotaRows(account) {
   if (account.engine !== 'claude') return '';
-  const windows = { fable: {}, ...(account.usage?.model_weekly || {}) };
+  const windows = { opus: {}, fable: {}, ...(account.usage?.model_weekly || {}) };
   return Object.entries(windows).map(([family, window]) => {
     const label = family.charAt(0).toUpperCase() + family.slice(1) + ' weekly';
     const expired = Number.isFinite(window.resets_at) && window.resets_at <= Date.now() / 1000;

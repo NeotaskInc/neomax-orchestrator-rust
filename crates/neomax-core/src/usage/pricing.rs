@@ -30,7 +30,7 @@ impl ModelPrice {
             } else {
                 round_four(input * CLAUDE_CACHE_WRITE_MULTIPLIER)
             },
-            cache_read: round_four(input * if model == "claude-fable-5-1" { 0.025 } else { CACHE_READ_MULTIPLIER }),
+            cache_read: round_four(input * cache_read_multiplier(model)),
             cache_write_1h: model.starts_with("claude-").then(|| round_four(input * 2.0)),
         }
     }
@@ -82,7 +82,8 @@ impl PriceCatalog {
             .trim()
             .to_string();
         let normalized = normalized.strip_prefix("anthropic/").or_else(|| normalized.strip_prefix("openai/"))
-            .unwrap_or(&normalized).replace("claude-fable-5.1", "claude-fable-5-1");
+            .unwrap_or(&normalized).replace("claude-fable-5.1", "claude-fable-5-1")
+            .replace("claude-opus-5.5", "claude-opus-5-5");
         self.rates
             .get(&normalized)
             .copied()
@@ -120,6 +121,7 @@ impl PriceCatalog {
 }
 
 const MODEL_IO: &[(&str, f64, f64)] = &[
+    ("claude-opus-5-5", 4.0, 20.0),
     ("claude-opus-5", 5.0, 25.0),
     ("claude-opus-4-8", 5.0, 25.0),
     ("claude-opus-4-7", 5.0, 25.0),
@@ -139,6 +141,14 @@ const MODEL_IO: &[(&str, f64, f64)] = &[
     ("grok-4.6", 0.0, 0.0),
 ];
 
+fn cache_read_multiplier(model: &str) -> f64 {
+    match model {
+        "claude-fable-5-1" => 0.025,
+        "claude-opus-5-5" => 0.05,
+        _ => CACHE_READ_MULTIPLIER,
+    }
+}
+
 fn round_four(value: f64) -> f64 {
     (value * 10_000.0).round() / 10_000.0
 }
@@ -157,6 +167,8 @@ mod tests {
             ("gpt-5.6-luna", 0.2, 1.2, 0.02, 0.25),
             ("claude-fable-5", 10.0, 50.0, 1.0, 12.5),
             ("claude-fable-5-1", 10.0, 50.0, 0.25, 12.5),
+            ("claude-opus-5-5", 4.0, 20.0, 0.2, 5.0),
+            ("claude-opus-5", 5.0, 25.0, 0.5, 6.25),
         ] {
             let price = prices.price_for(model);
             assert_eq!((price.input, price.output, price.cache_read, price.cache_write), (input, output, read, write), "{model}");
@@ -171,6 +183,32 @@ mod tests {
         assert_eq!(prices.estimate_record(&record), 75.75);
         record.model = "claude-fable-5".into();
         assert_eq!(prices.estimate_record(&record), 76.5);
+    }
+
+    #[test]
+    fn opus_5_5_default_has_its_own_rates_across_model_id_spellings() {
+        let prices = PriceCatalog::default();
+        for model in [
+            "claude-opus-5-5",
+            "claude-opus-5-5[1m]",
+            "claude-opus-5-5-20260915",
+            "anthropic/claude-opus-5.5",
+            crate::providers::catalog::CLAUDE_DEFAULT_MODEL,
+        ] {
+            let price = prices.known_price_for(model).expect(model);
+            assert_eq!(
+                (price.input, price.output, price.cache_read, price.cache_write, price.cache_write_1h),
+                (4.0, 20.0, 0.2, 5.0, Some(8.0)),
+                "{model}"
+            );
+        }
+        let opus_5 = prices.price_for("claude-opus-5[1m]");
+        assert_eq!((opus_5.input, opus_5.output, opus_5.cache_read), (5.0, 25.0, 0.5));
+        let record: super::super::LedgerRecord = serde_json::from_value(serde_json::json!({
+            "ts":1,"provider":"claude","account":"1","model":"claude-opus-5-5[1m]","id":"fixture","kind":"add",
+            "in":1_000_000,"out":1_000_000,"cw":1_000_000,"cr":1_000_000,"cache_write_1h":400_000
+        })).unwrap();
+        assert_eq!(prices.estimate_record(&record), 30.4);
     }
 
     #[test]
