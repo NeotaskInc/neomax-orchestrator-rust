@@ -25,12 +25,13 @@ jobs:
   release_ref:
     name: Validate release ref
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 10
     outputs:
       tag: ${{ steps.verify.outputs.tag }}
       version: ${{ steps.verify.outputs.version }}
       sha: ${{ steps.verify.outputs.sha }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -87,11 +88,12 @@ jobs:
     name: Require successful Rust CI for tag commit
     needs: release_ref
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 10
     permissions:
       actions: read
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Find the successful exact-SHA CI run
         shell: bash
         env:
@@ -102,14 +104,16 @@ jobs:
   quality:
     needs: release_ref
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install quality dependencies
         run: sudo apt-get update && sudo apt-get install --yes ripgrep
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # v1 series 2026-09-03
         with:
+          toolchain: stable
           components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: false
       - name: Check documentation style
@@ -138,10 +142,13 @@ jobs:
   msrv:
     needs: release_ref
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@1.85.0
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # v1 series 2026-09-03
+        with:
+          toolchain: 1.85.0
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: false
           shared-key: neomax-release-msrv
@@ -151,12 +158,13 @@ jobs:
   release-metadata:
     needs: [release_ref, ci_gate, quality, msrv]
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 10
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
       sha: ${{ steps.version.outputs.sha }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Export the verified release metadata
         id: version
         shell: bash
@@ -187,15 +195,17 @@ jobs:
           - runner: blacksmith-4vcpu-windows-2025
             target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     env:
       TARGET: ${{ matrix.target }}
       VERSION: ${{ needs.release-metadata.outputs.version }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # v1 series 2026-09-03
         with:
+          toolchain: stable
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: false
       - name: Build release binaries
@@ -214,7 +224,7 @@ jobs:
           archive="$(find "$RUNNER_TEMP/neomax-artifacts" -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' \) -print -quit)"
           bash dist/verify-install.sh --archive "$archive" --version "$VERSION" --target "$TARGET"
       - name: Upload assembled artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: neomax-${{ matrix.target }}
           path: ${{ runner.temp }}/neomax-artifacts
@@ -224,6 +234,7 @@ jobs:
   cross-package:
     needs: release-metadata
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -235,13 +246,18 @@ jobs:
       TARGET: ${{ matrix.target }}
       VERSION: ${{ needs.release-metadata.outputs.version }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # v1 series 2026-09-03
         with:
+          toolchain: stable
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: false
+          # Every leg runs on the same Linux x64 host, but each cross image has
+          # its own glibc; host build scripts cached by one leg must not be run
+          # inside another leg's older container.
+          key: ${{ matrix.target }}
       - name: Install cross
         run: cargo install cross --locked
       - name: Build release binaries
@@ -253,7 +269,7 @@ jobs:
           bash dist/checksums.sh --output "$RUNNER_TEMP/neomax-artifacts/SHA256SUMS" "$archive"
           bash dist/check-package.sh --archive "$archive" --version "$VERSION" --target "$TARGET"
       - name: Upload assembled artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: neomax-${{ matrix.target }}
           path: ${{ runner.temp }}/neomax-artifacts
@@ -263,12 +279,13 @@ jobs:
   assemble:
     needs: [release-metadata, native-package, cross-package]
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 15
     env:
       VERSION: ${{ needs.release-metadata.outputs.version }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Download every target package
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: neomax-*
           path: ${{ runner.temp }}/neomax-package-artifacts
@@ -282,7 +299,7 @@ jobs:
             --output-dir "$RUNNER_TEMP/neomax-release" \
             --repo-root "$GITHUB_WORKSPACE"
       - name: Upload assembled release bundle
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: neomax-release-bundle
           path: ${{ runner.temp }}/neomax-release
@@ -293,6 +310,7 @@ jobs:
     needs: [release-metadata, assemble]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'NeotaskInc/neomax-orchestrator-rust'
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 20
     permissions:
       contents: write
     env:
@@ -301,7 +319,7 @@ jobs:
       VERSION: ${{ needs.release-metadata.outputs.version }}
       RELEASE_SHA: ${{ needs.release-metadata.outputs.sha }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Verify the release tag
         shell: bash
         run: |
@@ -313,7 +331,7 @@ jobs:
           head_sha="$(git rev-parse --verify HEAD)"
           [[ "$tag_sha" == "$head_sha" ]]
       - name: Download the verified release bundle
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: neomax-release-bundle
           path: ${{ runner.temp }}/neomax-release

@@ -89,6 +89,7 @@ import sys
 payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
 jobs = payload.get("jobs", [])
 expected = {
+    "CI Gate",
     "quality",
     "msrv",
     "native-tests (blacksmith-6vcpu-macos-15)",
