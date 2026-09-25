@@ -9,8 +9,9 @@ packaging jobs skip until the pull request is ready for review, and
 `ready_for_review` starts the full run on the same head. Packaging jobs no
 longer wait for `quality` and `msrv`, so all jobs start together.
 
-Concurrency now cancels superseded runs only for pull requests. Pushes to
-`main` are never cancelled, so every landed commit keeps a complete CI run for
+Concurrency now cancels superseded runs only for pull requests. Each push to
+`main` runs in its own concurrency group, so it is neither cancelled nor
+replaced while pending, and every landed commit keeps a complete CI run for
 the exact-SHA release gate. Every action in the three workflows is pinned to a
 full commit SHA, every job has a timeout, and CI checkouts no longer persist
 the token. The release CI verifier and its fixture test now expect the
