@@ -17,6 +17,13 @@ the token. The release CI verifier and its fixture test now expect the
 `CI Gate` job in the exact-SHA run. Release triggers, job graph and packaging
 steps are unchanged.
 
+The `cross-package` Rust cache is now keyed per target in CI and release. All
+three legs shared one cache key, so the first warm run after 2026-09-20
+restored build scripts compiled in the Ubuntu 20.04 `x86_64-unknown-linux-musl`
+cross image into the Ubuntu 16.04 and 18.04 aarch64 images, which failed with
+`GLIBC_2.28` not found. Cold caches hid this on the only earlier Blacksmith
+runs.
+
 Affected files: `.github/workflows/ci.yml`,
 `.github/workflows/release-assemble.yml`,
 `.github/workflows/windows-rotation.yml`, `dist/verify-ci-run.sh`,

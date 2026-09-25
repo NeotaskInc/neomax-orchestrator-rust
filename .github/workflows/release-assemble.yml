@@ -254,6 +254,10 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: false
+          # Every leg runs on the same Linux x64 host, but each cross image has
+          # its own glibc; host build scripts cached by one leg must not be run
+          # inside another leg's older container.
+          key: ${{ matrix.target }}
       - name: Install cross
         run: cargo install cross --locked
       - name: Build release binaries
