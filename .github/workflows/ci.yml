@@ -2,6 +2,7 @@ name: Rust CI
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches:
       - main
@@ -11,8 +12,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: neomax-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   CARGO_TERM_COLOR: always
@@ -20,14 +21,18 @@ env:
 jobs:
   quality:
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install quality dependencies
         run: sudo apt-get update && sudo apt-get install --yes ripgrep
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master 2026-09-03
         with:
+          toolchain: stable
           components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: false
       - name: Check documentation style
@@ -55,10 +60,15 @@ jobs:
 
   msrv:
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@1.85.0
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master 2026-09-03
+        with:
+          toolchain: 1.85.0
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: false
           shared-key: neomax-msrv
@@ -66,6 +76,7 @@ jobs:
         run: cargo +1.85.0 check --workspace --all-targets --locked
 
   native-tests:
+    if: github.event.pull_request.draft != true
     strategy:
       fail-fast: false
       matrix:
@@ -75,10 +86,15 @@ jobs:
           - blacksmith-6vcpu-macos-15
           - blacksmith-4vcpu-windows-2025
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master 2026-09-03
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: false
           shared-key: neomax-native-${{ matrix.runner }}
@@ -96,7 +112,7 @@ jobs:
         run: cargo test -p neomax-core --lib io::process_group::windows -- --nocapture
 
   native-package:
-    needs: [quality, msrv]
+    if: github.event.pull_request.draft != true
     strategy:
       fail-fast: false
       matrix:
@@ -111,14 +127,18 @@ jobs:
           - runner: blacksmith-4vcpu-windows-2025
             target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     env:
       TARGET: ${{ matrix.target }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master 2026-09-03
+        with:
+          toolchain: stable
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: false
       - name: Check distribution scripts
@@ -144,7 +164,7 @@ jobs:
           archive="$(find "$RUNNER_TEMP/neomax-artifacts" -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' \) -print -quit)"
           bash dist/verify-install.sh --archive "$archive" --version "$(bash dist/check-version.sh --print)" --target "$TARGET"
       - name: Upload temporary package artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: neomax-${{ matrix.target }}
           path: ${{ runner.temp }}/neomax-artifacts
@@ -152,8 +172,9 @@ jobs:
           retention-days: 7
 
   cross-package:
-    needs: [quality, msrv]
+    if: github.event.pull_request.draft != true
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -164,11 +185,14 @@ jobs:
     env:
       TARGET: ${{ matrix.target }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master 2026-09-03
+        with:
+          toolchain: stable
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: false
       - name: Install cross
@@ -182,9 +206,33 @@ jobs:
           bash dist/checksums.sh --output "$RUNNER_TEMP/neomax-artifacts/SHA256SUMS" "$archive"
           bash dist/check-package.sh --archive "$archive" --version "$(bash dist/check-version.sh --print)" --target "$TARGET"
       - name: Upload temporary package artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: neomax-${{ matrix.target }}
           path: ${{ runner.temp }}/neomax-artifacts
           if-no-files-found: error
           retention-days: 7
+
+  ci-gate:
+    name: CI Gate
+    if: always()
+    needs: [quality, msrv, native-tests, native-package, cross-package]
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 5
+    steps:
+      - name: Require every CI job to succeed
+        env:
+          IS_DRAFT: ${{ github.event.pull_request.draft == true }}
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          if [ "$IS_DRAFT" = "true" ]; then
+            echo "::error::Draft PR: full CI runs when marked ready for review"
+            exit 1
+          fi
+          for result in $RESULTS; do
+            if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
+              echo "::error::A required CI job finished with result: $result"
+              exit 1
+            fi
+          done
+          echo "All CI jobs passed: $RESULTS"

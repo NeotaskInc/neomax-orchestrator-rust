@@ -95,6 +95,7 @@ grep -Fq 'actions/runs/$run_id/jobs?per_page=100' "$ci_verifier" || die 'CI veri
 grep -Fq '"native-tests (blacksmith-4vcpu-windows-2025)"' "$ci_verifier" || die 'CI verifier must require the Windows native test job'
 grep -Fq '"native-package (blacksmith-6vcpu-macos-15, aarch64-apple-darwin)"' "$ci_verifier" || die 'CI verifier must require every native package job'
 grep -Fq '"cross-package (aarch64-unknown-linux-musl)"' "$ci_verifier" || die 'CI verifier must require every cross-package job'
+grep -Fq '"CI Gate"' "$ci_verifier" || die 'CI verifier must require the CI Gate job'
 
 temporary="$(mktemp -d "${TMPDIR:-/tmp}/neomax-workflow-test.XXXXXX")"
 trap 'rm -rf "$temporary"' EXIT
@@ -117,6 +118,7 @@ import pathlib
 import sys
 
 names = [
+    "CI Gate",
     "quality",
     "msrv",
     "native-tests (blacksmith-6vcpu-macos-15)",
