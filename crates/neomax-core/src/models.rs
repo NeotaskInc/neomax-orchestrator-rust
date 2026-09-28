@@ -22,9 +22,9 @@ pub fn resolve_model(
 pub fn codex_model_tier(model: &str) -> Option<&'static str> {
     match model {
         "gpt-6-astra" => Some("astra"),
-        "gpt-5.6-sol" => Some("sol"),
+        "gpt-6-sol" | "gpt-5.6-sol" => Some("sol"),
         "gpt-5.6-terra" => Some("terra"),
-        "gpt-5.6-luna" => Some("luna"),
+        "gpt-6-luna" | "gpt-5.6-luna" => Some("luna"),
         _ => None,
     }
 }

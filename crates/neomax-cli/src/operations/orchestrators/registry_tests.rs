@@ -42,7 +42,7 @@ fn registration_model_uses_cli_then_config_then_environment_then_default() {
     );
     assert_eq!(
         registration_model(Engine::Codex, Some("sol"), &overrides, &environment,).unwrap(),
-        "gpt-5.6-sol"
+        "gpt-6-sol"
     );
     assert_eq!(
         registration_model(

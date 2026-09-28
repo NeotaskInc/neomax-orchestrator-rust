@@ -993,10 +993,10 @@ Defaults are explicit and provider-specific:
 Every provider accepts an explicit model ID that the selected local CLI
 supports. Neomax validates basic shape and lets the provider validate the
 provider-specific model. OpenCode IDs must use the qualified `provider/model`
-form. Codex keeps the GPT-5.6 `luna`, `terra`, and `sol` choices for explicit
-worker routing: Luna is intended for lightweight work, Terra for balanced
-coding work, and Sol for heavier general work. Kimi keeps `k3` and `k2.7` aliases. Claude Opus is never
-implicit; select it explicitly when the connected Claude CLI supports it.
+form. Codex aliases `sol` and `luna` select GPT-6 Sol and GPT-6 Luna;
+`terra` selects GPT-5.6 Terra. Older models remain available by full ID.
+Kimi keeps `k3` and `k2.7` aliases. Select Claude Opus 5.5 with
+`--model claude-opus-5-5`; the existing `--opus` flag retains Opus 5.
 
 Model overrides are stored separately from the main settings file so a
 provider model change does not discard unrelated configuration:

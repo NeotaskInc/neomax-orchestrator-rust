@@ -25,12 +25,12 @@ impl ModelPrice {
         Self {
             input,
             output,
-            cache_write: if openai && !model.starts_with("gpt-5.6-") && model != "gpt-6-astra" {
+            cache_write: if openai && !model.starts_with("gpt-5.6-") && !model.starts_with("gpt-6-") {
                 0.0
             } else {
                 round_four(input * CLAUDE_CACHE_WRITE_MULTIPLIER)
             },
-            cache_read: round_four(input * if model == "claude-fable-5-1" { 0.025 } else { CACHE_READ_MULTIPLIER }),
+            cache_read: round_four(input * match model { "claude-fable-5-1" => 0.025, "claude-opus-5-5" => 0.05, _ => CACHE_READ_MULTIPLIER }),
             cache_write_1h: model.starts_with("claude-").then(|| round_four(input * 2.0)),
         }
     }
@@ -82,7 +82,7 @@ impl PriceCatalog {
             .trim()
             .to_string();
         let normalized = normalized.strip_prefix("anthropic/").or_else(|| normalized.strip_prefix("openai/"))
-            .unwrap_or(&normalized).replace("claude-fable-5.1", "claude-fable-5-1");
+            .unwrap_or(&normalized).replace("claude-fable-5.1", "claude-fable-5-1").replace("claude-opus-5.5", "claude-opus-5-5");
         self.rates
             .get(&normalized)
             .copied()
@@ -120,6 +120,7 @@ impl PriceCatalog {
 }
 
 const MODEL_IO: &[(&str, f64, f64)] = &[
+    ("claude-opus-5-5", 4.0, 20.0),
     ("claude-opus-5", 5.0, 25.0),
     ("claude-opus-4-8", 5.0, 25.0),
     ("claude-opus-4-7", 5.0, 25.0),
@@ -129,6 +130,8 @@ const MODEL_IO: &[(&str, f64, f64)] = &[
     ("claude-sonnet-4-6", 3.0, 15.0),
     ("claude-haiku-4-5", 1.0, 5.0),
     ("gpt-6-astra", 10.0, 50.0),
+    ("gpt-6-sol", 2.0, 10.0),
+    ("gpt-6-luna", 0.1, 0.5),
     ("gpt-5.6-sol", 4.0, 20.0),
     ("gpt-5.6-terra", 2.0, 12.0),
     ("gpt-5.6-luna", 0.2, 1.2),
@@ -146,6 +149,31 @@ fn round_four(value: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn september_models_price_all_token_categories_and_aliases() {
+        let prices = PriceCatalog::default();
+        for (model, input, output, read, write, total) in [
+            ("gpt-6-sol", 2.0, 10.0, 0.2, 2.5, 14.7),
+            ("gpt-6-luna", 0.1, 0.5, 0.01, 0.125, 0.735),
+            ("claude-opus-5-5", 4.0, 20.0, 0.2, 5.0, 29.2),
+        ] {
+            let price = prices.price_for(model);
+            assert_eq!((price.input, price.output, price.cache_read, price.cache_write), (input, output, read, write));
+            assert!((prices.estimate(model, 1_000_000, 1_000_000, 1_000_000, 1_000_000) - total).abs() < 1e-10);
+        }
+        for model in ["claude-opus-5-5[1m]", "claude-opus-5-5-20260922", "anthropic/claude-opus-5.5"] {
+            assert_eq!(prices.price_for(model).cache_read, 0.2);
+            assert_eq!(prices.price_for(model).cache_write_1h, Some(8.0));
+        }
+        assert_eq!(prices.price_for("openai/gpt-6-luna").output, 0.5);
+        assert_eq!(prices.price_for("claude-opus-5").input, 5.0);
+        let record = serde_json::from_value(serde_json::json!({
+            "ts":1,"provider":"claude","account":"1","model":"claude-opus-5-5","id":"fixture","kind":"add",
+            "in":1_000_000,"out":1_000_000,"cw":1_000_000,"cr":1_000_000,"cache_write_1h":400_000
+        })).unwrap();
+        assert!((prices.estimate_record(&record) - 30.4).abs() < 1e-10);
+    }
 
     #[test]
     fn current_models_have_distinct_cache_prices_and_longest_prefix_matching() {
