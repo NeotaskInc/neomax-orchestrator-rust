@@ -14,8 +14,9 @@ fn compatibility_model_defaults_are_derived_from_the_catalog() {
 }
 
 #[test]
-fn opus_is_explicit_only_and_never_a_catalog_default() {
-    assert_eq!(default_model_id(Engine::Claude), CLAUDE_DEFAULT_MODEL);
+fn opus_55_is_default_and_legacy_opus_remains_explicit() {
+    assert_eq!(default_model_id(Engine::Claude), "claude-opus-5-5[1m]");
+    assert_eq!(CLAUDE_DEFAULT_MODEL, "claude-opus-5-5[1m]");
     assert_ne!(default_model_id(Engine::Claude), CLAUDE_OPUS_MODEL);
     assert_eq!(
         resolve_model(
@@ -37,7 +38,7 @@ fn model_precedence_keeps_strict_defaults_and_passes_local_ids() {
         resolve_model(Engine::Claude, None, &environment)
             .unwrap()
             .id,
-        "claude-fable-5-1[1m]"
+        "claude-opus-5-5[1m]"
     );
     let environment = MapEnvironment::new([
         ("NEOMAX_DEFAULT_MODEL".into(), "claude-local".into()),

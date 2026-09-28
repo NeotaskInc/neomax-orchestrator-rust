@@ -3,9 +3,10 @@
 ## 2026-09-27 - GPT-6 and Opus 5.5 model catalog
 
 Codex aliases `sol` and `luna` now select GPT-6 Sol and GPT-6 Luna.
-GPT-6 Astra remains the default. Full GPT-5.6 IDs and the existing `--opus`
-selection remain available. Claude Opus 5.5 is selected with
-`--model claude-opus-5-5`.
+GPT-6 Astra remains the Codex default. Claude now defaults to
+`claude-opus-5-5[1m]` across root launches, workers and scheduler parts.
+Explicit model overrides, full GPT-5.6 IDs and the existing `--opus`
+selection remain available.
 
 The usage catalog includes the new models at official standard input,
 output, cache-read and cache-write rates. Opus 5.5 uses its reduced $0.20
@@ -21,8 +22,13 @@ regression passed. All workspace test targets passed, including 897 core tests
 and 36 compatibility fixtures; the corrected core target passed on rerun after
 updating the old Luna alias expectation. Independent review passed model, pricing,
 precedence and CLI dry-run checks with no blocking findings.
-UBS found no critical findings; warnings concern test assertions/unwraps and
-existing numeric conversions and catalog allocations.
+UBS findings were reviewed: flagged panics/assertions are test failure paths;
+other warnings concern test unwraps and existing conversions/allocations.
+
+The Claude default follow-up updates catalog, configuration, scheduler and
+launcher expectations, plus the shipped skill and development guidance.
+The failover regression checks that the new default can use an account whose
+Fable quota is exhausted, while an explicit Fable selection remains blocked.
 
 Remaining limits: rates are standard API-equivalent estimates. Session totals
 cannot establish request-level context or service-tier premiums. No authenticated

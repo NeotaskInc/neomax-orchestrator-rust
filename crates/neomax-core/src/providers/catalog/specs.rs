@@ -2,7 +2,7 @@ use crate::Engine;
 
 use super::types::{AuthMethod, ModelDiscoverySupport, ProviderCapabilities, ProviderSpec};
 
-pub const CLAUDE_DEFAULT_MODEL: &str = "claude-fable-5-1[1m]";
+pub const CLAUDE_DEFAULT_MODEL: &str = "claude-opus-5-5[1m]";
 pub const CLAUDE_OPUS_MODEL: &str = "claude-opus-5";
 pub const CLAUDE_OPUS_MODEL_1M: &str = "claude-opus-5[1m]";
 pub const CODEX_DEFAULT_MODEL: &str = "gpt-6-astra";

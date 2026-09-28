@@ -47,7 +47,7 @@ fn model_aware_failover_preserves_fable_exhausted_accounts_for_opus() {
     exhausted.model_weekly.insert("fable".into(), crate::usage::QuotaWindow {used_percent:Some(100.0), resets_at:None});
     let fresh = account(Engine::Claude, "3", 40.0);
     let accounts = [current.clone(), exhausted.clone(), fresh.clone()];
-    for (model, expected) in [("claude-fable-5", &fresh), ("claude-fable-5-1[1m]", &fresh), ("claude-opus-5", &exhausted), ("claude-sonnet-5", &exhausted)] {
+    for (model, expected) in [("claude-fable-5", &fresh), ("claude-fable-5-1[1m]", &fresh), ("claude-opus-5", &exhausted), ("claude-opus-5-5[1m]", &exhausted), ("claude-sonnet-5", &exhausted)] {
         let mut run = run(Engine::Claude, &current.profile);
         run.model = model.into();
         let FailoverDecision::Continue(target) = plan_failover(&run, RunStatus::Limit, &accounts, &WorkerScope::only(Engine::Claude), Utc::now(), &SelectionPolicy::default()) else {panic!("expected eligible account")};
@@ -57,7 +57,12 @@ fn model_aware_failover_preserves_fable_exhausted_accounts_for_opus() {
     let run = run(Engine::Codex, &codex.profile);
     let accounts = [codex, exhausted];
     let scope: WorkerScope = "claude,codex".parse().unwrap();
-    assert!(matches!(plan_failover(&run, RunStatus::Limit, &accounts, &scope, Utc::now(), &SelectionPolicy::default()), FailoverDecision::Stop(_)));
+    let FailoverDecision::Continue(target) = plan_failover(&run, RunStatus::Limit, &accounts, &scope, Utc::now(), &SelectionPolicy::default()) else {panic!("expected Opus default failover")};
+    let mut continued = run.clone();
+    apply_failover(&mut continued, &target);
+    assert_eq!(continued.model, "claude-opus-5-5[1m]");
+    let fable = BTreeMap::from([(Engine::Claude, "claude-fable-5-1[1m]".into())]);
+    assert!(matches!(plan_failover_with_resolver(&run, RunStatus::Limit, &accounts, &scope, Utc::now(), &SelectionPolicy::default(), &fable), FailoverDecision::Stop(_)));
     let models = BTreeMap::from([(Engine::Claude, "claude-opus-5".into())]);
     assert!(matches!(plan_failover_with_resolver(&run, RunStatus::Limit, &accounts, &scope, Utc::now(), &SelectionPolicy::default(), &models), FailoverDecision::Continue(_)));
 }
