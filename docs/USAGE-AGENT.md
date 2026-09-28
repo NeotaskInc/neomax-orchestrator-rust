@@ -179,16 +179,28 @@ Its pricing catalog uses standard API-equivalent rates, not subscription
 charges. Fable 5 cache reads cost $1 per million tokens; Fable 5.1 cache reads
 cost $0.25. Both use $12.50 five-minute and $20 one-hour cache writes;
 one-hour counts are priced separately when the transcript supplies them.
-GPT-6 Astra and GPT-5.6 Sol, Terra, and Luna have individual input, output,
+GPT-6 Astra, Sol, Luna and GPT-5.6 Sol, Terra, Luna have individual input, output,
 cache-read, and cache-write entries. Cumulative records without request-level
 pricing metadata use standard rates; long-context and service-tier premiums
 are not inferred from session totals.
 
 Rates are based on the [Claude pricing documentation](https://platform.claude.com/docs/en/about-claude/pricing)
 and the official [Astra](https://developers.openai.com/api/docs/models/gpt-6-astra),
-[Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
+[Sol](https://developers.openai.com/api/docs/models/gpt-6-sol),
 [Terra](https://developers.openai.com/api/docs/models/gpt-5.6-terra), and
-[Luna](https://developers.openai.com/api/docs/models/gpt-5.6-luna) model pages.
+[Luna](https://developers.openai.com/api/docs/models/gpt-6-luna) model pages.
+
+Standard rates per million tokens, verified September 27, 2026:
+
+| Model | Input | Output | Cache read | Cache write |
+| --- | ---: | ---: | ---: | ---: |
+| GPT-6 Astra | $10 | $50 | $1 | $12.50 |
+| GPT-6 Sol | $2 | $10 | $0.20 | $2.50 |
+| GPT-6 Luna | $0.10 | $0.50 | $0.01 | $0.125 |
+| Claude Opus 5.5 | $4 | $20 | $0.20 | $5 |
+
+[Opus 5.5 pricing](https://www.anthropic.com/claude-opus-5-5) includes
+five-minute cache writes at $5; one-hour writes use the Claude 2x input rate ($8).
 
 When a Claude token is expired, the agent first tries the local refresh token.
 If the exchange returns `access_token`, it also accepts replacement

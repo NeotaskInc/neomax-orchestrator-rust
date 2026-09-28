@@ -165,18 +165,18 @@ project selection, and provider priority. Explicit choices win.
 
 | Provider | Default model | Launch or sign in |
 | --- | --- | --- |
-| Claude | `claude-fable-5-1[1m]` | `neomax claude [ACCOUNT]` |
+| Claude | `claude-opus-5-5[1m]` | `neomax claude [ACCOUNT]` |
 | Codex | `gpt-6-astra` | `neomax codex [ACCOUNT]` |
 | OpenCode | `opencode/big-pickle` | `neomax opencode [ACCOUNT]` |
 | Kimi | `kimi-code/k3` | `neomax kimi [ACCOUNT]` |
 | Grok | `grok-4.6` | `neomax grok [ACCOUNT]` |
 
 Every provider accepts model IDs supported by its local CLI. OpenCode model
-IDs use `provider/model`. Claude Opus is opt-in. Codex uses GPT-6 Astra as its
-default root model. Codex workers may be assigned a different supported model
-explicitly or by the routing policy. The GPT-5.6
-family remains available for explicit worker choices: Luna for lightweight
-work, Terra for balanced coding work, and Sol for heavier general work.
+IDs use `provider/model`. Claude uses Opus 5.5 by default. Codex uses GPT-6
+Astra as its default root model. Codex workers may be assigned a different supported model
+explicitly or by the routing policy. The `sol` and `luna` aliases select
+GPT-6 Sol and GPT-6 Luna. GPT-5.6 models remain available by full ID, and
+`terra` selects GPT-5.6 Terra. Select Opus 5.5 with `--model claude-opus-5-5`.
 
 Set a model for one launch:
 
@@ -184,7 +184,7 @@ Set a model for one launch:
 neomax --engine opencode --model provider/model
 cmax --model claude-model-id
 cdxmax --model gpt-5.6-terra
-neomax --codex-model gpt-5.6-luna --kimi-model kimi-model-id
+neomax --codex-model gpt-6-luna --kimi-model kimi-model-id
 ```
 
 Set persistent defaults:

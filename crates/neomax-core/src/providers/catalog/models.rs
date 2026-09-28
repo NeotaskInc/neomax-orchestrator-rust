@@ -127,9 +127,10 @@ fn canonical_alias(engine: Engine, value: &str) -> Result<String> {
     let canonical = match engine {
         Engine::Codex => match lower.as_str() {
             "astra" | "gpt-6" | "gpt6" => "gpt-6-astra",
-            "sol" | "gpt-5.6" | "gpt5.6" => "gpt-5.6-sol",
+            "sol" => "gpt-6-sol",
+            "gpt-5.6" | "gpt5.6" => "gpt-5.6-sol",
             "terra" => "gpt-5.6-terra",
-            "luna" => "gpt-5.6-luna",
+            "luna" => "gpt-6-luna",
             _ => value,
         },
         Engine::Kimi => match lower.as_str() {

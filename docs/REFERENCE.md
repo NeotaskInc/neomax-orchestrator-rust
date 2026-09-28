@@ -984,7 +984,7 @@ Defaults are explicit and provider-specific:
 
 | Provider | Default model | Model discovery |
 | --- | --- | --- |
-| Claude | `claude-fable-5-1[1m]` | No Neomax model-list command; explicit local-CLI-supported IDs are accepted |
+| Claude | `claude-opus-5-5[1m]` | No Neomax model-list command; explicit local-CLI-supported IDs are accepted |
 | Codex | `gpt-6-astra` | No Neomax model-list command; explicit local-CLI-supported IDs are accepted |
 | OpenCode | `opencode/big-pickle` | Best-effort local registry discovery |
 | Kimi | `kimi-code/k3` | Best-effort local CLI discovery |
@@ -993,10 +993,11 @@ Defaults are explicit and provider-specific:
 Every provider accepts an explicit model ID that the selected local CLI
 supports. Neomax validates basic shape and lets the provider validate the
 provider-specific model. OpenCode IDs must use the qualified `provider/model`
-form. Codex keeps the GPT-5.6 `luna`, `terra`, and `sol` choices for explicit
-worker routing: Luna is intended for lightweight work, Terra for balanced
-coding work, and Sol for heavier general work. Kimi keeps `k3` and `k2.7` aliases. Claude Opus is never
-implicit; select it explicitly when the connected Claude CLI supports it.
+form. Codex aliases `sol` and `luna` select GPT-6 Sol and GPT-6 Luna;
+`terra` selects GPT-5.6 Terra. Older models remain available by full ID.
+Kimi keeps `k3` and `k2.7` aliases. Claude defaults to Opus 5.5 with
+1M context. Explicit model overrides remain authoritative; the existing
+`--opus` flag retains Opus 5.
 
 Model overrides are stored separately from the main settings file so a
 provider model change does not discard unrelated configuration:
@@ -1005,7 +1006,7 @@ provider model change does not discard unrelated configuration:
 neomax config show
 neomax config models
 neomax config set-model opencode opencode/big-pickle
-neomax config set-model claude 'claude-fable-5-1[1m]'
+neomax config set-model claude 'claude-opus-5-5[1m]'
 neomax config unset-model opencode
 ```
 

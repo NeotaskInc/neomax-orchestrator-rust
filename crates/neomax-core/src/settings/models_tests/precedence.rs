@@ -80,7 +80,7 @@ fn config_then_argv_precedence_is_preserved_for_all_provider_models() {
             .effective_model_with_environment(engine, Some(explicit), &environment)
             .unwrap();
         let expected = match engine {
-            Engine::Codex => "gpt-5.6-luna",
+            Engine::Codex => "gpt-6-luna",
             Engine::Kimi => "kimi-code/k3",
             _ => explicit,
         };
