@@ -255,17 +255,19 @@ mod tests {
     #[test]
     fn a_reinstall_owns_the_hooks_an_earlier_install_left_and_its_uninstall_removes_them() {
         let bin = Path::new("/opt/neomax");
+        // The installer's own quoting, so the earlier install's commands match on every platform.
+        let exe = shell_quote(bin).unwrap();
         let mut settings = Map::new();
         settings.insert(
             "hooks".into(),
             serde_json::json!({
                 "SessionStart": [{"matcher":"","hooks":[
-                    {"type":"command","command":"'/opt/neomax' ls --hook"},
-                    {"type":"command","command":format!("{PLAIN_SESSION_GUARD}'/opt/neomax' orient --hook")},
+                    {"type":"command","command":format!("{exe} ls --hook")},
+                    {"type":"command","command":format!("{PLAIN_SESSION_GUARD}{exe} orient --hook")},
                     {"type":"command","command":"user-command"}
                 ]}],
                 "Stop": [{"matcher":"","hooks":[
-                    {"type":"command","command":format!("{PLAIN_SESSION_GUARD}'/opt/neomax' usage-hook")}
+                    {"type":"command","command":format!("{PLAIN_SESSION_GUARD}{exe} usage-hook")}
                 ]}]
             }),
         );
