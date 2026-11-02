@@ -55,6 +55,9 @@ fn run() -> Result<()> {
     })?;
     let args = error::usage(parser::utf8_args(args.collect()))?;
     cli::authorize_agent_invocation(&args)?;
+    if cli::is_plain_session_hook(&args) {
+        return Ok(());
+    }
     if cli::is_version(&args) {
         cli::print_version(launcher);
         return Ok(());

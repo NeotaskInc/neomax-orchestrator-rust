@@ -34,12 +34,7 @@ where
         for connection in listener.incoming() {
             match connection {
                 Ok(mut stream) => {
-                    if active
-                        .fetch_update(Ordering::AcqRel, Ordering::Acquire, |current| {
-                            (current < MAX_CONNECTIONS).then_some(current + 1)
-                        })
-                        .is_err()
-                    {
+                    if !try_acquire_connection(&active) {
                         let _ = stream.set_write_timeout(Some(IO_TIMEOUT));
                         let _ =
                             write_rejection(&mut stream, 503, "portal connection limit reached");
@@ -88,4 +83,24 @@ where
 
 fn write_rejection(stream: &mut TcpStream, status: u16, message: &str) -> Result<()> {
     HttpResponse::json(status, &json!({"error": message}))?.write_to(stream)
+}
+
+/// Takes one of the portal's connection slots, unless all of them are taken. The same bounded increment as
+/// `AtomicUsize::fetch_update`, written out so it builds on the minimum supported Rust and on current stable alike.
+fn try_acquire_connection(active: &AtomicUsize) -> bool {
+    let mut current = active.load(Ordering::Acquire);
+    loop {
+        if current >= MAX_CONNECTIONS {
+            return false;
+        }
+        match active.compare_exchange_weak(
+            current,
+            current + 1,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        ) {
+            Ok(_) => return true,
+            Err(actual) => current = actual,
+        }
+    }
 }

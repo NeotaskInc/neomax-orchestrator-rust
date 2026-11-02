@@ -40,6 +40,10 @@ pub(super) fn open_for_read(database: &Path) -> Option<Connection> {
     Some(connection)
 }
 
+
+/// The columns added after the first history schema, each with its SQLite declaration.
+const ADDITIVE_RUN_COLUMNS: &[(&str, &str)] = &[("project", "TEXT")];
+
 fn ensure_schema(connection: &Connection) -> rusqlite::Result<()> {
     connection.execute_batch(
         "CREATE TABLE IF NOT EXISTS runs(
@@ -56,7 +60,7 @@ fn ensure_schema(connection: &Connection) -> rusqlite::Result<()> {
     // Python history databases predate additive fields. ALTER only missing columns;
     // SQLite keeps every existing row and record blob intact.
     let existing = column_names(connection)?;
-    for (name, declaration) in [("project", "TEXT")] {
+    for &(name, declaration) in ADDITIVE_RUN_COLUMNS {
         if !existing.contains(name) {
             let result = connection
                 .execute_batch(&format!("ALTER TABLE runs ADD COLUMN {name} {declaration}"));
