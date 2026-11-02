@@ -33,6 +33,14 @@ pub(super) fn read_settings(path: &Path) -> Result<Option<ValueMap>> {
         })
 }
 
+/// The guard machines added by hand to Neomax's hooks (dev-6w6) so a plain `claude` session skips them. A hook written
+/// either way is the same Neomax hook: a reinstall doesn't add a second copy and an uninstall removes both.
+const PLAIN_SESSION_GUARD: &str = "[ -n \"${NEOMAX_ROLE+x}${NEOMAX_WORKER+x}\" ] || exit 0; exec ";
+
+fn same_hook_command(existing: &str, command: &str) -> bool {
+    existing == command || existing.strip_prefix(PLAIN_SESSION_GUARD) == Some(command)
+}
+
 pub(super) fn merge_hooks(
     existing: Option<ValueMap>,
     bin: &Path,
@@ -80,14 +88,18 @@ fn add_hook(
             .entry("hooks")
             .or_insert_with(|| Value::Array(Vec::new()));
         if let Some(hooks) = hooks.as_array_mut() {
-            if !hooks
-                .iter()
-                .any(|hook| hook.get("command").and_then(Value::as_str) == Some(command))
-            {
+            if !hooks.iter().any(|hook| {
+                hook.get("command")
+                    .and_then(Value::as_str)
+                    .is_some_and(|existing| same_hook_command(existing, command))
+            }) {
                 hooks.push(
                     serde_json::json!({"type":"command","command":command,"timeout":timeout}),
                 );
             }
+            // Neomax's own command, added now or by an earlier install (which didn't always record it, and may since
+            // have been guarded by hand): it is this install's to remove (Greptile P1 on #4).
+            return Ok(true);
         }
         return Ok(false);
     }
@@ -121,7 +133,7 @@ pub(super) fn remove_hooks(settings: &mut ValueMap, owned: &BTreeSet<(String, St
                     };
                     !owned.iter().any(|(owned_event, owned_command)| {
                         (owned_event.is_empty() || owned_event == &event)
-                            && owned_command == command
+                            && same_hook_command(command, owned_command)
                     })
                 });
             }
@@ -216,6 +228,68 @@ mod tests {
         assert_eq!(groups[0]["matcher"], "project:*");
         assert_eq!(groups[1]["matcher"], "");
         assert_eq!(groups[1]["hooks"][0]["command"], "neomax orient --hook");
+    }
+
+    // dev-6w6: machines guarded the installed hooks by hand; a reinstall must not add an unguarded copy beside them, and
+    // an uninstall must remove them.
+    #[test]
+    fn a_hand_guarded_hook_is_the_same_hook_for_reinstall_and_removal() {
+        let guarded = format!("{PLAIN_SESSION_GUARD}'/opt/neomax' turn-hook");
+        let mut events = Map::new();
+        events.insert(
+            "UserPromptSubmit".into(),
+            serde_json::json!([{"matcher":"","hooks":[{"type":"command","command":guarded}]}]),
+        );
+        assert!(add_hook(&mut events, "UserPromptSubmit", "'/opt/neomax' turn-hook", 8).unwrap());
+        assert_eq!(events["UserPromptSubmit"][0]["hooks"].as_array().unwrap().len(), 1);
+
+        let mut settings = Map::new();
+        settings.insert("hooks".into(), serde_json::Value::Object(events));
+        let owned = BTreeSet::from([("UserPromptSubmit".into(), "'/opt/neomax' turn-hook".into())]);
+        remove_hooks(&mut settings, &owned);
+        assert!(settings.get("hooks").is_none());
+    }
+
+    // Greptile P1 on #4: hooks an earlier install left unowned (and a machine then guarded by hand) are owned by the
+    // reinstall, so the uninstall after it removes every one of them.
+    #[test]
+    fn a_reinstall_owns_the_hooks_an_earlier_install_left_and_its_uninstall_removes_them() {
+        let bin = Path::new("/opt/neomax");
+        // The installer's own quoting, so the earlier install's commands match on every platform.
+        let exe = shell_quote(bin).unwrap();
+        let mut settings = Map::new();
+        settings.insert(
+            "hooks".into(),
+            serde_json::json!({
+                "SessionStart": [{"matcher":"","hooks":[
+                    {"type":"command","command":format!("{exe} ls --hook")},
+                    {"type":"command","command":format!("{PLAIN_SESSION_GUARD}{exe} orient --hook")},
+                    {"type":"command","command":"user-command"}
+                ]}],
+                "Stop": [{"matcher":"","hooks":[
+                    {"type":"command","command":format!("{PLAIN_SESSION_GUARD}{exe} usage-hook")}
+                ]}]
+            }),
+        );
+        let (mut merged, owned) = merge_hooks(Some(settings), bin).unwrap();
+        let owned = owned.into_iter().collect::<BTreeSet<_>>();
+        remove_hooks(&mut merged, &owned);
+        let left = merged["hooks"]["SessionStart"][0]["hooks"].as_array().unwrap();
+        assert_eq!(left.len(), 1);
+        assert_eq!(left[0]["command"], "user-command");
+        assert!(merged["hooks"].get("Stop").is_none());
+        assert!(merged["hooks"].get("UserPromptSubmit").is_none());
+    }
+
+    #[test]
+    fn a_hook_added_to_an_existing_group_is_recorded_as_owned() {
+        let mut events = Map::new();
+        events.insert(
+            "Stop".into(),
+            serde_json::json!([{"matcher":"","hooks":[{"type":"command","command":"user-command"}]}]),
+        );
+        assert!(add_hook(&mut events, "Stop", "'/opt/neomax' usage-hook", 8).unwrap());
+        assert_eq!(events["Stop"][0]["hooks"].as_array().unwrap().len(), 2);
     }
 
     #[test]

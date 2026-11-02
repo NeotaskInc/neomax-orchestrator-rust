@@ -10,6 +10,8 @@ mod dispatch;
 pub(crate) mod doctor;
 #[path = "cli/help.rs"]
 mod help;
+
+mod plain_session_hook;
 #[path = "cli/provider_entry.rs"]
 mod provider_entry;
 
@@ -19,6 +21,7 @@ pub(crate) use authorization::resolved_agent_command;
 pub use dispatch::{execute, execute_install, execute_uninstall};
 #[allow(unused_imports)]
 pub use help::{help_text, is_help, is_version, print_help, print_version, version};
+pub use plain_session_hook::is_plain_session_hook;
 
 #[cfg(test)]
 #[path = "cli_tests.rs"]

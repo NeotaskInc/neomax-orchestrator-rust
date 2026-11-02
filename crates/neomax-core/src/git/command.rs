@@ -25,13 +25,7 @@ impl GitProcessConfig {
             } else {
                 timeout
             },
-            max_output_bytes: if max_output_bytes == 0 {
-                1
-            } else if max_output_bytes > MAX_CONFIGURED_OUTPUT_BYTES {
-                MAX_CONFIGURED_OUTPUT_BYTES
-            } else {
-                max_output_bytes
-            },
+            max_output_bytes: max_output_bytes.clamp(1, MAX_CONFIGURED_OUTPUT_BYTES),
         }
     }
 }
