@@ -1,6 +1,7 @@
 use anyhow::{Result, bail};
 use neomax_core::WorkerScope;
 use neomax_core::orchestration::commands::Launcher;
+use neomax_core::orchestration::delegation::default_worker_scope;
 use std::env;
 
 use super::types::LaunchMode;
@@ -12,9 +13,11 @@ pub(crate) fn for_launcher(launcher: Launcher, explicit: Option<WorkerScope>) ->
         Launcher::AccountHelper(_) => LaunchMode::AccountHelper,
     };
     match mode {
-        LaunchMode::Dynamic | LaunchMode::ProviderPinned | LaunchMode::Solo => {
-            explicit.unwrap_or_else(WorkerScope::all)
-        }
+        LaunchMode::ProviderPinned => explicit.unwrap_or_else(|| match launcher {
+            Launcher::ProviderOrchestrator(engine) => default_worker_scope(engine),
+            _ => WorkerScope::all(),
+        }),
+        LaunchMode::Dynamic | LaunchMode::Solo => explicit.unwrap_or_else(WorkerScope::all),
         LaunchMode::AccountHelper => match launcher {
             Launcher::AccountHelper(engine) => WorkerScope::only(engine),
             _ => unreachable!("account helper scope requires an account launcher"),

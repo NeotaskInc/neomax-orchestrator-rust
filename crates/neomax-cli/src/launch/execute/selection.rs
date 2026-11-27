@@ -3,6 +3,7 @@ use chrono::Utc;
 use std::collections::{BTreeMap, BTreeSet};
 
 use neomax_core::accounts::{AccountSelector, AccountSnapshot, SelectionPolicy, select_account};
+use neomax_core::orchestration::delegation;
 use neomax_core::orchestration::registry::OrchestratorRecord;
 use neomax_core::orchestration::selection::{
     NeomaxSelectionRequest, OrchestratorPolicy, ProviderSelectionRequest,
@@ -276,4 +277,33 @@ pub(super) fn worker_models(
                 .map_err(Into::into)
         })
         .collect()
+}
+
+/// Apply the orchestrating engine's delegation policy: a root launch checks
+/// the worker models it hands down, and a worker dispatched from inside an
+/// orchestrator (`NEOMAX_ROLE`) gets that orchestrator's model limits and
+/// default effort.
+pub(super) fn apply_delegation(
+    options: &mut LaunchOptions,
+    engine: Engine,
+    model: &str,
+    worker_models: &BTreeMap<Engine, String>,
+) -> Result<()> {
+    if !options.worker_dispatch {
+        for (worker, worker_model) in worker_models {
+            delegation::check_worker_model(engine, *worker, worker_model)?;
+        }
+        return Ok(());
+    }
+    let Some(parent) = std::env::var("NEOMAX_ROLE")
+        .ok()
+        .and_then(|role| role.parse::<Engine>().ok())
+    else {
+        return Ok(());
+    };
+    delegation::check_worker_model(parent, engine, model)?;
+    if options.effort.is_none() {
+        options.effort = delegation::default_worker_effort(parent, engine).map(Into::into);
+    }
+    Ok(())
 }

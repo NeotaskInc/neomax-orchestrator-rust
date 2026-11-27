@@ -77,6 +77,10 @@ impl WorkerScope {
         Self(BTreeSet::from([engine]))
     }
 
+    pub fn of(engines: impl IntoIterator<Item = Engine>) -> Self {
+        Self(engines.into_iter().collect())
+    }
+
     pub fn contains(&self, engine: Engine) -> bool {
         self.0.contains(&engine)
     }

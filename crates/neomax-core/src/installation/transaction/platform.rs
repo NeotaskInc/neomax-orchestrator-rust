@@ -130,16 +130,16 @@ pub(super) fn create_symlink(source: &Path, target: &Path) -> Result<()> {
     Ok(())
 }
 
+#[cfg(unix)]
+const CROSS_DEVICE_ERROR: Option<i32> = Some(libc::EXDEV);
+/// `ERROR_NOT_SAME_DEVICE`.
+#[cfg(windows)]
+const CROSS_DEVICE_ERROR: Option<i32> = Some(17);
+#[cfg(not(any(unix, windows)))]
+const CROSS_DEVICE_ERROR: Option<i32> = None;
+
 pub(super) fn is_cross_device(error: &io::Error) -> bool {
-    #[cfg(unix)]
-    if error.raw_os_error() == Some(libc::EXDEV) {
-        return true;
-    }
-    #[cfg(windows)]
-    if error.raw_os_error() == Some(17) {
-        return true;
-    }
-    false
+    CROSS_DEVICE_ERROR.is_some_and(|code| error.raw_os_error() == Some(code))
 }
 
 #[cfg(windows)]

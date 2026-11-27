@@ -1,8 +1,10 @@
 use crate::providers::ProviderCommand;
 use crate::providers::catalog::ANTIGRAVITY_DEFAULT_EFFORT;
 
+use crate::orchestration::delegation::ANTIGRAVITY_DELEGATION;
+
 use super::super::super::types::OrchestratorRequest;
-use super::super::instructions::orchestrator_prompt;
+use super::super::instructions::{goal_block, startup_instruction};
 
 pub(crate) fn build(
     mut command: ProviderCommand,
@@ -26,9 +28,23 @@ pub(crate) fn build(
     if !request.resume || request.initial_task.is_some() {
         command = command
             .arg("--prompt-interactive")
-            .arg(orchestrator_prompt(request));
+            .arg(initial_prompt(request));
     }
     command
+}
+
+fn initial_prompt(request: &OrchestratorRequest) -> String {
+    let mut parts = vec![
+        startup_instruction(request).to_owned(),
+        ANTIGRAVITY_DELEGATION.to_owned(),
+    ];
+    if let Some(goal) = request.goal.as_deref() {
+        parts.push(goal_block(goal, request.max_turns));
+    }
+    if let Some(task) = request.initial_task.as_deref() {
+        parts.push(task.to_owned());
+    }
+    parts.join("\n\n")
 }
 
 pub(crate) fn effort(request: &OrchestratorRequest) -> &str {

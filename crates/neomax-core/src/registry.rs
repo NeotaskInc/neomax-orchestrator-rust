@@ -225,6 +225,7 @@ macro_rules! neomax_domain_declarations {
                     "orchestration::auth::rotation_log",
                     "orchestration::commands",
                     "orchestration::continuation",
+                    "orchestration::delegation",
                     "orchestration::continuation::ports",
                     "orchestration::continuation::request",
                     "orchestration::handoff",

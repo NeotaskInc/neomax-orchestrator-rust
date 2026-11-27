@@ -24,6 +24,16 @@ state there, or when its settings select Gemini API-key mode, in which case
 to every provider priority and failover order, so existing routing is
 unchanged.
 
+An Antigravity orchestrator delegates in a fixed order: its own subagents and
+threads first, then Claude Code workers on Opus at effort high. `amax`
+defaults its worker pool to `antigravity,claude` (`--workers` still overrides
+it), its initial prompt states that order, and a Claude worker dispatched from
+inside it gets effort `high` unless the dispatch names one. A Fable Claude
+model is refused both in the `amax` plan and in any dispatch from inside an
+Antigravity orchestrator. Provider discovery (`agy --version`, `agy models`)
+also runs with auto-update disabled. The neomax skill, README, reference,
+installation and architecture docs list Antigravity, `amax` and `amx`.
+
 The Codex default becomes `gpt-6.1-sol`, and the Codex sub-agent model list no
 longer offers GPT-5.6 models. Explicit GPT-5.6 IDs and aliases still resolve.
 
@@ -39,7 +49,16 @@ whitespace checks passed. All workspace test targets passed, including the
 provider-secret isolation e2e tests for `amax` (only `GEMINI_API_KEY` reaches
 agy in API-key mode; OAuth profiles receive no ambient keys) and the hermetic
 launch tests through a fake `agy`. `amax --dry-run --json` plans the Antigravity
-orchestrator with `gemini-4-neon`.
+orchestrator with `gemini-4-neon` and workers `claude,antigravity`, and refuses
+`--claude-model claude-fable-5`. A real `amax` launch against a recording fake
+`agy` received `--model gemini-4-neon --effort high
+--dangerously-skip-permissions --prompt-interactive` with the delegation order,
+`NEOMAX_FLEET=claude,antigravity` and `NEOMAX_CLAUDE_MODEL=claude-opus-5-5[1m]`.
+From inside that session a Fable dispatch was refused and a plain Claude
+dispatch ran `claude ... --model claude-opus-5-5[1m] --effort high`.
+
+A new stable Clippy lint (`needless_bool`) in the installer's cross-device
+check is fixed by expressing the per-platform error code as a constant.
 
 Remaining limits: the usage price table has no rates for `gpt-6.1-sol` or
 Gemini 4 Neon, so their cost estimates read zero. Antigravity has a single

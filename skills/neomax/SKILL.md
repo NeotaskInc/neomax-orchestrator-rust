@@ -1,12 +1,12 @@
 ---
 name: neomax
-description: Install and operate the native Neomax orchestrator across Claude, Codex, OpenCode, Kimi, and Grok. Use for Neomax installation, provider and model routing, account management, usage, rotation, worktrees, tasks, and managed worker dispatch.
+description: Install and operate the native Neomax orchestrator across Claude, Codex, OpenCode, Kimi, Grok, and Antigravity (agy, Gemini 4 Neon). Use for Neomax installation, provider and model routing, account management, usage, rotation, worktrees, tasks, and managed worker dispatch.
 ---
 
 # Neomax
 
-Neomax coordinates Claude, Codex, OpenCode, Kimi, and Grok through one native
-CLI. Use it from the project directory the user wants to work in.
+Neomax coordinates Claude, Codex, OpenCode, Kimi, Grok, and Antigravity (`agy`)
+through one native CLI. Use it from the project directory the user wants to work in.
 
 ## Install
 
@@ -56,7 +56,7 @@ After installation, persist this exact document for the current agent:
 
 Do not manually create provider workflow files. `neomax install` already seeds
 the correct commands, prompts, skills, hooks, and agent files for installed
-Claude, Codex, OpenCode, Kimi, and Grok profiles.
+Claude, Codex, OpenCode, Kimi, Grok, and Antigravity profiles.
 
 ## Begin a session
 
@@ -83,6 +83,7 @@ main orchestrator when the user requests a provider:
 | `ocmax` | OpenCode |
 | `kmax` | Kimi |
 | `gmax` | Grok |
+| `amax` | Antigravity (`agy`, Gemini 4 Neon at effort high) |
 
 The main orchestrator and worker pool are independent. `cmax --workers all`
 uses Claude as the orchestrator while keeping every eligible worker provider
@@ -113,8 +114,15 @@ neomax config set-model ENGINE MODEL
 neomax config unset-model ENGINE
 ```
 
-OpenCode model IDs use `provider/model`. Claude defaults to Opus 5.5. Never
-replace an unavailable requested model with another model silently.
+OpenCode model IDs use `provider/model`. Claude defaults to Opus 5.5, Codex to
+GPT-6.1 Sol, and Antigravity to `gemini-4-neon` at effort high. Never replace an
+unavailable requested model with another model silently.
+
+An Antigravity orchestrator (`amax`) delegates in a fixed order: its own
+subagents and threads first, then Claude Code workers on Opus 5.5 at effort
+high. Its default worker pool is `antigravity,claude`; `--workers` still
+overrides it. It never starts a Fable model: a Fable Claude model in its plan
+or in a dispatch from inside it is refused.
 
 Use guarded worker dispatch from an active orchestrator:
 
@@ -144,11 +152,17 @@ cdx login ACCOUNT MODE
 ocx login ACCOUNT PROVIDER MODE
 kmx login ACCOUNT MODE
 gmx login ACCOUNT MODE
+amx login
 neomax usage --json
 neomax doctor --json
 neomax codex 2
 neomax codex developer@example.com -- "Review this project"
 ```
+
+Antigravity keeps one sign-in per host in the operating-system keyring under
+`~/.gemini`; `amx login` starts `agy` so it can finish its Google sign-in, and
+Neomax never reads the keyring. On hosts where `agy` on `PATH` is a proxy
+wrapper, Neomax launches that wrapper unchanged.
 
 Neomax avoids accounts at the 99 percent wall and proactively prefers another
 account at 92 percent when a provider exposes a five-hour quota. If a managed

@@ -29,6 +29,7 @@ const SECRET_ENV_NAMES: &[&str] = &[
     "GROK_DEPLOYMENT_KEY",
     "GOOGLE_API_KEY",
     "VERTEXAI_API_KEY",
+    "GEMINI_API_KEY",
 ];
 
 fn main() {

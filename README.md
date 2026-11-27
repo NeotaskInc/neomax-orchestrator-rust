@@ -234,6 +234,7 @@ The older account helpers remain compatible:
 | `ocx` | `oauth`, `api-key` | `logout`, `status`, `whoami`, `models`, `run` |
 | `kmx` | `oauth`, `device`, `api-key`, `choose` | `logout`, `status`, `whoami`, `models`, `run` |
 | `gmx` | `oauth`, `device`, `api-key`, `choose` | `logout`, `status`, `whoami`, `models`, `run` |
+| `amx` | agy's own Google sign-in (`amx login`) | `status`, `models`, `run` |
 
 Use `orch` instead of a number for a reserved orchestrator profile. Run an
 account command with `--dry-run --json` to inspect it without invoking the
@@ -434,9 +435,9 @@ usage, session, subagent, run, scheduler, task, queue, and worktree state.
 
 | Area | Commands |
 | --- | --- |
-| Launch | `neomax`, `cmax`, `cdxmax`, `ocmax`, `kmax`, `gmax`, `dispatch`, `solo` |
+| Launch | `neomax`, `cmax`, `cdxmax`, `ocmax`, `kmax`, `gmax`, `amax`, `dispatch`, `solo` |
 | Selection | `select`, `why`, `pick-neomax`, `pick-orch`, `modes` |
-| Accounts | `cdx`, `ocx`, `kmx`, `gmx`, `pause`, `unpause`, `paused` |
+| Accounts | `cdx`, `ocx`, `kmx`, `gmx`, `amx`, `pause`, `unpause`, `paused` |
 | Runs | `status`, `list`, `log`, `history`, `resume`, `retry`, `kill`, `diff` |
 | Rotation | `rotate`, `rotate-tick`, `session-rotate`, `solo-rotate`, `handoff` |
 | Projects | `projects`, `project-register`, `project-unregister`, `orient` |
