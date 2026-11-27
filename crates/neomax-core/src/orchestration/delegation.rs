@@ -1,15 +1,15 @@
 //! Delegation defaults that belong to the orchestrating engine.
 //!
 //! An Antigravity (Gemini 4 Neon) orchestrator delegates to its own subagents
-//! first and then to Claude Code workers on Opus at effort high; it never
-//! starts a Fable model.
+//! first, then to Antigravity (Neon) workers, then to Claude Code workers on
+//! Opus at effort high; it never starts a Fable model.
 
 use crate::accounts::claude_model_family;
 use crate::{Engine, Error, Result, WorkerScope};
 
 pub const ANTIGRAVITY_CLAUDE_WORKER_EFFORT: &str = "high";
 
-pub const ANTIGRAVITY_DELEGATION: &str = "Delegation order for this Antigravity orchestrator: first use your own subagents and parallel threads (invoke_subagent) for bounded research, edits and checks. For larger or longer units, dispatch Claude Code workers through NEOMAX_BIN dispatch with engine claude; they run Claude Opus at effort high. Never select, request or start a Fable model.";
+pub const ANTIGRAVITY_DELEGATION: &str = "Delegation order for this Antigravity orchestrator: 1) your own subagents and parallel threads (invoke_subagent) for bounded side work such as research, edits and checks; 2) Antigravity (Gemini 4 Neon) workers through NEOMAX_BIN dispatch with engine antigravity for units that own a task, branch or pull request; 3) Claude Code workers through NEOMAX_BIN dispatch with engine claude, which run Claude Opus at effort high. Reviewers stay Claude. Never select, request or start a Fable model.";
 
 /// The worker pool an orchestrator uses when the launch names none.
 pub fn default_worker_scope(orchestrator: Engine) -> WorkerScope {

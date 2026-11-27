@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::{Engine, Result};
 
-use super::commands::{CommandRunner, binary_status, model_ids};
+use super::commands::{CommandRunner, binary_status, listed_model_ids, model_listing};
 #[cfg(target_os = "macos")]
 use super::commands::DiscoveryCommand;
 use super::environment::Environment;
@@ -31,11 +31,21 @@ impl<'a> ProviderDiscovery<'a> {
             }
             profiles
         };
+        let binary = binary_status(engine, self.environment, self.commands);
+        let listing = model_listing(engine, self.environment, self.commands);
+        let mut profiles = profiles;
+        if engine == Engine::Antigravity && binary.available {
+            if let Some(output) = listing.as_ref() {
+                super::profile_auth_antigravity::apply_sign_in_probe(&mut profiles, output);
+            }
+        }
         Ok(ProviderSnapshot {
             spec: provider,
-            binary: binary_status(engine, self.environment, self.commands),
+            binary,
             profiles,
-            models: model_ids(engine, self.environment, self.commands),
+            models: listing
+                .map(|output| listed_model_ids(&output, engine))
+                .unwrap_or_default(),
         })
     }
 

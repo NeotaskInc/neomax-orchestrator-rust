@@ -248,7 +248,7 @@ a provider.
 | `ocmax` | Pin OpenCode as the main orchestrator |
 | `kmax` | Pin Kimi as the main orchestrator |
 | `gmax` | Pin Grok as the main orchestrator |
-| `amax` | Pin Antigravity (`agy`, Gemini 4 Neon) as the main orchestrator; default workers `antigravity,claude`, Claude workers on Opus at effort high, Fable refused |
+| `amax` | Pin Antigravity (`agy`, Gemini 4 Neon) as the main orchestrator; default workers `antigravity,claude`; delegation order is Neon subagents, Neon workers, then Claude workers on Opus at effort high; Fable refused |
 | `cdx` | Codex account helper |
 | `ocx` | OpenCode account helper |
 | `kmx` | Kimi account helper |

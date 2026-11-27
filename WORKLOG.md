@@ -1,66 +1,31 @@
 # Work log
 
-## 2026-11-27 - Antigravity (agy) engine and amax launcher
+## 2026-11-27 - Antigravity sign-in probe and Neon worker delegation
 
-Neomax gains a sixth engine, Antigravity, driven through the Antigravity CLI
-`agy`. It works as a root orchestrator (`amax`, `neomax antigravity`) and as a
-guarded headless worker. The default model is `gemini-4-neon` at effort
-`high`; `-e` accepts agy's `low|medium|high|xhigh|max` and `-u` selects
-`xhigh`. Workers run `agy --print ... --output-format stream-json` with
-`--dangerously-skip-permissions`, or `--mode plan` for read-only scouts, and
-resume with `--conversation`. Root sessions pass the orchestrator instruction
-and task through `--prompt-interactive`, because agy has no system-prompt flag.
-Every agy process gets `AGY_CLI_DISABLE_AUTO_UPDATE=true`.
+Antigravity profiles are now confirmed signed in before Neomax uses them.
+Discovery reuses the `agy models` run it already makes for model listing: when
+that run completes with a non-zero exit, as agy does when signed out ("Please
+sign in"), native sign-in profiles become unauthenticated. A timed-out or
+truncated listing keeps the file evidence, and Gemini API-key profiles are not
+changed. A signed-out agy is therefore refused at once instead of a launch
+waiting at agy's sign-in prompt. The probe does not depend on where agy keeps
+its token, so a keyring or file check can be added behind the same function.
 
-agy's `init`, `step_update` and `result` events are parsed for the
-conversation id, response, token usage (including thinking and cached tokens),
-native subagents and error or quota status. Sessions and native subagents are
-read from agy's own `antigravity-cli/conversation_summaries.db`, opened
-read-only. agy keeps its Google sign-in in the operating-system keyring, which
-Neomax never reads: a profile counts as connected once agy has initialised its
-state there, or when its settings select Gemini API-key mode, in which case
-`GEMINI_API_KEY` is passed only to the agy process. `amx` is the account helper
-(`login` starts agy's own sign-in; `run`, `models`). Antigravity is appended
-to every provider priority and failover order, so existing routing is
-unchanged.
+An Antigravity orchestrator's delegation order gains its second step: its own
+subagents and threads for bounded side work, then Antigravity (Neon) workers
+for units that own a task, branch or pull request, then Claude Code workers on
+Opus at effort high. Reviewers stay Claude, and Fable stays refused. The neomax
+skill and reference describe the order and the probe.
 
-An Antigravity orchestrator delegates in a fixed order: its own subagents and
-threads first, then Claude Code workers on Opus at effort high. `amax`
-defaults its worker pool to `antigravity,claude` (`--workers` still overrides
-it), its initial prompt states that order, and a Claude worker dispatched from
-inside it gets effort `high` unless the dispatch names one. A Fable Claude
-model is refused both in the `amax` plan and in any dispatch from inside an
-Antigravity orchestrator. Provider discovery (`agy --version`, `agy models`)
-also runs with auto-update disabled. The neomax skill, README, reference,
-installation and architecture docs list Antigravity, `amax` and `amx`.
+Affected areas: provider discovery, Antigravity auth detection, the
+orchestrator delegation text, the neomax skill and `docs/REFERENCE.md`.
 
-The Codex default becomes `gpt-6.1-sol`, and the Codex sub-agent model list no
-longer offers GPT-5.6 models. Explicit GPT-5.6 IDs and aliases still resolve.
+Verification: formatting, Clippy with `-D warnings`, documentation style and
+all workspace test targets passed. With the real agy 1.5.18 binary signed out
+in a temporary home, `amax --foreground "hi"` exited in under a second with
+"no eligible authenticated antigravity orchestrator account"; with a fake agy
+whose `models` succeeds, the same launch planned the Antigravity orchestrator.
 
-Affected areas: core engine enum, provider spec, worker and orchestrator
-command builders, event parser, session discovery, auth detection, process
-secrets, failover, scheduler effort validation, model settings, CLI launchers,
-help, account helpers, portal, usage agent, installer alias lists, shell
-shortcuts and the e2e fake-provider harness.
-
-Verification: formatting, Clippy with `-D warnings`, documentation style,
-product surface, privacy surface, shell syntax, shell shortcut and diff
-whitespace checks passed. All workspace test targets passed, including the
-provider-secret isolation e2e tests for `amax` (only `GEMINI_API_KEY` reaches
-agy in API-key mode; OAuth profiles receive no ambient keys) and the hermetic
-launch tests through a fake `agy`. `amax --dry-run --json` plans the Antigravity
-orchestrator with `gemini-4-neon` and workers `claude,antigravity`, and refuses
-`--claude-model claude-fable-5`. A real `amax` launch against a recording fake
-`agy` received `--model gemini-4-neon --effort high
---dangerously-skip-permissions --prompt-interactive` with the delegation order,
-`NEOMAX_FLEET=claude,antigravity` and `NEOMAX_CLAUDE_MODEL=claude-opus-5-5[1m]`.
-From inside that session a Fable dispatch was refused and a plain Claude
-dispatch ran `claude ... --model claude-opus-5-5[1m] --effort high`.
-
-A new stable Clippy lint (`needless_bool`) in the installer's cross-device
-check is fixed by expressing the per-platform error code as a constant.
-
-Remaining limits: the usage price table has no rates for `gpt-6.1-sol` or
-Gemini 4 Neon, so their cost estimates read zero. Antigravity has a single
-native profile per host; account pooling is left to the provider or a proxy.
-No authenticated provider request was made by these tests.
+Remaining limits: a failed `agy models` run for a reason other than sign-in,
+such as a network error, also marks the native profile signed out until the
+next discovery.
