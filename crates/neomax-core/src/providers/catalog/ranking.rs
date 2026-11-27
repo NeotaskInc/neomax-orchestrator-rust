@@ -4,12 +4,13 @@ use crate::Engine;
 
 use super::types::OrchestratorCandidate;
 
-pub const DEFAULT_NEOMAX_PRIORITY: [Engine; 5] = [
+pub const DEFAULT_NEOMAX_PRIORITY: [Engine; 6] = [
     Engine::Claude,
     Engine::Codex,
     Engine::Kimi,
     Engine::Grok,
     Engine::Opencode,
+    Engine::Antigravity,
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq)]

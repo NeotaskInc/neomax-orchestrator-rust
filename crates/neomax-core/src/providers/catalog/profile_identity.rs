@@ -65,6 +65,7 @@ pub fn profile_email_with_environment(
             .and_then(|identity| identity.email().map(ToOwned::to_owned))
             .and_then(|email| canonical_email(&email)),
         Engine::Claude => claude_email(profile, filesystem),
+        Engine::Antigravity => None,
         Engine::Kimi => json_email(
             credential_path(Engine::Kimi, profile, Path::new("")),
             filesystem,

@@ -166,10 +166,11 @@ project selection, and provider priority. Explicit choices win.
 | Provider | Default model | Launch or sign in |
 | --- | --- | --- |
 | Claude | `claude-opus-5-5[1m]` | `neomax claude [ACCOUNT]` |
-| Codex | `gpt-6-astra` | `neomax codex [ACCOUNT]` |
+| Codex | `gpt-6.1-sol` | `neomax codex [ACCOUNT]` |
 | OpenCode | `opencode/big-pickle` | `neomax opencode [ACCOUNT]` |
 | Kimi | `kimi-code/k3` | `neomax kimi [ACCOUNT]` |
 | Grok | `grok-4.6` | `neomax grok [ACCOUNT]` |
+| Antigravity (`agy`) | `gemini-4-neon`, effort `high` | `neomax antigravity` or `amax` |
 
 Every provider accepts model IDs supported by its local CLI. OpenCode model
 IDs use `provider/model`. Claude uses Opus 5.5 by default. Codex uses GPT-6

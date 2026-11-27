@@ -87,6 +87,7 @@ fn selection_is_same_provider_for_every_supported_engine() {
             Engine::Opencode => ".opencode",
             Engine::Kimi => ".kimi-code",
             Engine::Grok => ".grok",
+            Engine::Antigravity => ".gemini",
         };
         let source_profile = fixture.context.paths.home.join(default_dir);
         let target_profile = fixture

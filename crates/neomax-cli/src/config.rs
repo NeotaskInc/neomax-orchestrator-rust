@@ -224,11 +224,12 @@ mod tests {
             ("opencode", "local/provider/model"),
             ("kimi", "kimi/custom"),
             ("grok", "grok/custom"),
+            ("antigravity", "gemini-4-neon"),
         ] {
             set_model_args(&fixture.context, &[engine.into(), model.into()]).unwrap();
         }
         let overrides = fixture.context.model_overrides().unwrap();
-        assert_eq!(overrides.effective().unwrap().len(), 5);
+        assert_eq!(overrides.effective().unwrap().len(), Engine::ALL.len());
         assert_eq!(
             overrides.get(Engine::Opencode),
             Some("local/provider/model")

@@ -22,10 +22,12 @@ impl Launcher {
             "ocmax" => Some(Self::ProviderOrchestrator(Engine::Opencode)),
             "kmax" => Some(Self::ProviderOrchestrator(Engine::Kimi)),
             "gmax" => Some(Self::ProviderOrchestrator(Engine::Grok)),
+            "amax" => Some(Self::ProviderOrchestrator(Engine::Antigravity)),
             "cdx" => Some(Self::AccountHelper(Engine::Codex)),
             "ocx" => Some(Self::AccountHelper(Engine::Opencode)),
             "kmx" => Some(Self::AccountHelper(Engine::Kimi)),
             "gmx" => Some(Self::AccountHelper(Engine::Grok)),
+            "amx" => Some(Self::AccountHelper(Engine::Antigravity)),
             _ => None,
         }
     }

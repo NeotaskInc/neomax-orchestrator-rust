@@ -7,10 +7,11 @@ fn policy_defaults_aliases_and_local_ids_are_resolved_for_every_provider() {
     let settings = ModelOverrides::default();
     let defaults = [
         (Engine::Claude, "claude-opus-5-5[1m]"),
-        (Engine::Codex, "gpt-6-astra"),
+        (Engine::Codex, "gpt-6.1-sol"),
         (Engine::Opencode, "opencode/big-pickle"),
         (Engine::Kimi, "kimi-code/k3"),
         (Engine::Grok, "grok-4.6"),
+        (Engine::Antigravity, "gemini-4-neon"),
     ];
     for (engine, expected) in defaults {
         let resolved = settings

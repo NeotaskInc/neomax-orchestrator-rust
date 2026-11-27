@@ -111,6 +111,7 @@ pub(super) fn helper_name(engine: Engine) -> &'static str {
         Engine::Opencode => "ocx",
         Engine::Kimi => "kmx",
         Engine::Grok => "gmx",
+        Engine::Antigravity => "amx",
         Engine::Claude => "claude-helper",
     }
 }

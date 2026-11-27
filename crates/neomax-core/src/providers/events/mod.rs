@@ -1,3 +1,4 @@
+mod antigravity;
 mod children;
 mod claude;
 mod codex;
@@ -14,6 +15,7 @@ mod token_usage;
 #[cfg(test)]
 mod test_support;
 
+pub use antigravity::{parse as parse_antigravity, parse_at as parse_antigravity_at};
 pub use claude::parse as parse_claude;
 pub use codex::{parse as parse_codex, parse_at as parse_codex_at};
 pub use codex_quota::{

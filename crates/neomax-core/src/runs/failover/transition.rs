@@ -62,6 +62,15 @@ fn apply_provider_defaults(run: &mut RunRecord, models: &dyn ModelResolver) {
             });
             run.ultra = false;
         }
+        Engine::Antigravity => {
+            run.effort = Some(
+                run.effort
+                    .clone()
+                    .filter(|value| catalog::ANTIGRAVITY_EFFORTS.contains(&value.as_str()))
+                    .unwrap_or_else(|| catalog::ANTIGRAVITY_DEFAULT_EFFORT.into()),
+            );
+            run.ultra = false;
+        }
         Engine::Opencode | Engine::Kimi | Engine::Grok => {
             run.effort = None;
             run.ultra = false;

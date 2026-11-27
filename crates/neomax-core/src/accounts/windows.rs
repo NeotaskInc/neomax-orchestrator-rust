@@ -32,7 +32,9 @@ pub enum QuotaSupport {
 pub const fn quota_support(engine: Engine) -> QuotaSupport {
     match engine {
         Engine::Claude | Engine::Codex => QuotaSupport::Numeric,
-        Engine::Opencode | Engine::Kimi | Engine::Grok => QuotaSupport::Reactive,
+        Engine::Opencode | Engine::Kimi | Engine::Grok | Engine::Antigravity => {
+            QuotaSupport::Reactive
+        }
     }
 }
 

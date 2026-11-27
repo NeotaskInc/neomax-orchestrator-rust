@@ -6,8 +6,9 @@ only the Claude Code entry point; it must not create a separate set of product
 rules.
 
 Neomax is a portable multi-harness control plane for Claude, Codex, OpenCode,
-Kimi, and Grok. The universal `neomax` launcher can select among eligible
-providers, while `cmax`, `cdxmax`, `ocmax`, `kmax`, and `gmax` pin the main
+Kimi, Grok, and Antigravity (`agy`). The universal `neomax` launcher can select
+among eligible providers, while `cmax`, `cdxmax`, `ocmax`, `kmax`, `gmax`, and
+`amax` pin the main
 orchestrator without restricting the independent worker pool. Plans can route
 different parts to different providers and models. Account selection uses the
 92 percent proactive threshold where a five-hour window is available and the

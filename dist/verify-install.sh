@@ -123,7 +123,7 @@ for auxiliary in "${AUXILIARIES[@]}"; do
   run_surface "$auxiliary"
 done
 
-for launcher in neomax neomax-cli cmax cdxmax ocmax kmax gmax; do
+for launcher in neomax neomax-cli cmax cdxmax ocmax kmax gmax amax; do
   assert_help_contains "$launcher" 'portal'
   assert_help_contains "$launcher" 'rotate'
   assert_help_contains "$launcher" 'usage'

@@ -10,7 +10,7 @@ use crate::tests::fixture;
 fn status_uses_safe_views_for_empty_fleet() {
     let fixture = fixture();
     let report = build_report(&fixture.context).unwrap();
-    assert_eq!(report.engines.len(), 5);
+    assert_eq!(report.engines.len(), neomax_core::Engine::ALL.len());
     assert!(report.accounts.is_empty());
     assert!(report.sessions.is_empty());
     assert!(report.subagents.is_empty());

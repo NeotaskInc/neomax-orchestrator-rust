@@ -57,6 +57,10 @@ pub fn build_bootstrap(
     match engine {
         Engine::Kimi if request.solo => Ok(Some(solo::kimi::bootstrap(command, request, model))),
         Engine::Kimi => Ok(Some(root::kimi::bootstrap(command, request, model))),
-        Engine::Claude | Engine::Codex | Engine::Opencode | Engine::Grok => Ok(None),
+        Engine::Claude
+        | Engine::Codex
+        | Engine::Opencode
+        | Engine::Grok
+        | Engine::Antigravity => Ok(None),
     }
 }

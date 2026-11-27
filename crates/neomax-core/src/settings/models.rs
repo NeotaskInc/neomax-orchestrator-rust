@@ -18,6 +18,7 @@ pub struct ModelOverrides {
     pub opencode: Option<String>,
     pub kimi: Option<String>,
     pub grok: Option<String>,
+    pub antigravity: Option<String>,
     #[serde(flatten)]
     pub extra: BTreeMap<String, toml::Value>,
 }
@@ -80,6 +81,7 @@ impl ModelOverrides {
             Engine::Opencode => self.opencode.as_deref(),
             Engine::Kimi => self.kimi.as_deref(),
             Engine::Grok => self.grok.as_deref(),
+            Engine::Antigravity => self.antigravity.as_deref(),
         }
     }
 
@@ -90,6 +92,7 @@ impl ModelOverrides {
             Engine::Opencode => self.opencode = Some(model),
             Engine::Kimi => self.kimi = Some(model),
             Engine::Grok => self.grok = Some(model),
+            Engine::Antigravity => self.antigravity = Some(model),
         }
     }
 
@@ -100,6 +103,7 @@ impl ModelOverrides {
             Engine::Opencode => self.opencode = None,
             Engine::Kimi => self.kimi = None,
             Engine::Grok => self.grok = None,
+            Engine::Antigravity => self.antigravity = None,
         }
     }
 

@@ -1,3 +1,4 @@
+pub(crate) mod antigravity;
 pub(crate) mod claude;
 pub(crate) mod codex;
 pub(crate) mod grok;
@@ -25,5 +26,6 @@ pub(crate) fn build(
         Engine::Opencode => opencode::build(command, request, model),
         Engine::Kimi => Ok(kimi::build(command, request, model)),
         Engine::Grok => Ok(grok::build(command, request, model)),
+        Engine::Antigravity => Ok(antigravity::build(command, request, model)),
     }
 }

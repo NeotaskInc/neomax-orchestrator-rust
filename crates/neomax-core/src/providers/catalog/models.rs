@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{Engine, Error, Result};
 
 use super::environment::Environment;
-use super::specs::{default_model_id, spec};
+use super::specs::{ANTIGRAVITY_DEFAULT_MODEL, default_model_id, spec};
 use super::types::{ModelOrigin, ResolvedModel};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -15,6 +15,12 @@ pub struct ModelDefaults {
     pub opencode: String,
     pub kimi: String,
     pub grok: String,
+    #[serde(default = "default_antigravity_model")]
+    pub antigravity: String,
+}
+
+fn default_antigravity_model() -> String {
+    default_model_id(Engine::Antigravity).into()
 }
 
 impl Default for ModelDefaults {
@@ -31,6 +37,7 @@ impl ModelDefaults {
             opencode: default_model_id(Engine::Opencode).into(),
             kimi: default_model_id(Engine::Kimi).into(),
             grok: default_model_id(Engine::Grok).into(),
+            antigravity: default_model_id(Engine::Antigravity).into(),
         }
     }
 
@@ -41,6 +48,7 @@ impl ModelDefaults {
             Engine::Opencode => &self.opencode,
             Engine::Kimi => &self.kimi,
             Engine::Grok => &self.grok,
+            Engine::Antigravity => &self.antigravity,
         }
     }
 }
@@ -127,10 +135,15 @@ fn canonical_alias(engine: Engine, value: &str) -> Result<String> {
     let canonical = match engine {
         Engine::Codex => match lower.as_str() {
             "astra" | "gpt-6" | "gpt6" => "gpt-6-astra",
+            "gpt-6.1" | "gpt6.1" => "gpt-6.1-sol",
             "sol" => "gpt-6-sol",
             "gpt-5.6" | "gpt5.6" => "gpt-5.6-sol",
             "terra" => "gpt-5.6-terra",
             "luna" => "gpt-6-luna",
+            _ => value,
+        },
+        Engine::Antigravity => match lower.as_str() {
+            "neon" | "gemini-neon" | "gemini-4" => ANTIGRAVITY_DEFAULT_MODEL,
             _ => value,
         },
         Engine::Kimi => match lower.as_str() {

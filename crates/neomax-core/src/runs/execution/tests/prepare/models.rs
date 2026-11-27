@@ -106,6 +106,7 @@ fn orchestrator_propagates_each_worker_model_to_every_provider_environment() {
             Engine::Opencode => "NEOMAX_OPENCODE_MODEL",
             Engine::Kimi => "NEOMAX_KIMI_MODEL",
             Engine::Grok => "NEOMAX_GROK_MODEL",
+            Engine::Antigravity => "NEOMAX_ANTIGRAVITY_MODEL",
         };
         for (key, value) in expected {
             let expected_value = if key == root_model_key {

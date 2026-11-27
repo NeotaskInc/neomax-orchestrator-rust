@@ -9,10 +9,12 @@ pub(crate) fn invocation_name(launcher: Launcher) -> &'static str {
         Launcher::ProviderOrchestrator(Engine::Opencode) => "ocmax",
         Launcher::ProviderOrchestrator(Engine::Kimi) => "kmax",
         Launcher::ProviderOrchestrator(Engine::Grok) => "gmax",
+        Launcher::ProviderOrchestrator(Engine::Antigravity) => "amax",
         Launcher::AccountHelper(Engine::Codex) => "cdx",
         Launcher::AccountHelper(Engine::Opencode) => "ocx",
         Launcher::AccountHelper(Engine::Kimi) => "kmx",
         Launcher::AccountHelper(Engine::Grok) => "gmx",
+        Launcher::AccountHelper(Engine::Antigravity) => "amx",
         Launcher::AccountHelper(Engine::Claude) => "claude-helper",
     }
 }

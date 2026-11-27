@@ -298,6 +298,7 @@ fn target_selectors(args: &[String]) -> Result<Vec<String>> {
             "--opencode-model",
             "--kimi-model",
             "--grok-model",
+            "--antigravity-model",
         ],
     )?;
     values.extend(positionals);

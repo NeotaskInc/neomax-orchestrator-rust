@@ -64,7 +64,7 @@ pub fn credential_evidence(
         Engine::Codex => value.get("tokens").unwrap_or(&value),
         Engine::Kimi => value.get("oauth").unwrap_or(&value),
         Engine::Grok => value.get("tokens").unwrap_or(&value),
-        Engine::Opencode => return result,
+        Engine::Opencode | Engine::Antigravity => return result,
     };
     result.refresh_present = ["refresh_token", "refreshToken"]
         .into_iter()

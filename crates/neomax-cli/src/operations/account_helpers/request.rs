@@ -99,6 +99,7 @@ impl AccountHelperRequest {
                 "--opencode-model=",
                 "--kimi-model=",
                 "--grok-model=",
+                "--antigravity-model=",
             ] {
                 if let Some(value) = current.strip_prefix(flag) {
                     if value.is_empty() {

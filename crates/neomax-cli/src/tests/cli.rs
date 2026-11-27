@@ -23,10 +23,12 @@ fn every_multicall_surface_has_its_own_help_and_version_name() {
         (Launcher::ProviderOrchestrator(Engine::Opencode), "ocmax"),
         (Launcher::ProviderOrchestrator(Engine::Kimi), "kmax"),
         (Launcher::ProviderOrchestrator(Engine::Grok), "gmax"),
+        (Launcher::ProviderOrchestrator(Engine::Antigravity), "amax"),
         (Launcher::AccountHelper(Engine::Codex), "cdx"),
         (Launcher::AccountHelper(Engine::Opencode), "ocx"),
         (Launcher::AccountHelper(Engine::Kimi), "kmx"),
         (Launcher::AccountHelper(Engine::Grok), "gmx"),
+        (Launcher::AccountHelper(Engine::Antigravity), "amx"),
     ];
     for (launcher, name) in launchers {
         let help = crate::cli::help_text(launcher);

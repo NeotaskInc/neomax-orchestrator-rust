@@ -148,7 +148,7 @@ fn armed_rotation_ticks_every_provider_without_crossing_provider_scope() {
     for engine in Engine::ALL {
         harness.add_profile(engine, 2);
     }
-    for alias in ["cmax", "cdxmax", "ocmax", "kmax", "gmax"] {
+    for alias in ["cmax", "cdxmax", "ocmax", "kmax", "gmax", "amax"] {
         harness.run_alias(alias, ["--help"]).assert_success();
     }
     let usage = UsageCacheStore::new(harness.state.join("usage"));
@@ -159,7 +159,7 @@ fn armed_rotation_ticks_every_provider_without_crossing_provider_scope() {
         let (five_hour, weekly) = match engine {
             Engine::Claude => (99.0, 0.0),
             Engine::Codex => (0.0, 99.0),
-            Engine::Opencode | Engine::Kimi | Engine::Grok => (0.0, 99.0),
+            Engine::Opencode | Engine::Kimi | Engine::Grok | Engine::Antigravity => (0.0, 99.0),
         };
         usage
             .save(

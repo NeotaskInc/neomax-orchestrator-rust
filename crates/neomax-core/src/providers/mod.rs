@@ -1,3 +1,4 @@
+mod antigravity;
 pub mod auth;
 pub mod catalog;
 mod claude;
@@ -22,6 +23,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Engine, Result};
 
+pub use antigravity::Antigravity;
 pub use claude::Claude;
 pub use codex::Codex;
 pub use event_types::{ChildActivity, ParsedEvents, TokenUsage};
@@ -121,6 +123,9 @@ impl ProviderRegistry {
             Box::new(OpenCode::new(catalog::current_binary(Engine::Opencode))),
             Box::new(Kimi::new(catalog::current_binary(Engine::Kimi))),
             Box::new(Grok::new(catalog::current_binary(Engine::Grok))),
+            Box::new(Antigravity::new(catalog::current_binary(
+                Engine::Antigravity,
+            ))),
         ])
     }
 
@@ -131,6 +136,10 @@ impl ProviderRegistry {
             Box::new(OpenCode::new(snapshot_binary(&snapshot, Engine::Opencode))),
             Box::new(Kimi::new(snapshot_binary(&snapshot, Engine::Kimi))),
             Box::new(Grok::new(snapshot_binary(&snapshot, Engine::Grok))),
+            Box::new(Antigravity::new(snapshot_binary(
+                &snapshot,
+                Engine::Antigravity,
+            ))),
         ])
         .with_catalog(snapshot)
     }
@@ -384,6 +393,10 @@ mod tests {
                 Engine::Grok => {
                     assert_eq!(argument_value(&args, "--permission-mode"), Some("plan"));
                     assert!(!args.contains(&"--always-approve".into()));
+                }
+                Engine::Antigravity => {
+                    assert_eq!(argument_value(&args, "--mode"), Some("plan"));
+                    assert!(!args.contains(&"--dangerously-skip-permissions".into()));
                 }
             }
         }

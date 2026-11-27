@@ -115,8 +115,13 @@ impl LaunchOptions {
                         options.model =
                             Some(validate_model(value(args, &mut index, flag, inline)?)?);
                     }
-                    "--claude-model" | "--codex-model" | "-cm" | "--opencode-model"
-                    | "--kimi-model" | "--grok-model" => {
+                    "--claude-model"
+                    | "--codex-model"
+                    | "-cm"
+                    | "--opencode-model"
+                    | "--kimi-model"
+                    | "--grok-model"
+                    | "--antigravity-model" => {
                         let engine = engine_model_flag(flag).expect("known model flag");
                         options.provider_models.insert(
                             engine,
@@ -347,6 +352,14 @@ pub(crate) fn normalize_provider_options(
             options.effort = Some(options.effort.clone().unwrap_or_else(|| "xhigh".into()));
             options.ultra = false;
         }
+    } else if engine == Engine::Antigravity {
+        if options.opus {
+            bail!("--opus does not apply to antigravity workers");
+        }
+        if options.ultra {
+            options.effort = Some(options.effort.clone().unwrap_or_else(|| "xhigh".into()));
+            options.ultra = false;
+        }
     } else if engine == Engine::Claude && options.ultra && options.effort.is_none() {
         options.effort = Some("xhigh".into());
     }
@@ -410,6 +423,7 @@ fn engine_model_flag(flag: &str) -> Option<Engine> {
         "--opencode-model" => Some(Engine::Opencode),
         "--kimi-model" => Some(Engine::Kimi),
         "--grok-model" => Some(Engine::Grok),
+        "--antigravity-model" => Some(Engine::Antigravity),
         _ => None,
     }
 }

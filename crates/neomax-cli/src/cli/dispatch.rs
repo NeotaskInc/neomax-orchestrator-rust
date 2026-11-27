@@ -257,6 +257,7 @@ fn resume_value_flag(flag: &str) -> bool {
             | "--opencode-model"
             | "--kimi-model"
             | "--grok-model"
+            | "--antigravity-model"
             | "--goal"
             | "--base"
             | "--run-id"

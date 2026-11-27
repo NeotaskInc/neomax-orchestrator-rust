@@ -28,7 +28,7 @@ fn full_environment_is_explicit_and_provider_models_are_preserved() {
     );
     assert_eq!(
         command.env.get(OsStr::new("NEOMAX_FLEET")),
-        Some(&"claude,codex,opencode,kimi,grok".into())
+        Some(&crate::WorkerScope::all().csv().into())
     );
     assert_eq!(
         command.env.get(OsStr::new("NEOMAX_PROJECT_ROOT")),

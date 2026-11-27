@@ -16,6 +16,8 @@ pub(crate) const ALIASES: &[&str] = &[
     "kmax",
     "gmx",
     "gmax",
+    "amx",
+    "amax",
 ];
 pub(crate) const AUXILIARIES: &[&str] =
     &["neomax-portal", "neomax-usage-agent", "neomax-worktrees"];

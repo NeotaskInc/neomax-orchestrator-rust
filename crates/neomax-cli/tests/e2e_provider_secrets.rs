@@ -67,6 +67,12 @@ fn env_only_credentials_reach_only_the_selected_provider_process() {
                 ("GROK_DEPLOYMENT_KEY", "fixture-grok-deployment"),
             ],
         ),
+        (
+            "amax",
+            Engine::Antigravity,
+            "secret_gemini_api_key",
+            &[("GEMINI_API_KEY", "fixture-antigravity-gemini")],
+        ),
     ];
 
     for &(launcher, engine, selected_key, selected_keys) in cases {
@@ -106,6 +112,7 @@ fn oauth_profiles_never_receive_ambient_api_keys() {
         ("ocmax", Engine::Opencode),
         ("kmax", Engine::Kimi),
         ("gmax", Engine::Grok),
+        ("amax", Engine::Antigravity),
     ] {
         let harness = E2eHarness::new([engine]);
         let args: Vec<&str> = if engine == Engine::Kimi {
@@ -146,6 +153,7 @@ fn all_fixture_secrets(
         ("GROK_DEPLOYMENT_KEY", "fixture-common-grok-deployment"),
         ("GOOGLE_API_KEY", "fixture-common-google"),
         ("VERTEXAI_API_KEY", "fixture-common-vertex"),
+        ("GEMINI_API_KEY", "fixture-common-gemini"),
     ];
     for &(key, value) in selected {
         if let Some(entry) = values.iter_mut().find(|entry| entry.0 == key) {
@@ -171,6 +179,7 @@ fn all_secret_field_names() -> &'static [&'static str] {
         "secret_grok_deployment_key",
         "secret_google_api_key",
         "secret_vertexai_api_key",
+        "secret_gemini_api_key",
     ]
 }
 
@@ -184,6 +193,7 @@ fn remove_file_backed_credentials(harness: &E2eHarness, engine: Engine) {
         Engine::Codex | Engine::Grok => vec![profile.join("auth.json")],
         Engine::Opencode => vec![profile.join("opencode/auth.json")],
         Engine::Kimi => vec![profile.join("credentials/kimi-code.json")],
+        Engine::Antigravity => vec![profile.join("antigravity-cli/installation_id")],
     };
     for path in paths {
         fs::remove_file(path).expect("remove seeded file credential");

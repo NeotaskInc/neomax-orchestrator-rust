@@ -88,9 +88,9 @@ fn model_precedence_keeps_strict_defaults_and_passes_local_ids() {
 }
 
 #[test]
-fn astra_is_default_and_worker_family_aliases_remain_available() {
+fn sol_is_default_and_worker_family_aliases_remain_available() {
     let environment = MapEnvironment::default();
-    assert_eq!(default_model_id(Engine::Codex), "gpt-6-astra");
+    assert_eq!(default_model_id(Engine::Codex), "gpt-6.1-sol");
     for (alias, model) in [
         ("astra", "gpt-6-astra"),
         ("sol", "gpt-6-sol"),
@@ -105,9 +105,12 @@ fn astra_is_default_and_worker_family_aliases_remain_available() {
 #[test]
 fn new_models_and_legacy_ids_remain_explicitly_selectable() {
     let environment = MapEnvironment::default();
-    for model in ["gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol", "gpt-5.6-luna"] {
+    for model in ["gpt-6.1-sol", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol", "gpt-5.6-luna"] {
         assert_eq!(resolve_model(Engine::Codex, Some(model), &environment).unwrap().id, model);
-        assert!(super::super::CODEX_SUBAGENT_MODELS.contains(&model));
+        assert_eq!(
+            super::super::CODEX_SUBAGENT_MODELS.contains(&model),
+            !model.starts_with("gpt-5.6")
+        );
     }
     assert_eq!(crate::models::codex_model_tier("gpt-6-sol"), Some("sol"));
     assert_eq!(crate::models::codex_model_tier("gpt-6-luna"), Some("luna"));

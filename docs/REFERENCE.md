@@ -985,10 +985,11 @@ Defaults are explicit and provider-specific:
 | Provider | Default model | Model discovery |
 | --- | --- | --- |
 | Claude | `claude-opus-5-5[1m]` | No Neomax model-list command; explicit local-CLI-supported IDs are accepted |
-| Codex | `gpt-6-astra` | No Neomax model-list command; explicit local-CLI-supported IDs are accepted |
+| Codex | `gpt-6.1-sol` | No Neomax model-list command; explicit local-CLI-supported IDs are accepted |
 | OpenCode | `opencode/big-pickle` | Best-effort local registry discovery |
 | Kimi | `kimi-code/k3` | Best-effort local CLI discovery |
 | Grok | `grok-4.6` | Best-effort local CLI discovery |
+| Antigravity | `gemini-4-neon` at effort `high` | Best-effort `agy models` discovery |
 
 Every provider accepts an explicit model ID that the selected local CLI
 supports. Neomax validates basic shape and lets the provider validate the

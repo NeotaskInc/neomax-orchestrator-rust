@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::path::{Component, Path, PathBuf};
 
 use crate::Engine;
+use crate::providers::catalog::ANTIGRAVITY_HOME_ENV;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OrchestratorIdentity {
@@ -63,6 +64,7 @@ pub fn profile_for_engine(engine: Engine, home: &Path) -> PathBuf {
         Engine::Opencode => ".opencode",
         Engine::Kimi => ".kimi-code",
         Engine::Grok => ".grok",
+        Engine::Antigravity => ".gemini",
     })
 }
 
@@ -73,6 +75,7 @@ pub const fn config_env(engine: Engine) -> &'static str {
         Engine::Opencode => "XDG_DATA_HOME",
         Engine::Kimi => "KIMI_CODE_HOME",
         Engine::Grok => "GROK_HOME",
+        Engine::Antigravity => ANTIGRAVITY_HOME_ENV,
     }
 }
 

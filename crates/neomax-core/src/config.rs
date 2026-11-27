@@ -18,15 +18,17 @@ pub enum Engine {
     Opencode,
     Kimi,
     Grok,
+    Antigravity,
 }
 
 impl Engine {
-    pub const ALL: [Self; 5] = [
+    pub const ALL: [Self; 6] = [
         Self::Claude,
         Self::Codex,
         Self::Opencode,
         Self::Kimi,
         Self::Grok,
+        Self::Antigravity,
     ];
 
     pub const fn as_str(self) -> &'static str {
@@ -36,6 +38,7 @@ impl Engine {
             Self::Opencode => "opencode",
             Self::Kimi => "kimi",
             Self::Grok => "grok",
+            Self::Antigravity => "antigravity",
         }
     }
 }
@@ -56,6 +59,7 @@ impl FromStr for Engine {
             "opencode" | "open-code" => Ok(Self::Opencode),
             "kimi" => Ok(Self::Kimi),
             "grok" => Ok(Self::Grok),
+            "antigravity" | "agy" => Ok(Self::Antigravity),
             other => Err(Error::InvalidArgument(format!("unknown engine {other}"))),
         }
     }
@@ -322,7 +326,7 @@ mod tests {
         assert!(mixed.contains(Engine::Opencode));
         assert!(mixed.contains(Engine::Kimi));
         assert!(!mixed.contains(Engine::Claude));
-        assert_eq!(WorkerScope::all().engines().count(), 5);
+        assert_eq!(WorkerScope::all().engines().count(), Engine::ALL.len());
     }
 
     #[test]
@@ -339,7 +343,7 @@ mod tests {
     fn defaults_match_the_release_contract() {
         let models = ModelDefaults::default();
         assert_eq!(models.for_engine(Engine::Claude), "claude-opus-5-5[1m]");
-        assert_eq!(models.for_engine(Engine::Codex), "gpt-6-astra");
+        assert_eq!(models.for_engine(Engine::Codex), "gpt-6.1-sol");
         assert_eq!(
             models.for_engine(Engine::Opencode),
             "opencode/big-pickle"

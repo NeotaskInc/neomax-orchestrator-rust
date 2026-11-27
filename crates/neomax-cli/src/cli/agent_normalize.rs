@@ -88,6 +88,7 @@ fn agent_flag_takes_value(flag: &str) -> bool {
             | "--opencode-model"
             | "--kimi-model"
             | "--grok-model"
+            | "--antigravity-model"
             | "--goal"
             | "--base"
             | "--run-id"

@@ -8,9 +8,10 @@ described in `README.md`.
 
 ## Product boundaries
 
-- Neomax coordinates Claude, Codex, OpenCode, Kimi, and Grok through one
-  provider-neutral core. The universal launcher and the five provider-pinned
-  launchers are separate public surfaces over the same domains. A pinned
+- Neomax coordinates Claude, Codex, OpenCode, Kimi, Grok, and Antigravity
+  (`agy`) through one provider-neutral core. The universal launcher and the six
+  provider-pinned launchers are separate public surfaces over the same
+  domains. A pinned
   launcher selects the main orchestrator only; `--workers all` or an explicit
   provider subset controls the independent worker pool.
 - `neomax-core` owns behavior. `neomax-cli`, `neomax-portal`,
@@ -89,8 +90,12 @@ described in `README.md`.
   worker scope. Do not create one global behavior that assumes every CLI has
   the same session model.
 - Preserve the strict defaults: Claude `claude-opus-5-5[1m]`, Codex
-  `gpt-6-astra`, OpenCode `opencode/big-pickle`, Kimi `kimi-code/k3`,
-  and Grok `grok-4.6`.
+  `gpt-6.1-sol`, OpenCode `opencode/big-pickle`, Kimi `kimi-code/k3`,
+  Grok `grok-4.6`, and Antigravity `gemini-4-neon` at effort `high`.
+- Antigravity keeps its Google sign-in in the operating-system keyring and
+  its state under `~/.gemini`; Neomax never reads the keyring and never
+  redirects `HOME`. A host wrapper named `agy` may route plain launches through
+  a proxy, so resolve `agy` from `PATH` rather than a fixed path.
 - Every provider accepts explicit locally supported model IDs. OpenCode IDs
   must remain qualified as `provider/model`. Claude Opus 5.5 is the default;
   explicit model overrides remain authoritative.

@@ -27,6 +27,7 @@ pub fn provider_mode(engine: Engine, scope: WorkerScope) -> Mode {
         Engine::Opencode => "ocmax",
         Engine::Kimi => "kmax",
         Engine::Grok => "gmax",
+        Engine::Antigravity => "amax",
     };
     Mode {
         id: format!("{}-pinned", engine.as_str()),

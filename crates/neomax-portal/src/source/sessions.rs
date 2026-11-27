@@ -95,6 +95,12 @@ pub(crate) fn discover_sessions_with_progress(
                     &context,
                     cutoff,
                 ),
+                Engine::Antigravity => neomax_core::sessions::antigravity::discover(
+                    &profile.path,
+                    &profile.account,
+                    &context,
+                    cutoff,
+                ),
             };
             if let Ok(mut rows) = result {
                 if include_managed {

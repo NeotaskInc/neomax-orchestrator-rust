@@ -120,6 +120,7 @@ fn is_value_flag(arg: &str) -> bool {
             | "--opencode-model"
             | "--kimi-model"
             | "--grok-model"
+            | "--antigravity-model"
             | "--goal"
             | "--base"
             | "--run-id"

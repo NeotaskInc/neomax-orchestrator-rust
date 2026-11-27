@@ -33,7 +33,7 @@ pub(crate) fn read_details(
                 Engine::Kimi | Engine::Grok => {
                     sessions::detail(engine, &profile, days, &session_records, cutoff)
                 }
-                Engine::Claude | Engine::Codex => unreachable!(),
+                Engine::Claude | Engine::Codex | Engine::Antigravity => unreachable!(),
             };
             details[index].push(detail);
         }

@@ -40,7 +40,7 @@ pub(super) fn execute(args: &[String], context: &RuntimeContext) -> Result<()> {
         );
     }
     println!("connected providers: {}", connected.join(", "));
-    println!("account helpers: cdx, ocx, kmx, gmx; Claude uses cmax");
+    println!("account helpers: cdx, ocx, kmx, gmx, amx; Claude uses cmax");
     Ok(())
 }
 
@@ -88,6 +88,14 @@ fn account_commands() -> Vec<serde_json::Value> {
                 "login": "gmx login ACCOUNT [oauth|device|api-key|choose]",
                 "whoami": "gmx whoami [ACCOUNT]",
                 "run": "gmx run ACCOUNT [--model MODEL] TASK..."
+            }),
+            Engine::Antigravity => json!({
+                "engine": "antigravity",
+                "helper": "amx",
+                "commands": ["login", "status", "models", "run"],
+                "login": "amx login (then complete agy's Google sign-in)",
+                "models": "amx models",
+                "run": "amx run 1 [--model MODEL] TASK..."
             }),
         })
         .collect()

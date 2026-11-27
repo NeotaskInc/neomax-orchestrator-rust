@@ -39,6 +39,7 @@ fn no_task_orientation_reaches_each_supported_provider_surface() {
         Engine::Codex,
         Engine::Opencode,
         Engine::Grok,
+        Engine::Antigravity,
     ] {
         let request = request(engine).with_orientation(orientation);
         let command = super::super::build(engine, OsStr::new(engine.as_str()), &request).unwrap();
@@ -58,7 +59,7 @@ fn no_task_orientation_reaches_each_supported_provider_surface() {
                     .expect("Grok orientation switch");
                 assert_eq!(args.get(index + 1).map(String::as_str), Some(orientation));
             }
-            Engine::Codex | Engine::Opencode => {
+            Engine::Codex | Engine::Opencode | Engine::Antigravity => {
                 assert!(
                     args.last()
                         .is_some_and(|prompt| prompt.contains(orientation))
@@ -77,6 +78,7 @@ fn explicit_tasks_keep_the_default_instruction_even_if_orientation_is_present() 
         Engine::Codex,
         Engine::Opencode,
         Engine::Grok,
+        Engine::Antigravity,
     ] {
         let request = request(engine)
             .with_orientation(orientation)
@@ -105,7 +107,7 @@ fn explicit_tasks_keep_the_default_instruction_even_if_orientation_is_present() 
                     Some(ORCHESTRATOR_DIRECTIVE)
                 );
             }
-            Engine::Codex | Engine::Opencode => {
+            Engine::Codex | Engine::Opencode | Engine::Antigravity => {
                 assert!(
                     args.last()
                         .is_some_and(|prompt| prompt.contains(ORCHESTRATOR_DIRECTIVE))

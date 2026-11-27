@@ -96,6 +96,9 @@ fn discover_profile<S: ArtifactSource>(
         Engine::Grok => {
             neomax_core::sessions::grok::discover(source, &profile.path, account, context, cutoff)
         }
+        Engine::Antigravity => {
+            neomax_core::sessions::antigravity::discover(&profile.path, account, context, cutoff)
+        }
         Engine::Opencode => {
             let database = neomax_core::sessions::opencode::database_path(&profile.path, home);
             if !database.is_file() {

@@ -57,6 +57,12 @@ pub(crate) fn plan_connect(
             BTreeMap::new(),
             "Grok login started for the selected account".into(),
         ),
+        Engine::Antigravity => (
+            "agy".into(),
+            Vec::new(),
+            BTreeMap::new(),
+            "Antigravity started; complete its Google sign-in in that session".into(),
+        ),
     };
     Ok(ActionPlan {
         operation: "connect".into(),
