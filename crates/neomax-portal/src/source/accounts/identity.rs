@@ -80,6 +80,7 @@ pub(crate) fn identity_for(
                     .map(Into::into),
             )
         }
+        Engine::Antigravity => (None, None, None),
     }
 }
 

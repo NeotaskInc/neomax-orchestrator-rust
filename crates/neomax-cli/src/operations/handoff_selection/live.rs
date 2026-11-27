@@ -59,6 +59,7 @@ pub(crate) fn select_live_orchestrator(
                     Engine::Opencode => ".opencode",
                     Engine::Kimi => ".kimi-code",
                     Engine::Grok => ".grok",
+                    Engine::Antigravity => ".gemini",
                 })
             } else {
                 context.paths.home.join(account_path)

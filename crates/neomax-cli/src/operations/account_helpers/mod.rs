@@ -41,7 +41,7 @@ pub(crate) fn provider_operation(
 pub(crate) fn run(launcher: Launcher, args: &[String], context: &RuntimeContext) -> Result<()> {
     let engine = match launcher {
         Launcher::AccountHelper(engine) => engine,
-        _ => bail!("account helpers require cdx, ocx, kmx, or gmx"),
+        _ => bail!("account helpers require cdx, ocx, kmx, gmx, or amx"),
     };
     let auth = FileAuthPort;
     let process = LocalProcessPort;

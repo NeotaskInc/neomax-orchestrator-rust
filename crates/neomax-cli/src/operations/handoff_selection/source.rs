@@ -59,6 +59,7 @@ pub(super) fn source_account(
                     Engine::Opencode => ".opencode",
                     Engine::Kimi => ".kimi-code",
                     Engine::Grok => ".grok",
+                    Engine::Antigravity => ".gemini",
                 })
                 .to_owned()
         });

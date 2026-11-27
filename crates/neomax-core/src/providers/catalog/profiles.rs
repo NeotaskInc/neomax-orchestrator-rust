@@ -245,6 +245,7 @@ pub fn credential_path(engine: Engine, profile: &Path, home: &Path) -> PathBuf {
             }
         }
         Engine::Kimi => profile.join("credentials/kimi-code.json"),
+        Engine::Antigravity => super::profile_auth_antigravity::settings_path(profile),
     }
 }
 

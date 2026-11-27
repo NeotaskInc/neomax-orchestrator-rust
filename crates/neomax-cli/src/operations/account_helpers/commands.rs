@@ -83,6 +83,15 @@ pub(crate) fn login_command(
                 bail!("Grok access-token login is not supported; use OAuth, device, or API key")
             }
         },
+        Engine::Antigravity => match auth_mode {
+            AuthMode::OAuth | AuthMode::Choose => {}
+            AuthMode::ApiKey => {
+                bail!("Antigravity API-key mode uses GEMINI_API_KEY; there is no login step")
+            }
+            AuthMode::Device | AuthMode::AccessToken => {
+                bail!("Antigravity signs in through its own Google browser flow")
+            }
+        },
     }
     Ok(command.args(request.forwarded.clone()))
 }
@@ -95,6 +104,9 @@ pub(crate) fn logout_command(
 ) -> Result<ProcessInvocation> {
     let command = base_command(request.engine, profile, home, cwd)?.interactive();
     let command = match request.engine {
+        Engine::Antigravity => {
+            bail!("Antigravity signs out inside agy: start `agy` and run /logout")
+        }
         Engine::Claude => command.arg("auth").arg("logout"),
         Engine::Opencode => command.arg("auth").arg("logout"),
         _ => command.arg("logout"),
@@ -160,6 +172,15 @@ pub(crate) fn run_command(
         Engine::Grok => {
             command = command.arg("--no-auto-update").arg("--model").arg(model);
         }
+        Engine::Antigravity => {
+            command = command
+                .arg("--model")
+                .arg(model)
+                .arg("--effort")
+                .arg(catalog::ANTIGRAVITY_DEFAULT_EFFORT)
+                .arg("--dangerously-skip-permissions")
+                .env("AGY_CLI_DISABLE_AUTO_UPDATE", "true");
+        }
     }
     Ok(command.args(request.forwarded.clone()))
 }
@@ -181,7 +202,9 @@ pub(crate) fn models_command(
                 .arg("--json")
                 .args(request.forwarded.clone()),
         ),
-        Engine::Grok => Some(command.arg("models").args(request.forwarded.clone())),
+        Engine::Grok | Engine::Antigravity => {
+            Some(command.arg("models").args(request.forwarded.clone()))
+        }
     }
 }
 
@@ -202,7 +225,7 @@ pub(crate) fn whoami_command(
                 .arg("list")
                 .args(request.forwarded.clone()),
         ),
-        Engine::Grok => None,
+        Engine::Grok | Engine::Antigravity => None,
     }
 }
 
@@ -235,7 +258,10 @@ fn base_command(
 }
 
 pub(crate) fn provider_supports_models(engine: Engine) -> bool {
-    matches!(engine, Engine::Opencode | Engine::Kimi | Engine::Grok)
+    matches!(
+        engine,
+        Engine::Opencode | Engine::Kimi | Engine::Grok | Engine::Antigravity
+    )
 }
 
 pub(crate) fn provider_auth_methods(engine: Engine) -> Vec<&'static str> {

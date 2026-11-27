@@ -66,6 +66,7 @@ fn provider_label(engine: Engine) -> &'static str {
         Engine::Opencode => "OpenCode",
         Engine::Kimi => "Kimi",
         Engine::Grok => "Grok",
+        Engine::Antigravity => "Antigravity",
     }
 }
 
@@ -139,6 +140,10 @@ pub(super) fn workflow_target(
             .join(workflow.strip_suffix(".md").unwrap_or(workflow))
             .join("SKILL.md"),
         Engine::Grok => profile.join("commands").join(workflow),
+        Engine::Antigravity => profile
+            .join("skills")
+            .join(workflow.strip_suffix(".md").unwrap_or(workflow))
+            .join("SKILL.md"),
     }
 }
 

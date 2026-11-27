@@ -26,7 +26,7 @@ fn universal_mode_is_dynamic_and_captures_initial_task_verbatim() {
     assert_eq!(plan.orchestrator.as_deref(), Some("opencode"));
     assert_eq!(plan.routing, "default");
     assert_eq!(plan.initial_task.as_deref(), Some("ship the feature"));
-    assert_eq!(plan.worker_engines.len(), 5);
+    assert_eq!(plan.worker_engines.len(), Engine::ALL.len());
     let opencode = plan
         .adapters
         .iter()

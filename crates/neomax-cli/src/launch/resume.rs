@@ -87,6 +87,7 @@ fn launcher_name(launcher: Launcher) -> &'static str {
             neomax_core::Engine::Opencode => "ocmax",
             neomax_core::Engine::Kimi => "kmax",
             neomax_core::Engine::Grok => "gmax",
+            neomax_core::Engine::Antigravity => "amax",
         },
         Launcher::AccountHelper(engine) => match engine {
             neomax_core::Engine::Claude => "c",
@@ -94,6 +95,7 @@ fn launcher_name(launcher: Launcher) -> &'static str {
             neomax_core::Engine::Opencode => "ocx",
             neomax_core::Engine::Kimi => "kmx",
             neomax_core::Engine::Grok => "gmx",
+            neomax_core::Engine::Antigravity => "amx",
         },
     }
 }

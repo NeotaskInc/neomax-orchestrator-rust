@@ -22,7 +22,7 @@ mkdir -p \
   "$home/.grok-acct5" \
   "$bin"
 
-for launcher in cmax cdx ocx kmx gmx; do
+for launcher in cmax cdx ocx kmx gmx amx; do
   launcher_path="$bin/$launcher"
   printf '%s\n' \
     '#!/bin/sh' \
@@ -43,6 +43,7 @@ HOME="$home" PATH="$bin:/usr/bin:/bin" NEOMAX_SHORTCUT_LOG="$log" \
     opencode3 opencode
     kimi4 kimi
     grok5 grok
+    antigravity1 neon
     if (( $+functions[claude3] )); then exit 10; fi
     if (( $+functions[codex2] )); then exit 11; fi
     true
@@ -57,6 +58,7 @@ printf '%s\n' \
   'ocx:<run><3><opencode>' \
   'kmx:<run><4><kimi>' \
   'gmx:<run><5><grok>' \
+  'amx:<run><1><neon>' \
   >"$expected"
 cmp -s "$expected" "$log" || {
   printf '%s\n' 'dynamic account shortcut output differs from the canonical helper contract' >&2

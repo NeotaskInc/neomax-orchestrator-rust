@@ -29,6 +29,7 @@ const SECRET_ENV_NAMES: &[&str] = &[
     "GROK_DEPLOYMENT_KEY",
     "GOOGLE_API_KEY",
     "VERTEXAI_API_KEY",
+    "GEMINI_API_KEY",
 ];
 
 fn main() {
@@ -146,6 +147,10 @@ fn run() -> io::Result<()> {
             println!(r#"{{"type":"text","data":"fixture"}}"#);
             println!(r#"{{"type":"end","stopReason":"end_turn","sessionId":"session-grok"}}"#);
         }
+        "antigravity" => {
+            println!(r#"{{"event":"init","conversation_id":"session-antigravity","init":{{}}}}"#);
+            println!(r#"{{"event":"result","result":{{"conversation_id":"session-antigravity","status":"SUCCESS","response":"fixture"}}}}"#);
+        }
         _ => {}
     }
     Ok(())
@@ -156,7 +161,10 @@ fn provider_name() -> String {
         .ok()
         .and_then(|path| path.file_stem().map(|stem| stem.to_string_lossy().into_owned()))
         .unwrap_or_default();
-    stem.strip_prefix("fake-").unwrap_or(&stem).to_ascii_lowercase()
+    match stem.strip_prefix("fake-").unwrap_or(&stem).to_ascii_lowercase().as_str() {
+        "agy" => "antigravity".into(),
+        name => name.into(),
+    }
 }
 
 fn profile_env(provider: &str) -> &'static str {
@@ -166,6 +174,7 @@ fn profile_env(provider: &str) -> &'static str {
         "opencode" => "XDG_DATA_HOME",
         "kimi" => "KIMI_CODE_HOME",
         "grok" => "GROK_HOME",
+        "antigravity" => "NEOMAX_ANTIGRAVITY_HOME",
         _ => "",
     }
 }
@@ -216,6 +225,7 @@ pub(super) fn fake_name(engine: Engine) -> &'static str {
         Engine::Opencode => "fake-opencode.exe",
         Engine::Kimi => "fake-kimi.exe",
         Engine::Grok => "fake-grok.exe",
+        Engine::Antigravity => "fake-antigravity.exe",
     }
 }
 
@@ -226,7 +236,12 @@ pub(super) fn write_fake_provider(
 ) -> io::Result<()> {
     let path = bin_dir.join(fake_name(engine));
     write_provider(&path)?;
-    write_provider(&bin_dir.join(format!("{provider}.exe")))
+    write_provider(&bin_dir.join(format!("{provider}.exe")))?;
+    let default_binary = neomax_core::providers::catalog::spec(engine).default_binary;
+    if default_binary != provider {
+        write_provider(&bin_dir.join(format!("{default_binary}.exe")))?;
+    }
+    Ok(())
 }
 
 fn write_provider(path: &Path) -> io::Result<()> {

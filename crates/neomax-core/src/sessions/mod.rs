@@ -1,4 +1,5 @@
 pub mod activity;
+pub mod antigravity;
 pub mod artifacts;
 pub mod claude;
 pub mod codex;

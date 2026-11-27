@@ -195,7 +195,7 @@ fn incremental_sweep_preserves_partial_lines_and_captures_all_text_providers() {
     let mut state = WatchState::default();
     let report = collector.sweep(&mut state, SweepMode::Full, 0).unwrap();
     assert_eq!(report.records_emitted, 3);
-    assert_eq!(report.providers.len(), 5);
+    assert_eq!(report.providers.len(), neomax_core::Engine::ALL.len());
     assert!(
         report
             .providers

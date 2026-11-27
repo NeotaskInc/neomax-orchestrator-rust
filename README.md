@@ -166,10 +166,11 @@ project selection, and provider priority. Explicit choices win.
 | Provider | Default model | Launch or sign in |
 | --- | --- | --- |
 | Claude | `claude-opus-5-5[1m]` | `neomax claude [ACCOUNT]` |
-| Codex | `gpt-6-astra` | `neomax codex [ACCOUNT]` |
+| Codex | `gpt-6.1-sol` | `neomax codex [ACCOUNT]` |
 | OpenCode | `opencode/big-pickle` | `neomax opencode [ACCOUNT]` |
 | Kimi | `kimi-code/k3` | `neomax kimi [ACCOUNT]` |
 | Grok | `grok-4.6` | `neomax grok [ACCOUNT]` |
+| Antigravity (`agy`) | `gemini-4-neon`, effort `high` | `neomax antigravity` or `amax` |
 
 Every provider accepts model IDs supported by its local CLI. OpenCode model
 IDs use `provider/model`. Claude uses Opus 5.5 by default. Codex uses GPT-6
@@ -233,6 +234,7 @@ The older account helpers remain compatible:
 | `ocx` | `oauth`, `api-key` | `logout`, `status`, `whoami`, `models`, `run` |
 | `kmx` | `oauth`, `device`, `api-key`, `choose` | `logout`, `status`, `whoami`, `models`, `run` |
 | `gmx` | `oauth`, `device`, `api-key`, `choose` | `logout`, `status`, `whoami`, `models`, `run` |
+| `amx` | agy's own Google sign-in (`amx login`) | `status`, `models`, `run` |
 
 Use `orch` instead of a number for a reserved orchestrator profile. Run an
 account command with `--dry-run --json` to inspect it without invoking the
@@ -433,9 +435,9 @@ usage, session, subagent, run, scheduler, task, queue, and worktree state.
 
 | Area | Commands |
 | --- | --- |
-| Launch | `neomax`, `cmax`, `cdxmax`, `ocmax`, `kmax`, `gmax`, `dispatch`, `solo` |
+| Launch | `neomax`, `cmax`, `cdxmax`, `ocmax`, `kmax`, `gmax`, `amax`, `dispatch`, `solo` |
 | Selection | `select`, `why`, `pick-neomax`, `pick-orch`, `modes` |
-| Accounts | `cdx`, `ocx`, `kmx`, `gmx`, `pause`, `unpause`, `paused` |
+| Accounts | `cdx`, `ocx`, `kmx`, `gmx`, `amx`, `pause`, `unpause`, `paused` |
 | Runs | `status`, `list`, `log`, `history`, `resume`, `retry`, `kill`, `diff` |
 | Rotation | `rotate`, `rotate-tick`, `session-rotate`, `solo-rotate`, `handoff` |
 | Projects | `projects`, `project-register`, `project-unregister`, `orient` |

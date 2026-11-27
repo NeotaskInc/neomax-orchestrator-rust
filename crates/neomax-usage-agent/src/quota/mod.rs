@@ -95,7 +95,7 @@ impl LocalQuotaRefresher {
                     self.use_keychain,
                 ),
                 Engine::Codex => Ok(codex::refresh(&self.paths, profile, force)),
-                Engine::Opencode | Engine::Kimi | Engine::Grok => {
+                Engine::Opencode | Engine::Kimi | Engine::Grok | Engine::Antigravity => {
                     unreachable!("reactive providers are handled before numeric quota refresh")
                 }
             },

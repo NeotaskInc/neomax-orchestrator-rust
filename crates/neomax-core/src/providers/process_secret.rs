@@ -19,6 +19,7 @@ const KIMI_KEYS: &[&str] = &[
     "VERTEXAI_API_KEY",
 ];
 const GROK_KEYS: &[&str] = &["XAI_API_KEY", "GROK_API_KEY", "GROK_DEPLOYMENT_KEY"];
+const ANTIGRAVITY_KEYS: &[&str] = &["GEMINI_API_KEY"];
 
 /// A credential selected for one provider process.
 ///
@@ -71,6 +72,7 @@ pub(crate) fn supported_environment_keys(engine: Engine) -> &'static [&'static s
         Engine::Opencode => OPENCODE_KEYS,
         Engine::Kimi => KIMI_KEYS,
         Engine::Grok => GROK_KEYS,
+        Engine::Antigravity => ANTIGRAVITY_KEYS,
     }
 }
 

@@ -40,5 +40,7 @@ for _neomax_profile in "$HOME"/.grok-acct<2->(Nn/); do
   _neomax_define_account_shortcut "grok${_neomax_account}" gmx helper "${_neomax_account}"
 done
 
+_neomax_define_account_shortcut antigravity1 amx helper 1
+
 unset _neomax_profile _neomax_account
 unfunction _neomax_define_account_shortcut

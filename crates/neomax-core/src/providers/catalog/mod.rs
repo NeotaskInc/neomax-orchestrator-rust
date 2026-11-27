@@ -9,6 +9,7 @@ mod environment;
 mod filesystem;
 mod models;
 mod profile_auth;
+mod profile_auth_antigravity;
 mod profile_auth_claude;
 mod profile_auth_codex;
 mod profile_auth_common;
@@ -49,7 +50,8 @@ pub use profiles::{
 pub use ranking::{DEFAULT_NEOMAX_PRIORITY, RankingPolicy, choose_neomax, rank_neomax};
 pub use selectors::resolve_profile_selector;
 pub use specs::{
-    CLAUDE_DEFAULT_MODEL, CLAUDE_OPUS_MODEL, CLAUDE_OPUS_MODEL_1M, CODEX_DEFAULT_MODEL,
+    ANTIGRAVITY_DEFAULT_EFFORT, ANTIGRAVITY_DEFAULT_MODEL, ANTIGRAVITY_EFFORTS,
+    ANTIGRAVITY_HOME_ENV, CLAUDE_DEFAULT_MODEL, CLAUDE_OPUS_MODEL, CLAUDE_OPUS_MODEL_1M, CODEX_DEFAULT_MODEL,
     CODEX_FAST_ENV, CODEX_SERVICE_TIER, CODEX_SUBAGENT_MODELS, GROK_DEFAULT_MODEL,
     KIMI_DEFAULT_MODEL, OPENCODE_DEFAULT_MODEL, all_specs, codex_service_tier, default_model_id,
     spec, supports_native_interactive_resume, supports_native_resume,

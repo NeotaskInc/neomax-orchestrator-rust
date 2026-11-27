@@ -42,6 +42,7 @@ pub(super) fn validated_provider_value(name: &str, raw: &OsString) -> Result<Str
             "XDG_DATA_HOME",
             "KIMI_CODE_HOME",
             "GROK_HOME",
+            "NEOMAX_ANTIGRAVITY_HOME",
         ]
         .contains(&name))
         && !is_absolute_path(Path::new(value))

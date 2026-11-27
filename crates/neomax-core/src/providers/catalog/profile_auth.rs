@@ -4,6 +4,7 @@ use crate::Engine;
 
 use super::environment::Environment;
 use super::filesystem::FileSystem;
+use super::profile_auth_antigravity::antigravity_auth;
 use super::profile_auth_claude::{claude_auth, claude_credential_present};
 use super::profile_auth_codex::codex_auth;
 use super::profile_auth_grok::grok_auth;
@@ -24,6 +25,7 @@ pub(super) fn detect_auth(
         Engine::Opencode => opencode_auth(profile, home, filesystem),
         Engine::Kimi => kimi_auth(profile, filesystem),
         Engine::Grok => grok_auth(profile, filesystem),
+        Engine::Antigravity => antigravity_auth(profile, filesystem),
     };
     let credential_present = credential_present(engine, profile, home, filesystem);
     let auth = if methods.is_empty() {
@@ -47,6 +49,7 @@ pub(super) fn detect_auth_with_environment(
         Engine::Opencode => opencode_auth_with_environment(profile, environment, filesystem),
         Engine::Kimi => kimi_auth(profile, filesystem),
         Engine::Grok => grok_auth(profile, filesystem),
+        Engine::Antigravity => antigravity_auth(profile, filesystem),
     };
     let credential_present =
         credential_present_with_environment(engine, profile, home, environment, filesystem);
@@ -69,6 +72,7 @@ fn credential_present(
         Engine::Codex | Engine::Opencode | Engine::Grok => {
             filesystem.is_file(&credential_path(engine, profile, home))
         }
+        Engine::Antigravity => false,
         Engine::Kimi => {
             filesystem.is_file(&credential_path(engine, profile, home))
                 || filesystem.is_file(&profile.join("config.toml"))

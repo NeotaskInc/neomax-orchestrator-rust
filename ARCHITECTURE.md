@@ -5,7 +5,8 @@ Neomax is a Rust workspace with one reusable domain library and four executable 
 - `neomax-core` owns state, providers, routing, runs, usage, sessions, projects, scheduling,
   rotation, issues, and git behavior.
 - `neomax-cli` builds the multicall `neomax` executable. Installer-created `neomax-cli`,
-  `cmax`, `cdx`, `cdxmax`, `ocx`, `ocmax`, `kmx`, `kmax`, `gmx`, and `gmax` links resolve to
+  `cmax`, `cdx`, `cdxmax`, `ocx`, `ocmax`, `kmx`, `kmax`, `gmx`, `gmax`, `amx`, and `amax`
+  links resolve to
   that binary.
 - `neomax-portal` serves the localhost dashboard from the same core status model.
 - `neomax-usage-agent` installs and runs the background collector without model-prompt execution.

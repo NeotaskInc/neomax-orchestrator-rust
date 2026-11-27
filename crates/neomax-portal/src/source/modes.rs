@@ -67,6 +67,10 @@ fn account_commands() -> Vec<AccountCommandView> {
             "Grok account login",
             "gmx login ACCOUNT [oauth|device|api-key|choose]",
         ),
+        (
+            "Antigravity sign-in",
+            "amx login (then complete agy's Google sign-in)",
+        ),
         ("Codex account identity", "cdx whoami [ACCOUNT]"),
         ("OpenCode account identity", "ocx whoami [ACCOUNT]"),
         ("Kimi account identity", "kmx whoami [ACCOUNT]"),
@@ -87,6 +91,7 @@ fn account_commands() -> Vec<AccountCommandView> {
             "Grok account run",
             "gmx run ACCOUNT [--model MODEL] TASK...",
         ),
+        ("Antigravity run", "amx run 1 [--model MODEL] TASK..."),
         ("Fleet status", "neomax status --json"),
         ("Usage report", "neomax usage --json"),
     ]
@@ -107,7 +112,7 @@ mod tests {
     fn exposes_universal_and_each_provider_mode() {
         let source = FilesystemPortalSource::new("/home/user", "/state");
         let modes = available_modes(&source);
-        assert_eq!(modes.modes.len(), 6);
+        assert_eq!(modes.modes.len(), neomax_core::Engine::ALL.len() + 1);
         assert_eq!(modes.modes[0].cmd, "neomax");
         assert!(modes.modes[0].why.is_some());
         assert!(

@@ -5,6 +5,7 @@ use crate::{Engine, WorkerScope};
 pub mod auth;
 pub mod commands;
 pub mod continuation;
+pub mod delegation;
 pub mod diagnostics;
 pub mod handoff;
 pub mod registry;
@@ -27,6 +28,7 @@ pub fn provider_mode(engine: Engine, scope: WorkerScope) -> Mode {
         Engine::Opencode => "ocmax",
         Engine::Kimi => "kmax",
         Engine::Grok => "gmax",
+        Engine::Antigravity => "amax",
     };
     Mode {
         id: format!("{}-pinned", engine.as_str()),

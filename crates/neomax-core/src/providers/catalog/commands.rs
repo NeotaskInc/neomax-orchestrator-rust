@@ -174,7 +174,14 @@ fn safe_environment(
     environment: &dyn Environment,
     provider: &ProviderSpec,
 ) -> BTreeMap<String, String> {
-    environment.safe_child_environment(Some(&provider.config_env))
+    let mut values = environment.safe_child_environment(Some(&provider.config_env));
+    if provider.engine == Engine::Antigravity {
+        values.insert(
+            crate::providers::antigravity::AUTO_UPDATE_ENV.into(),
+            "true".into(),
+        );
+    }
+    values
 }
 
 fn first_line(bytes: &[u8]) -> Option<String> {

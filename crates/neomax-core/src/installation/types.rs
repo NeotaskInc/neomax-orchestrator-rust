@@ -16,6 +16,8 @@ pub const ALIASES: &[&str] = &[
     "kmax",
     "gmx",
     "gmax",
+    "amx",
+    "amax",
 ];
 pub const AUXILIARIES: &[&str] = &["neomax-portal", "neomax-usage-agent", "neomax-worktrees"];
 pub const ASSETS: &[&str] = &["opencode-model-policy.json", "LICENSE", "README.md"];

@@ -1,11 +1,12 @@
 use crate::{Engine, Error, Result};
 
-const DEFAULT_PRIORITY: [Engine; 5] = [
+const DEFAULT_PRIORITY: [Engine; 6] = [
     Engine::Claude,
     Engine::Codex,
     Engine::Kimi,
     Engine::Grok,
     Engine::Opencode,
+    Engine::Antigravity,
 ];
 
 pub fn engine_priority(raw: Option<&str>) -> Result<Vec<Engine>> {

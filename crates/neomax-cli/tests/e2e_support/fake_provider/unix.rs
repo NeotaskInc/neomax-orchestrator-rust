@@ -13,6 +13,7 @@ pub(super) fn fake_name(engine: Engine) -> &'static str {
         Engine::Opencode => "fake-opencode",
         Engine::Kimi => "fake-kimi",
         Engine::Grok => "fake-grok",
+        Engine::Antigravity => "fake-antigravity",
     }
 }
 
@@ -23,7 +24,12 @@ pub(super) fn write_fake_provider(
 ) -> io::Result<()> {
     let path = bin_dir.join(fake_name(engine));
     write_provider(&path, provider)?;
-    write_provider(&bin_dir.join(provider), provider)
+    write_provider(&bin_dir.join(provider), provider)?;
+    let default_binary = neomax_core::providers::catalog::spec(engine).default_binary;
+    if default_binary != provider {
+        write_provider(&bin_dir.join(default_binary), provider)?;
+    }
+    Ok(())
 }
 
 fn write_provider(path: &Path, provider: &str) -> io::Result<()> {
@@ -81,6 +87,7 @@ case "{provider}" in
   opencode) printf '%s\n' '{{"type":"text","sessionID":"session-opencode","part":{{"text":"fixture"}}}}'; printf '%s\n' '{{"type":"step_finish","part":{{"reason":"stop"}}}}' ;;
   kimi) printf '%s\n' '{{"role":"assistant","content":"fixture"}}'; printf '%s\n' '{{"role":"meta","type":"session.resume_hint","session_id":"session-kimi"}}' ;;
   grok) printf '%s\n' '{{"type":"text","data":"fixture"}}'; printf '%s\n' '{{"type":"end","stopReason":"end_turn","sessionId":"session-grok"}}' ;;
+  antigravity) printf '%s\n' '{{"event":"init","conversation_id":"session-antigravity","init":{{}}}}'; printf '%s\n' '{{"event":"result","result":{{"conversation_id":"session-antigravity","status":"SUCCESS","response":"fixture"}}}}' ;;
 esac
 "#,
     )

@@ -235,7 +235,7 @@ fn group_has_engine(_process_group: u32, _engine: Engine) -> ProbeState {
 fn command_matches_engine(command: &str, engine: Engine) -> bool {
     let command = command.to_ascii_lowercase();
     command.contains(engine.as_str())
-        || ["claude", "codex", "opencode", "kimi", "grok"]
+        || ["claude", "codex", "opencode", "kimi", "grok", "agy"]
             .iter()
             .any(|name| command.contains(name))
 }

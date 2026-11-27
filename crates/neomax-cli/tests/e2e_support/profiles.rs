@@ -10,6 +10,7 @@ pub(super) fn profile_stem(engine: Engine) -> &'static str {
         Engine::Opencode => "opencode",
         Engine::Kimi => "kimi-code",
         Engine::Grok => "grok",
+        Engine::Antigravity => "gemini",
     }
 }
 
@@ -20,6 +21,7 @@ pub(super) fn profile_env(engine: Engine) -> &'static str {
         Engine::Opencode => "NEOMAX_OPENCODE_PROFILES",
         Engine::Kimi => "NEOMAX_KIMI_PROFILES",
         Engine::Grok => "NEOMAX_GROK_PROFILES",
+        Engine::Antigravity => "NEOMAX_ANTIGRAVITY_PROFILES",
     }
 }
 
@@ -30,6 +32,7 @@ pub(super) fn binary_env(engine: Engine) -> &'static str {
         Engine::Opencode => "NEOMAX_OPENCODE_BIN",
         Engine::Kimi => "NEOMAX_KIMI_BIN",
         Engine::Grok => "NEOMAX_GROK_BIN",
+        Engine::Antigravity => "NEOMAX_ANTIGRAVITY_BIN",
     }
 }
 
@@ -75,6 +78,10 @@ pub(super) fn seed_profile(engine: Engine, profile: &Path) {
             profile.join("auth.json"),
             r#"{"xai::oidc":{"refresh_token":"fixture"}}"#,
         ),
+        Engine::Antigravity => {
+            fs::create_dir_all(profile.join("antigravity-cli")).expect("agy profile");
+            fs::write(profile.join("antigravity-cli/installation_id"), "fixture")
+        }
     }
     .expect("profile credential");
 }

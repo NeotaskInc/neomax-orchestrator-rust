@@ -55,6 +55,13 @@ fn profile_discovery_supports_all_auth_shapes_without_returning_credentials() {
         .file(
             home.join(".grok").join("auth.json"),
             br#"{"oidc":{"auth_mode":"oidc","key":"secret"}}"#,
+        )
+        .dir(home.join(".gemini"))
+        .file(
+            home.join(".gemini")
+                .join("antigravity-cli")
+                .join("installation_id"),
+            b"installation",
         );
     for engine in Engine::ALL {
         let profiles =

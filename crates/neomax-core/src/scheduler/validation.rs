@@ -8,12 +8,13 @@ use crate::{Engine, Error, Result, WorkerScope};
 
 use super::types::Part;
 
-pub const PROVIDER_ORDER: [Engine; 5] = [
+pub const PROVIDER_ORDER: [Engine; 6] = [
     Engine::Claude,
     Engine::Opencode,
     Engine::Grok,
     Engine::Kimi,
     Engine::Codex,
+    Engine::Antigravity,
 ];
 
 pub(crate) fn normalize_part(value: &Value, index: usize, scope: &WorkerScope) -> Result<Part> {
@@ -202,6 +203,7 @@ fn validate_effort(id: &str, engine: Engine, effort: Option<&str>) -> Result<()>
     let allowed: &[&str] = match engine {
         Engine::Codex => &["low", "medium", "high", "xhigh"],
         Engine::Claude => &["low", "medium", "high", "xhigh", "max"],
+        Engine::Antigravity => crate::providers::catalog::ANTIGRAVITY_EFFORTS,
         Engine::Opencode | Engine::Kimi | Engine::Grok => &[],
     };
     if allowed.contains(&effort) {

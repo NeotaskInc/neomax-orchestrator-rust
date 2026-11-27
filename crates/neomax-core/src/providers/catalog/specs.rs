@@ -5,8 +5,8 @@ use super::types::{AuthMethod, ModelDiscoverySupport, ProviderCapabilities, Prov
 pub const CLAUDE_DEFAULT_MODEL: &str = "claude-opus-5-5[1m]";
 pub const CLAUDE_OPUS_MODEL: &str = "claude-opus-5";
 pub const CLAUDE_OPUS_MODEL_1M: &str = "claude-opus-5[1m]";
-pub const CODEX_DEFAULT_MODEL: &str = "gpt-6-astra";
-pub const CODEX_SUBAGENT_MODELS: &[&str] = &["gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"];
+pub const CODEX_DEFAULT_MODEL: &str = "gpt-6.1-sol";
+pub const CODEX_SUBAGENT_MODELS: &[&str] = &["gpt-6.1-sol", "gpt-6-sol", "gpt-6-luna"];
 pub const CODEX_SERVICE_TIER: &str = "default";
 pub use crate::settings::CODEX_FAST_ENV;
 
@@ -25,12 +25,20 @@ pub fn codex_service_tier(
 pub const OPENCODE_DEFAULT_MODEL: &str = "opencode/big-pickle";
 pub const KIMI_DEFAULT_MODEL: &str = "kimi-code/k3";
 pub const GROK_DEFAULT_MODEL: &str = "grok-4.6";
+pub const ANTIGRAVITY_DEFAULT_MODEL: &str = "gemini-4-neon";
+pub const ANTIGRAVITY_DEFAULT_EFFORT: &str = "high";
+pub const ANTIGRAVITY_EFFORTS: &[&str] = &["low", "medium", "high", "xhigh", "max"];
+/// agy has no configuration-directory variable: its state always lives under
+/// `~/.gemini`. Neomax records the selected profile in this namespaced value
+/// so profile selection stays explicit without redirecting the CLI.
+pub const ANTIGRAVITY_HOME_ENV: &str = "NEOMAX_ANTIGRAVITY_HOME";
 
 const CLAUDE_AUTH: &[AuthMethod] = &[AuthMethod::OAuth, AuthMethod::ApiKey];
 const CODEX_AUTH: &[AuthMethod] = &[AuthMethod::OAuth, AuthMethod::Device, AuthMethod::ApiKey];
 const OPENCODE_AUTH: &[AuthMethod] = &[AuthMethod::ApiKey, AuthMethod::OAuth];
 const KIMI_AUTH: &[AuthMethod] = &[AuthMethod::OAuth, AuthMethod::ApiKey];
 const GROK_AUTH: &[AuthMethod] = &[AuthMethod::OAuth, AuthMethod::Device, AuthMethod::ApiKey];
+const ANTIGRAVITY_AUTH: &[AuthMethod] = &[AuthMethod::OAuth, AuthMethod::ApiKey];
 
 fn capabilities(
     auth_methods: &[AuthMethod],
@@ -159,6 +167,26 @@ pub fn spec(engine: Engine) -> ProviderSpec {
             ],
             capabilities: capabilities(GROK_AUTH, ModelDiscoverySupport::BestEffort),
         },
+        Engine::Antigravity => ProviderSpec {
+            engine,
+            default_binary: "agy".into(),
+            binary_env: "NEOMAX_ANTIGRAVITY_BIN".into(),
+            config_env: ANTIGRAVITY_HOME_ENV.into(),
+            profile_env: "NEOMAX_ANTIGRAVITY_PROFILES".into(),
+            default_profile_dir: ".gemini".into(),
+            account_prefix: ".gemini-acct".into(),
+            orchestrator_dir: ".gemini-orch".into(),
+            orchestrator_env: "NEOMAX_ANTIGRAVITY_ORCH".into(),
+            model_env: "NEOMAX_ANTIGRAVITY_MODEL".into(),
+            default_model: ANTIGRAVITY_DEFAULT_MODEL.into(),
+            model_args: vec!["models".into()],
+            default_unsets_config_env: true,
+            scrub: Vec::new(),
+            capabilities: ProviderCapabilities {
+                multiple_profiles: false,
+                ..capabilities(ANTIGRAVITY_AUTH, ModelDiscoverySupport::BestEffort)
+            },
+        },
     }
 }
 
@@ -173,6 +201,7 @@ pub fn default_model_id(engine: Engine) -> &'static str {
         Engine::Opencode => OPENCODE_DEFAULT_MODEL,
         Engine::Kimi => KIMI_DEFAULT_MODEL,
         Engine::Grok => GROK_DEFAULT_MODEL,
+        Engine::Antigravity => ANTIGRAVITY_DEFAULT_MODEL,
     }
 }
 

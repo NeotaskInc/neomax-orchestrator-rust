@@ -107,10 +107,12 @@ pub(super) const MULTICALL_LAUNCHERS: &[(&str, Launcher)] = &[
     ("ocmax", Launcher::ProviderOrchestrator(Engine::Opencode)),
     ("kmax", Launcher::ProviderOrchestrator(Engine::Kimi)),
     ("gmax", Launcher::ProviderOrchestrator(Engine::Grok)),
+    ("amax", Launcher::ProviderOrchestrator(Engine::Antigravity)),
     ("cdx", Launcher::AccountHelper(Engine::Codex)),
     ("ocx", Launcher::AccountHelper(Engine::Opencode)),
     ("kmx", Launcher::AccountHelper(Engine::Kimi)),
     ("gmx", Launcher::AccountHelper(Engine::Grok)),
+    ("amx", Launcher::AccountHelper(Engine::Antigravity)),
 ];
 
 #[test]

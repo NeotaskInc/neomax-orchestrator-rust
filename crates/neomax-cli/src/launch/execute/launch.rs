@@ -116,6 +116,7 @@ pub(crate) fn run_with_registry(
         .with_context(|| format!("provider adapter {engine} is not registered"))?;
     let model = selection::selected_model(context, &options, engine)?;
     let worker_models = selection::worker_models(context, &options, engine)?;
+    selection::apply_delegation(&mut options, engine, &model.model, &worker_models)?;
     let session = options
         .session_id
         .clone()

@@ -192,6 +192,6 @@ mod tests {
         let snapshot = build_status(&source, 1_800_000_000, 3).unwrap();
         assert_eq!(snapshot.now, 1_800_000_000);
         assert_eq!(snapshot.inbox, 0);
-        assert!(snapshot.summary.fleet_scope.len() <= 5);
+        assert!(snapshot.summary.fleet_scope.len() <= neomax_core::Engine::ALL.len());
     }
 }

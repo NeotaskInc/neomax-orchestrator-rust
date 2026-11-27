@@ -102,11 +102,11 @@ fn every_orchestrator_provider_launch_receives_full_tools_and_role_contract() {
         assert_eq!(manifest, ToolManifest::canonical());
         assert_eq!(
             env.get(OsStr::new("NEOMAX_FLEET")),
-            Some(&"claude,codex,opencode,kimi,grok".into())
+            Some(&crate::WorkerScope::all().csv().into())
         );
         assert_eq!(
             env.get(OsStr::new("NEOMAX_WORKERS")),
-            Some(&"claude,codex,opencode,kimi,grok".into())
+            Some(&crate::WorkerScope::all().csv().into())
         );
         let args = prepared.command().args_lossy();
         if engine == Engine::Kimi {

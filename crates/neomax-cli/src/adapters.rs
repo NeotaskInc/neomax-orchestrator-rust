@@ -35,16 +35,22 @@ impl ProviderAdapter {
                 executable: "grok",
                 label: "Grok",
             },
+            Engine::Antigravity => Self {
+                engine,
+                executable: "agy",
+                label: "Antigravity",
+            },
         }
     }
 
-    pub const fn all() -> [Self; 5] {
+    pub const fn all() -> [Self; 6] {
         [
             Self::for_engine(Engine::Claude),
             Self::for_engine(Engine::Codex),
             Self::for_engine(Engine::Opencode),
             Self::for_engine(Engine::Kimi),
             Self::for_engine(Engine::Grok),
+            Self::for_engine(Engine::Antigravity),
         ]
     }
 }

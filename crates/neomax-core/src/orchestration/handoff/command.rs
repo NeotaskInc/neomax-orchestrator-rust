@@ -212,13 +212,18 @@ pub const fn launcher_for(engine: Engine) -> &'static str {
         Engine::Opencode => "ocmax",
         Engine::Kimi => "kmax",
         Engine::Grok => "gmax",
+        Engine::Antigravity => "amax",
     }
 }
 
 pub fn default_kickoff(engine: Engine, source_account: &str) -> String {
     let instructions = match engine {
         Engine::Claude => "CLAUDE.md",
-        Engine::Codex | Engine::Opencode | Engine::Kimi | Engine::Grok => "AGENTS.md",
+        Engine::Codex
+        | Engine::Opencode
+        | Engine::Kimi
+        | Engine::Grok
+        | Engine::Antigravity => "AGENTS.md",
     };
     normalize_kickoff(&format!(
         "You are now THE Neomax orchestrator (the previous one rotated off {engine} account {source_account} near its usage limit). Resume immediately with ZERO loss: read this project's {instructions}, then run `neomax ls` to adopt every in-flight/inbox worker, read the program's STATUS.md, and continue the execution loop exactly where it left off."

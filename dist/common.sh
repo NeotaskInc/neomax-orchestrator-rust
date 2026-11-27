@@ -5,7 +5,7 @@ DIST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$DIST_ROOT/.." && pwd)"
 PRODUCT="neomax"
 
-ALIASES=(neomax neomax-cli cmax cdx cdxmax ocx ocmax kmx kmax gmx gmax)
+ALIASES=(neomax neomax-cli cmax cdx cdxmax ocx ocmax kmx kmax gmx gmax amx amax)
 AUXILIARIES=(neomax-portal neomax-usage-agent neomax-worktrees)
 WORKFLOW_ASSETS=(neomax rotate find-issues fix-issues project)
 SHELL_ASSETS=(neomax-aliases.zsh neomax-shell-shortcuts.sh)

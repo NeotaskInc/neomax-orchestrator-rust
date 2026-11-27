@@ -45,6 +45,17 @@ pub(crate) fn build(
         options.model.as_deref(),
         orchestrator,
     )?;
+    if let Some(orchestrator) = orchestrator.filter(|_| !options.worker_dispatch) {
+        for engine in worker_scope.engines() {
+            if let Some(model) = models.get(&engine.to_string()) {
+                neomax_core::orchestration::delegation::check_worker_model(
+                    orchestrator,
+                    engine,
+                    &model.model,
+                )?;
+            }
+        }
+    }
     let adapters = ProviderAdapter::all()
         .into_iter()
         .filter(|adapter| {

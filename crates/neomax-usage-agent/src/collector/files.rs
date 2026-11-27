@@ -63,7 +63,7 @@ pub(crate) fn discover_sources(catalog: &super::ProfileCatalog, since: i64) -> V
             }
             Engine::Kimi => collect_kimi(&mut output, profile, since),
             Engine::Grok => collect_grok(&mut output, profile, since),
-            Engine::Opencode => {}
+            Engine::Opencode | Engine::Antigravity => {}
         }
     }
     output.sort_by(|left, right| left.path.cmp(&right.path));

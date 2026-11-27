@@ -16,6 +16,7 @@ pub(super) const SECRET_ENV_NAMES: &[&str] = &[
     "GROK_DEPLOYMENT_KEY",
     "GOOGLE_API_KEY",
     "VERTEXAI_API_KEY",
+    "GEMINI_API_KEY",
 ];
 
 pub(super) fn provider_name(engine: Engine) -> &'static str {
@@ -30,6 +31,7 @@ pub(super) fn profile_env(provider: &str) -> &'static str {
         "opencode" => "XDG_DATA_HOME",
         "kimi" => "KIMI_CODE_HOME",
         "grok" => "GROK_HOME",
+        "antigravity" => "NEOMAX_ANTIGRAVITY_HOME",
         _ => "",
     }
 }

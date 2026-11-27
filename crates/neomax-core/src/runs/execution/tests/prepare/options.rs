@@ -164,7 +164,7 @@ fn root_goal_and_turn_limits_are_carried_into_typed_orchestrator_requests() {
                 assert!(args.contains(&"--max-turns".into()));
                 assert!(args.iter().any(|arg| arg.starts_with("/goal ")));
             }
-            Engine::Codex | Engine::Opencode | Engine::Grok => {
+            Engine::Codex | Engine::Opencode | Engine::Grok | Engine::Antigravity => {
                 assert!(
                     args.iter()
                         .any(|arg| arg.contains("OBJECTIVE: do not finish"))

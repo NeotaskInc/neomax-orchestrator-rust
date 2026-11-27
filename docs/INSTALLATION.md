@@ -87,7 +87,7 @@ On Windows, run `bin\neomax.exe install` from the extracted package directory.
 
 The installer creates the user command surface in one transaction. It installs the `neomax`
 multicall executable, the `neomax-cli` compatibility name, the `cmax`, `cdx`, `cdxmax`, `ocx`,
-`ocmax`, `kmx`, `kmax`, `gmx`, and `gmax` launchers, and the `neomax-portal`,
+`ocmax`, `kmx`, `kmax`, `gmx`, `gmax`, `amx`, and `amax` launchers, and the `neomax-portal`,
 `neomax-usage-agent`, and `neomax-worktrees` auxiliary commands. It also installs the OpenCode
 model policy and product documentation assets.
 
@@ -140,8 +140,9 @@ sh "$NEOMAX_SHARE/shell/neomax-shell-shortcuts.sh" install \
 ```
 
 The generated `claudeN`, `codexN`, `opencodeN`, `kimiN`, and `grokN` functions discover existing
-account profiles each time a new shell starts. They call the installed `cmax`, `cdx`, `ocx`,
-`kmx`, and `gmx` helpers, respectively, and do not contain credentials or account-specific paths.
+account profiles each time a new shell starts, and `antigravity1` runs the single Antigravity
+profile. They call the installed `cmax`, `cdx`, `ocx`, `kmx`, `gmx`, and `amx` helpers,
+respectively, and do not contain credentials or account-specific paths.
 The explicit manager owns only its bounded profile block. Remove that block with:
 
 ```text

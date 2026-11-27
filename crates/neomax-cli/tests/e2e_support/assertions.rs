@@ -20,6 +20,10 @@ pub(crate) fn assert_root_argv(invocation: &Invocation, engine: Engine, label: &
             !invocation.has_arg("--single"),
             "{label} used Grok --single"
         ),
+        Engine::Antigravity => assert!(
+            !invocation.has_arg("--print") && !invocation.has_arg("-p"),
+            "{label} used agy print mode"
+        ),
     }
 }
 
@@ -37,6 +41,7 @@ pub(crate) fn assert_worker_argv(invocation: &Invocation, engine: Engine, label:
             invocation.has_arg("--single"),
             "{label} lacks Grok --single"
         ),
+        Engine::Antigravity => assert!(invocation.has_arg("--print"), "{label} lacks agy --print"),
     }
 }
 
@@ -86,6 +91,14 @@ pub(crate) fn assert_plan_argv(invocation: &Invocation, engine: Engine, label: &
                 "{label}"
             );
             assert!(!invocation.has_arg("--always-approve"), "{label}");
+        }
+        Engine::Antigravity => {
+            assert_worker_argv(invocation, engine, label);
+            assert_eq!(invocation.arg_value("--mode"), Some("plan"), "{label}");
+            assert!(
+                !invocation.has_arg("--dangerously-skip-permissions"),
+                "{label}"
+            );
         }
     }
 }
@@ -202,5 +215,6 @@ pub(crate) fn pinned_orchestrator_alias(engine: Engine) -> &'static str {
         Engine::Opencode => "ocmax",
         Engine::Kimi => "kmax",
         Engine::Grok => "gmax",
+        Engine::Antigravity => "amax",
     }
 }

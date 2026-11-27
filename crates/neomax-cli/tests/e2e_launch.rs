@@ -1,7 +1,7 @@
 #[path = "e2e_support/mod.rs"]
 mod support;
 
-use neomax_core::Engine;
+use neomax_core::{Engine, WorkerScope};
 
 use support::{
     E2eHarness,
@@ -20,6 +20,7 @@ fn universal_and_pinned_orchestrators_handle_initial_tasks_by_capability() {
         ("ocmax", Engine::Opencode),
         ("kmax", Engine::Kimi),
         ("gmax", Engine::Grok),
+        ("amax", Engine::Antigravity),
     ]);
 
     for (launcher, engine) in cases {
@@ -99,7 +100,7 @@ fn universal_launch_selects_the_only_connected_provider_and_runs_the_fake_cli() 
         .expect("fixture account name");
     assert_eq!(report["account"], account);
     assert_eq!(report["model"], "opencode/big-pickle");
-    assert_eq!(report["worker_scope"], "claude,codex,opencode,kimi,grok");
+    assert_eq!(report["worker_scope"], WorkerScope::all().csv());
 
     let invocations = harness.invocations();
     assert_eq!(invocations.len(), 1);
@@ -118,10 +119,11 @@ fn universal_launch_selects_the_only_connected_provider_and_runs_the_fake_cli() 
 fn each_provider_pinned_launcher_selects_its_provider_without_authenticating_any_other() {
     let cases = [
         ("cmax", Engine::Claude, "claude-opus-5-5[1m]"),
-        ("cdxmax", Engine::Codex, "gpt-6-astra"),
+        ("cdxmax", Engine::Codex, "gpt-6.1-sol"),
         ("ocmax", Engine::Opencode, "opencode/big-pickle"),
         ("kmax", Engine::Kimi, "kimi-code/k3"),
         ("gmax", Engine::Grok, "grok-4.6"),
+        ("amax", Engine::Antigravity, "gemini-4-neon"),
     ];
 
     for (launcher, engine, model) in cases {
