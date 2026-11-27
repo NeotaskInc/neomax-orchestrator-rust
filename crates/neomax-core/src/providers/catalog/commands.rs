@@ -142,14 +142,26 @@ pub fn binary_status(
     }
 }
 
+#[cfg(test)]
 pub fn model_ids(
     engine: Engine,
     environment: &dyn Environment,
     runner: &dyn CommandRunner,
 ) -> Vec<String> {
+    model_listing(engine, environment, runner)
+        .map(|output| listed_model_ids(&output, engine))
+        .unwrap_or_default()
+}
+
+/// Run the provider's model-listing command once, if it has one.
+pub fn model_listing(
+    engine: Engine,
+    environment: &dyn Environment,
+    runner: &dyn CommandRunner,
+) -> Option<CommandOutput> {
     let provider = spec(engine);
     if provider.model_args.is_empty() {
-        return Vec::new();
+        return None;
     }
     let program = environment
         .value(&provider.binary_env)
@@ -161,9 +173,10 @@ pub fn model_ids(
         cwd: Some(environment.current_dir()),
         safe_environment: safe_environment(environment, &provider),
     };
-    let Ok(output) = runner.run(&command) else {
-        return Vec::new();
-    };
+    runner.run(&command).ok()
+}
+
+pub fn listed_model_ids(output: &CommandOutput, engine: Engine) -> Vec<String> {
     if !output.success || output.timed_out || output.truncated {
         return Vec::new();
     }

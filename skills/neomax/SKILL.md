@@ -119,8 +119,9 @@ GPT-6.1 Sol, and Antigravity to `gemini-4-neon` at effort high. Never replace an
 unavailable requested model with another model silently.
 
 An Antigravity orchestrator (`amax`) delegates in a fixed order: its own
-subagents and threads first, then Claude Code workers on Opus 5.5 at effort
-high. Its default worker pool is `antigravity,claude`; `--workers` still
+subagents and threads for bounded side work, then Antigravity (Neon) workers
+for units that own a task, branch or pull request, then Claude Code workers
+on Opus 5.5 at effort high. Reviewers stay Claude. Its default worker pool is `antigravity,claude`; `--workers` still
 overrides it. It never starts a Fable model: a Fable Claude model in its plan
 or in a dispatch from inside it is refused.
 
@@ -161,7 +162,8 @@ neomax codex developer@example.com -- "Review this project"
 
 Antigravity keeps one sign-in per host in the operating-system keyring under
 `~/.gemini`; `amx login` starts `agy` so it can finish its Google sign-in, and
-Neomax never reads the keyring. On hosts where `agy` on `PATH` is a proxy
+Neomax never reads the keyring. Discovery treats a failed `agy models` run as
+signed out, so Neomax never starts a signed-out agy. On hosts where `agy` on `PATH` is a proxy
 wrapper, Neomax launches that wrapper unchanged.
 
 Neomax avoids accounts at the 99 percent wall and proactively prefers another
